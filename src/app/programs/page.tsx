@@ -343,13 +343,13 @@ export default function ProgramsPage() {
                 overflow: 'hidden',
               }}>
                 {/* Track header */}
-                <div style={{
-                  padding: '2rem 2.5rem',
+                <div className="track-header-row" style={{
+                  padding: '1.5rem',
                   borderBottom: '1px solid var(--border)',
                   display: 'flex',
                   alignItems: 'flex-start',
                   justifyContent: 'space-between',
-                  gap: '2rem',
+                  gap: '1rem',
                   flexWrap: 'wrap',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.25rem', flex: 1 }}>
@@ -369,20 +369,22 @@ export default function ProgramsPage() {
                       }}>
                         {track.name}
                       </h3>
-                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'nowrap', alignItems: 'center' }}>
+                      <div className="track-badges" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
                         <span style={{
                           fontSize: '0.75rem', fontWeight: 600,
                           color: track.accent === 'cyan' ? 'var(--cyan)' : 'var(--orange)',
                           background: track.accent === 'cyan' ? 'var(--cyan-dim)' : 'var(--orange-dim)',
                           padding: '0.2rem 0.7rem', borderRadius: '4px',
+                          whiteSpace: 'nowrap',
                         }}>
-                          {track.duration}
+                          3 Months
                         </span>
                         <span style={{
                           fontSize: '0.75rem', fontWeight: 600,
                           color: 'var(--muted)',
                           background: 'rgba(255,255,255,0.05)',
                           padding: '0.2rem 0.7rem', borderRadius: '4px',
+                          whiteSpace: 'nowrap',
                         }}>
                           {track.level}
                         </span>
@@ -616,10 +618,13 @@ export default function ProgramsPage() {
       </main>
       <Footer />
       <style>{`
-        @media (max-width: 600px) {
-          .track-badges span { font-size: 0.68rem !important; padding: 0.15rem 0.5rem !important; }
-          .track-header-row { flex-direction: column !important; gap: 1rem !important; }
-          .track-header-row a { width: 100% !important; justify-content: center !important; }
+        @media (max-width: 640px) {
+          .track-header-row { flex-direction: column !important; }
+          .track-header-row > a {
+            width: 100% !important;
+            justify-content: center !important;
+            text-align: center !important;
+          }
         }
       `}</style>
     </>
