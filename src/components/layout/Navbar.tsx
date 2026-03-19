@@ -5,9 +5,9 @@ import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 
 const navLinks = [
-  { href: '#programs',        label: 'Programs' },
-  { href: '#how-it-works',    label: 'How It Works' },
-  { href: '#certifications',  label: 'Certifications' },
+  { href: '/programs',        label: 'Programs' },
+  { href: '/how-it-works',    label: 'How It Works' },
+  { href: '/certifications',  label: 'Certifications' },
 ];
 
 export default function Navbar() {
@@ -76,7 +76,7 @@ export default function Navbar() {
           </li>
         ))}
         <li>
-          <Link href="#register" style={{
+          <Link href="/register" style={{
             background: 'var(--cyan)',
             color: '#070D1A',
             padding: '0.5rem 1.25rem',
@@ -140,7 +140,7 @@ export default function Navbar() {
             </Link>
           ))}
           <Link
-            href="#register"
+            href="/register"
             onClick={() => setOpen(false)}
             style={{
               background: 'var(--cyan)',
