@@ -2,6 +2,7 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Figtree:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
 
+/* ── Dark theme (default) ── */
 :root {
   --bg: #070D1A;
   --surface: #0D1526;
@@ -19,6 +20,22 @@
   --font-body: 'Figtree', sans-serif;
 }
 
+/* ── Light theme ── */
+[data-theme="light"] {
+  --bg: #F4F7FC;
+  --surface: #FFFFFF;
+  --surface2: #EBF0F8;
+  --cyan: #0099CC;
+  --cyan-dim: rgba(0, 153, 204, 0.08);
+  --cyan-border: rgba(0, 153, 204, 0.3);
+  --orange: #E05A1E;
+  --orange-dim: rgba(224, 90, 30, 0.08);
+  --text: #0D1526;
+  --muted: #5A6E8A;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-bright: rgba(0, 0, 0, 0.14);
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -30,6 +47,7 @@ body {
   font-size: 16px;
   line-height: 1.6;
   overflow-x: hidden;
+  transition: background 0.25s ease, color 0.25s ease;
 }
 
 * {

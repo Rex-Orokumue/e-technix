@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 
-const WHATSAPP_NUMBER = '2348000000000'; // ← replace with real number
+const WHATSAPP_NUMBER = '2348120288390'; // ← replace with real number
 
 interface Track {
   id: string;
@@ -369,7 +369,7 @@ export default function ProgramsPage() {
                       }}>
                         {track.name}
                       </h3>
-                      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'nowrap', alignItems: 'center' }}>
                         <span style={{
                           fontSize: '0.75rem', fontWeight: 600,
                           color: track.accent === 'cyan' ? 'var(--cyan)' : 'var(--orange)',
@@ -615,6 +615,13 @@ export default function ProgramsPage() {
 
       </main>
       <Footer />
+      <style>{`
+        @media (max-width: 600px) {
+          .track-badges span { font-size: 0.68rem !important; padding: 0.15rem 0.5rem !important; }
+          .track-header-row { flex-direction: column !important; gap: 1rem !important; }
+          .track-header-row a { width: 100% !important; justify-content: center !important; }
+        }
+      `}</style>
     </>
   );
 }

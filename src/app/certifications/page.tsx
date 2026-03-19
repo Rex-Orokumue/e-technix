@@ -286,10 +286,10 @@ export default function CertificationsPage() {
               >
                 {/* Header */}
                 <div style={{
-                  padding: '2rem 2.5rem',
+                  padding: 'clamp(1.25rem, 4vw, 2rem) clamp(1rem, 4vw, 2.5rem)',
                   borderBottom: '1px solid var(--border)',
                   display: 'flex',
-                  alignItems: 'center',
+                  alignItems: 'flex-start',
                   justifyContent: 'space-between',
                   gap: '1.5rem',
                   flexWrap: 'wrap',
@@ -344,7 +344,7 @@ export default function CertificationsPage() {
 
                 {/* Body */}
                 <div style={{
-                  padding: '2rem 2.5rem',
+                  padding: 'clamp(1.25rem, 4vw, 2rem) clamp(1rem, 4vw, 2.5rem)',
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
                   gap: '2rem',
@@ -495,6 +495,14 @@ export default function CertificationsPage() {
 
       </main>
       <Footer />
+      <style>{`
+        @media (max-width: 600px) {
+          .cert-header { flex-direction: column !important; align-items: flex-start !important; }
+          .cert-header a { width: 100% !important; text-align: center !important; justify-content: center !important; }
+          .cert-body { padding: 1.25rem !important; }
+          .cert-body > div:first-child { grid-column: 1 / -1 !important; }
+        }
+      `}</style>
     </>
   );
 }

@@ -71,7 +71,7 @@ export default function Hero() {
             background: 'var(--cyan)',
             borderRadius: '50%',
           }} />
-          Now Enrolling — 2025 Cohort
+          Now Enrolling — 2026 Cohort
         </motion.div>
 
         {/* Headline */}
@@ -120,7 +120,7 @@ export default function Hero() {
           }}
         >
           <Link
-            href="#register"
+            href="/register"
             style={{
               display: 'inline-flex',
               alignItems: 'center',

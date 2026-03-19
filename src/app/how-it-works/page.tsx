@@ -197,21 +197,19 @@ export default function HowItWorksPage() {
             now to where you want to be — in 6 to 9 months.
           </p>
 
-          {/* Timeline bar */}
+          {/* Timeline grid — 2x2 on mobile, 4 columns on desktop */}
           <div style={{
-            display: 'flex',
-            gap: 0,
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: '12px',
-            overflow: 'hidden',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+            gap: '0.75rem',
             maxWidth: '700px',
           }}>
             {timeline.map((t, i) => (
               <div key={t.label} style={{
-                flex: 1,
-                padding: '1.25rem 1.5rem',
-                borderRight: i < timeline.length - 1 ? '1px solid var(--border)' : 'none',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: '10px',
+                padding: '1rem 1.25rem',
                 textAlign: 'center',
               }}>
                 <div style={{
@@ -229,6 +227,12 @@ export default function HowItWorksPage() {
                 }}>
                   {t.label}
                 </div>
+                <div style={{
+                  marginTop: '6px',
+                  width: '24px', height: '2px',
+                  background: t.accent === 'cyan' ? 'var(--cyan)' : 'var(--orange)',
+                  borderRadius: '1px', margin: '6px auto 0',
+                }} />
               </div>
             ))}
           </div>
