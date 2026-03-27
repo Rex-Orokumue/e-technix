@@ -56,7 +56,7 @@ export default function Navbar() {
         alignItems: 'center',
         gap: '2px',
       }}>
-        <span style={{ color: 'var(--cyan)' }}>e</span>
+        <span style={{ color: 'var(--cyan)' }}>e-</span>
         technix
         <span style={{
           width: '8px', height: '8px',

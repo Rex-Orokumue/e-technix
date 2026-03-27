@@ -57,3 +57,16 @@ body {
 p {
   margin-bottom: 1rem;
 }
+
+/* ── Red theme override ── */
+.theme-red {
+  --cyan: #FF3333;
+  --cyan-dim: rgba(255, 51, 51, 0.1);
+  --cyan-border: rgba(255, 51, 51, 0.25);
+}
+
+[data-theme="light"] .theme-red {
+  --cyan: #CC0000;
+  --cyan-dim: rgba(204, 0, 0, 0.08);
+  --cyan-border: rgba(204, 0, 0, 0.3);
+}
