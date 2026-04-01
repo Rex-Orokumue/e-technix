@@ -8,17 +8,25 @@ import {
   Foundation,
   Certifications,
   CTASection,
+  UrgencyBar,
+  WhatsIncluded,
+  Testimonials,
+  GuaranteeStrip,
 } from '@/components/home/sections';
 
 export default function Home() {
   return (
     <>
       <Navbar />
+      <UrgencyBar />
       <main>
         <Hero />
+        <GuaranteeStrip />
         <Stats />
+        <WhatsIncluded />
         <HowItWorks />
         <TrackGrid />
+        <Testimonials />
         <Foundation />
         <Certifications />
         <CTASection />

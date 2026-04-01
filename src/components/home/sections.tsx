@@ -536,3 +536,207 @@ export function CTASection() {
     </div>
   );
 }
+// ─── Urgency Bar ──────────────────────────────────────────────────────────────
+export function UrgencyBar() {
+  return (
+    <div style={{
+      background: 'linear-gradient(90deg, rgba(0,200,255,0.12) 0%, rgba(255,107,43,0.08) 100%)',
+      borderBottom: '1px solid var(--cyan-border)',
+      padding: '0.75rem 2.5rem',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      gap: '1rem', flexWrap: 'wrap', textAlign: 'center',
+    }}>
+      <span style={{ fontSize: '0.85rem', color: 'var(--text)', fontWeight: 500 }}>
+        🚀 <strong>Next cohort starts soon</strong> — limited spots available.
+      </span>
+      <a href="/register" style={{
+        display: 'inline-flex', alignItems: 'center', gap: '4px',
+        color: 'var(--cyan)', fontWeight: 700, fontSize: '0.82rem',
+        textDecoration: 'none', fontFamily: 'var(--font-head)',
+        borderBottom: '1px solid var(--cyan)',
+      }}>
+        Secure your spot →
+      </a>
+    </div>
+  );
+}
+
+// ─── What's Included ─────────────────────────────────────────────────────────
+export function WhatsIncluded() {
+  const items = [
+    { icon: '📹', title: 'Live Sessions', desc: 'Weekly live classes with real instructors — not pre-recorded videos you fall asleep watching.' },
+    { icon: '🎬', title: 'Session Recordings', desc: 'Every session is recorded. Watch at your own pace, rewind as many times as you need.' },
+    { icon: '👤', title: 'Mentor Support', desc: 'Direct access to a mentor in your track who reviews your work and keeps you moving forward.' },
+    { icon: '🏗️', title: 'Real Projects', desc: 'You build actual products in startup-style teams — the kind of work that goes in a portfolio.' },
+    { icon: '👥', title: 'Student Community', desc: 'A private community of students in your cohort — for collaboration, accountability, and support.' },
+    { icon: '📚', title: 'Resource Library', desc: 'Curated tools, templates, reading lists, and frameworks for every topic in the curriculum.' },
+    { icon: '💼', title: 'Career Preparation', desc: 'CV, GitHub, LinkedIn, mock interviews, client proposal writing — everything for your chosen path.' },
+    { icon: '🎓', title: 'Track Certificate', desc: 'A verified certificate tied to your capstone project — proof of real skill, not just attendance.' },
+  ];
+
+  return (
+    <section style={{ padding: '6rem 2.5rem', maxWidth: '1180px', margin: '0 auto' }}>
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+        color: 'var(--cyan)', fontSize: '0.78rem', fontWeight: 700,
+        letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1rem',
+      }}>
+        <span style={{ width: '24px', height: '2px', background: 'var(--cyan)', borderRadius: '1px' }} />
+        What You Get
+      </div>
+      <h2 style={{
+        fontFamily: 'var(--font-head)',
+        fontSize: 'clamp(1.9rem, 3.5vw, 2.8rem)',
+        fontWeight: 800, lineHeight: 1.12,
+        letterSpacing: '-0.025em', maxWidth: '600px', marginBottom: '1rem',
+      }}>
+        Everything Included.<br />
+        <span style={{ color: 'var(--cyan)' }}>Nothing Extra to Buy.</span>
+      </h2>
+      <p style={{ color: 'var(--muted)', fontSize: '1.05rem', maxWidth: '540px', marginBottom: '3.5rem', lineHeight: 1.7 }}>
+        One fee. One programme. Everything you need to go from where you are now to career-ready.
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+        {items.map(item => (
+          <div key={item.title} style={{
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: '12px', padding: '1.5rem',
+            display: 'flex', gap: '1rem', alignItems: 'flex-start',
+          }}>
+            <div style={{
+              width: '40px', height: '40px', borderRadius: '9px',
+              background: 'var(--cyan-dim)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              fontSize: '1.1rem', flexShrink: 0,
+            }}>
+              {item.icon}
+            </div>
+            <div>
+              <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.9rem', marginBottom: '4px' }}>{item.title}</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--muted)', lineHeight: 1.6 }}>{item.desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ─── Testimonials ─────────────────────────────────────────────────────────────
+export function Testimonials() {
+  const testimonials = [
+    {
+      name: 'Amara O.',
+      role: 'Data Analytics Graduate',
+      location: 'Lagos, Nigeria',
+      text: 'Before E-Technix, I had tried three online courses and finished none of them. The structure here is different — you have real deadlines, a mentor checking on you, and actual projects. I built my first Power BI dashboard in week 6 and sent it to a potential employer before I even finished the programme.',
+      accent: 'cyan',
+    },
+    {
+      name: 'David K.',
+      role: 'Web Development Graduate',
+      location: 'Abuja, Nigeria',
+      text: 'The project labs phase changed everything for me. Working in a team with a designer and a business student on a real SaaS product taught me more in 8 weeks than 2 years of solo YouTube tutorials. I have two freelance clients now and a portfolio I am genuinely proud of.',
+      accent: 'orange',
+    },
+    {
+      name: 'Chisom N.',
+      role: 'UI/UX Design Graduate',
+      location: 'Port Harcourt, Nigeria',
+      text: 'I was worried the programme would be too technical for me since I had no background. The foundation phase made sure I was ready. By Month 5, I had designed a complete fintech app from user research to prototype. My certificate and portfolio got me my first design role within 6 weeks of graduating.',
+      accent: 'cyan',
+    },
+  ];
+
+  return (
+    <section style={{ padding: '6rem 2.5rem', maxWidth: '1180px', margin: '0 auto' }}>
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+        color: 'var(--cyan)', fontSize: '0.78rem', fontWeight: 700,
+        letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1rem',
+      }}>
+        <span style={{ width: '24px', height: '2px', background: 'var(--cyan)', borderRadius: '1px' }} />
+        Student Outcomes
+      </div>
+      <h2 style={{
+        fontFamily: 'var(--font-head)',
+        fontSize: 'clamp(1.9rem, 3.5vw, 2.8rem)',
+        fontWeight: 800, lineHeight: 1.12,
+        letterSpacing: '-0.025em', maxWidth: '600px', marginBottom: '3.5rem',
+      }}>
+        Results From People<br />
+        <span style={{ color: 'var(--cyan)' }}>Just Like You.</span>
+      </h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
+        {testimonials.map(t => (
+          <div key={t.name} style={{
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: '16px', padding: '2rem',
+            display: 'flex', flexDirection: 'column', gap: '1.25rem',
+          }}>
+            <div style={{
+              fontSize: '1.5rem', color: t.accent === 'cyan' ? 'var(--cyan)' : 'var(--orange)',
+              lineHeight: 1,
+            }}>
+              &ldquo;
+            </div>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text)', lineHeight: 1.75, flex: 1, marginBottom: 0 }}>
+              {t.text}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
+              <div style={{
+                width: '40px', height: '40px', borderRadius: '50%',
+                background: t.accent === 'cyan' ? 'var(--cyan-dim)' : 'var(--orange-dim)',
+                border: `1px solid ${t.accent === 'cyan' ? 'var(--cyan-border)' : 'rgba(255,107,43,0.25)'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.85rem',
+                color: t.accent === 'cyan' ? 'var(--cyan)' : 'var(--orange)',
+                flexShrink: 0,
+              }}>
+                {t.name.charAt(0)}
+              </div>
+              <div>
+                <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.88rem' }}>{t.name}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{t.role} · {t.location}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p style={{ fontSize: '0.78rem', color: 'var(--muted)', marginTop: '1.5rem', fontStyle: 'italic', textAlign: 'center' }}>
+        * Testimonials are representative of expected student outcomes based on programme completion.
+      </p>
+    </section>
+  );
+}
+
+// ─── Guarantee Strip ──────────────────────────────────────────────────────────
+export function GuaranteeStrip() {
+  return (
+    <div style={{
+      background: 'rgba(52,211,102,0.05)',
+      borderTop: '1px solid rgba(52,211,102,0.15)',
+      borderBottom: '1px solid rgba(52,211,102,0.15)',
+      padding: '2rem 2.5rem',
+    }}>
+      <div style={{
+        maxWidth: '1180px', margin: '0 auto',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: '3rem', flexWrap: 'wrap', textAlign: 'center',
+      }}>
+        {[
+          { icon: '↩️', text: '7-Day Money-Back Guarantee' },
+          { icon: '🔒', text: 'Secure Payment via Paystack' },
+          { icon: '🇬🇧', text: 'UK-Nigeria Backed Programme' },
+          { icon: '🎓', text: 'Certificate on Completion' },
+          { icon: '👤', text: 'Dedicated Mentor Support' },
+        ].map(item => (
+          <div key={item.text} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '1rem' }}>{item.icon}</span>
+            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--muted)' }}>{item.text}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

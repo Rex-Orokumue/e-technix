@@ -3,10 +3,12 @@
 import Link from 'next/link';
 
 const links = [
-  { href: '#programs',       label: 'Programs' },
-  { href: '#how-it-works',   label: 'How It Works' },
-  { href: '#certifications', label: 'Certifications' },
-  { href: '#register',       label: 'Register' },
+  { href: '/programs',       label: 'Programs' },
+  { href: '/how-it-works',   label: 'How It Works' },
+  { href: '/certifications', label: 'Certifications' },
+  { href: '/about',          label: 'About' },
+  { href: '/faq',            label: 'FAQ' },
+  { href: '/register',       label: 'Register' },
 ];
 
 export default function Footer() {
