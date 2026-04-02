@@ -30,12 +30,12 @@ const fmtPrice = (ngnAmount: number, currency: Currency) => {
 
 // ─── Pricing Data ─────────────────────────────────────────────────────────────
 const tracks = [
-  { id: 'data-analytics',       icon: '📊', name: 'Data Analytics',           full: 180000, install: 95000 },
-  { id: 'web-development',      icon: '🌐', name: 'Web App Development',       full: 220000, install: 115000 },
-  { id: 'mobile-apps',          icon: '📱', name: 'Mobile & Desktop Apps',     full: 220000, install: 115000 },
-  { id: 'ai-systems',           icon: '🤖', name: 'AI & Agentic Systems',      full: 280000, install: 145000 },
-  { id: 'ui-ux-design',         icon: '🎨', name: 'Product Design (UI/UX)',    full: 160000, install: 85000 },
-  { id: 'business-development', icon: '📈', name: 'Business Development',      full: 150000, install: 80000 },
+  { id: 'data-analytics',       icon: '📊', name: 'Data Analytics',           full: 180000, install: 100000 },
+  { id: 'web-development',      icon: '🌐', name: 'Web App Development',       full: 230000, install: 125000 },
+  { id: 'mobile-apps',          icon: '📱', name: 'Mobile & Desktop Apps',     full: 230000, install: 125000 },
+  { id: 'ai-systems',           icon: '🤖', name: 'AI & Agentic Systems',      full: 300000, install: 160000 },
+  { id: 'ui-ux-design',         icon: '🎨', name: 'Product Design (UI/UX)',    full: 180000, install: 100000 },
+  { id: 'business-development', icon: '📈', name: 'Business Development',      full: 180000, install: 100000 },
 ];
 
 const experienceLevels = [
