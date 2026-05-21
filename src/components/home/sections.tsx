@@ -402,7 +402,7 @@ export function Certifications() {
 // ─── CTA Section ──────────────────────────────────────────────────────────────
 import Link from 'next/link';
 
-const WHATSAPP_NUMBER = '2348000000000'; // ← replace with real number
+const WHATSAPP_NUMBER = '2348120288390';
 
 export function CTASection() {
   return (
@@ -540,22 +540,25 @@ export function CTASection() {
 export function UrgencyBar() {
   return (
     <div style={{
-      background: 'linear-gradient(90deg, rgba(0,200,255,0.12) 0%, rgba(255,107,43,0.08) 100%)',
-      borderBottom: '1px solid var(--cyan-border)',
+      background: 'linear-gradient(90deg, rgba(52,211,102,0.12) 0%, rgba(0,200,255,0.08) 50%, rgba(255,107,43,0.06) 100%)',
+      borderBottom: '1px solid rgba(52,211,102,0.25)',
       padding: '0.75rem 2.5rem',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       gap: '1rem', flexWrap: 'wrap', textAlign: 'center',
     }}>
-      <span style={{ fontSize: '0.85rem', color: 'var(--text)', fontWeight: 500 }}>
-        🚀 <strong>Next cohort starts soon</strong> — limited spots available.
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: '4px',
+        fontSize: '0.85rem', color: 'var(--text)', fontWeight: 500,
+      }}>
+        🔥 <strong style={{ color: '#34D366' }}>3 tracks now FREE</strong> — Web Dev, Mobile Apps & Data Analytics
       </span>
       <a href="/register" style={{
         display: 'inline-flex', alignItems: 'center', gap: '4px',
-        color: 'var(--cyan)', fontWeight: 700, fontSize: '0.82rem',
+        color: '#34D366', fontWeight: 700, fontSize: '0.82rem',
         textDecoration: 'none', fontFamily: 'var(--font-head)',
-        borderBottom: '1px solid var(--cyan)',
+        borderBottom: '1px solid #34D366',
       }}>
-        Secure your spot →
+        Register for free →
       </a>
     </div>
   );
@@ -725,8 +728,8 @@ export function GuaranteeStrip() {
         gap: '3rem', flexWrap: 'wrap', textAlign: 'center',
       }}>
         {[
-          { icon: '↩️', text: '7-Day Money-Back Guarantee' },
-          { icon: '🔒', text: 'Secure Payment via Paystack' },
+          { icon: '🔥', text: '3 Tracks Now FREE' },
+          { icon: '💬', text: 'Easy WhatsApp Registration' },
           { icon: '🇬🇧', text: 'UK-Nigeria Backed Programme' },
           { icon: '🎓', text: 'Certificate on Completion' },
           { icon: '👤', text: 'Dedicated Mentor Support' },

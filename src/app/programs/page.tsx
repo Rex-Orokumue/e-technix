@@ -247,6 +247,51 @@ export default function ProgramsPage() {
           </p>
         </section>
 
+        {/* ── FREE Tracks Promo Banner ── */}
+        <div style={{
+          margin: '0 2.5rem',
+          background: 'linear-gradient(135deg, rgba(52,211,102,0.1) 0%, rgba(0,200,255,0.06) 50%, rgba(255,107,43,0.04) 100%)',
+          border: '1px solid rgba(52,211,102,0.25)',
+          borderRadius: '16px',
+          padding: '2rem 2.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1.5rem',
+          flexWrap: 'wrap',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+            <span style={{ fontSize: '2rem' }}>🔥</span>
+            <div>
+              <div style={{
+                fontFamily: 'var(--font-head)',
+                fontSize: '1.1rem',
+                fontWeight: 800,
+                color: 'var(--text)',
+                marginBottom: '0.25rem',
+              }}>
+                3 Tracks Now <span style={{ color: '#34D366' }}>Completely FREE</span>
+              </div>
+              <p style={{ fontSize: '0.88rem', color: 'var(--muted)', lineHeight: 1.5, marginBottom: 0 }}>
+                Web App Development, Mobile & Desktop Apps, and Data Analytics are free for a limited time.
+              </p>
+            </div>
+          </div>
+          <Link href="/register" style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+            background: '#25D366', color: '#fff',
+            fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.88rem',
+            padding: '0.75rem 1.75rem', borderRadius: '8px',
+            textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0,
+            transition: 'opacity 0.2s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+          >
+            Register for Free →
+          </Link>
+        </div>
+
         {/* ── Phase 1 Foundation ── */}
         <section style={{ padding: '5rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '3rem', flexWrap: 'wrap' }}>
@@ -388,14 +433,30 @@ export default function ProgramsPage() {
                         }}>
                           {track.level}
                         </span>
+                        {['data-analytics', 'web-development', 'mobile-apps'].includes(track.id) && (
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '4px',
+                            background: 'rgba(52,211,102,0.15)',
+                            border: '1px solid rgba(52,211,102,0.3)',
+                            borderRadius: '4px', padding: '0.2rem 0.6rem',
+                            fontSize: '0.68rem', fontWeight: 800, color: '#34D366',
+                            letterSpacing: '0.08em', textTransform: 'uppercase',
+                            whiteSpace: 'nowrap',
+                          }}>
+                            🔥 FREE
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
 
                   <Link href="/register" style={{
                     display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                    background: track.accent === 'cyan' ? 'var(--cyan)' : 'var(--orange)',
-                    color: '#070D1A', fontFamily: 'var(--font-head)',
+                    background: ['data-analytics', 'web-development', 'mobile-apps'].includes(track.id)
+                      ? '#25D366'
+                      : (track.accent === 'cyan' ? 'var(--cyan)' : 'var(--orange)'),
+                    color: ['data-analytics', 'web-development', 'mobile-apps'].includes(track.id) ? '#fff' : '#070D1A',
+                    fontFamily: 'var(--font-head)',
                     fontWeight: 700, fontSize: '0.85rem',
                     padding: '0.65rem 1.5rem', borderRadius: '7px',
                     textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0,
@@ -404,7 +465,9 @@ export default function ProgramsPage() {
                   onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
                   onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
                   >
-                    Enrol in This Track →
+                    {['data-analytics', 'web-development', 'mobile-apps'].includes(track.id)
+                      ? 'Register FREE →'
+                      : 'Enrol in This Track →'}
                   </Link>
                 </div>
 

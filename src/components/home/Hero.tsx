@@ -74,6 +74,35 @@ export default function Hero() {
           Now Enrolling — 2026 Cohort
         </motion.div>
 
+        {/* Free tracks promo badge */}
+        <motion.div
+          {...fadeUp(0.05)}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'linear-gradient(135deg, rgba(52,211,102,0.15), rgba(52,211,102,0.08))',
+            border: '1px solid rgba(52,211,102,0.3)',
+            color: '#34D366',
+            fontSize: '0.82rem',
+            fontWeight: 700,
+            letterSpacing: '0.05em',
+            padding: '0.45rem 1.2rem',
+            borderRadius: '999px',
+            marginBottom: '2rem',
+            animation: 'promoBadgePulse 2.5s ease-in-out infinite',
+          }}
+        >
+          🔥 3 Tracks Now FREE — Web Dev, Mobile & Data Analytics
+        </motion.div>
+
+        <style>{`
+          @keyframes promoBadgePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,102,0.25); }
+            50% { box-shadow: 0 0 20px 6px rgba(52,211,102,0.1); }
+          }
+        `}</style>
+
         {/* Headline */}
         <motion.h1
           {...fadeUp(0.1)}

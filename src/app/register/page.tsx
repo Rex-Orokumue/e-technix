@@ -3,10 +3,8 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import Link from 'next/link';
 
 const WHATSAPP_NUMBER = '2348120288390';
-const PAYSTACK_KEY = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!;
 
 // ─── Exchange rates (update periodically) ─────────────────────────────────────
 const RATES = { NGN: 1, USD: 1 / 1580, GBP: 1 / 2020 };
@@ -29,6 +27,8 @@ const fmtPrice = (ngnAmount: number, currency: Currency) => {
 };
 
 // ─── Pricing Data ─────────────────────────────────────────────────────────────
+const FREE_TRACK_IDS = ['data-analytics', 'web-development', 'mobile-apps'];
+
 const tracks = [
   { id: 'data-analytics',       icon: '📊', name: 'Data Analytics',           full: 180000, install: 100000 },
   { id: 'web-development',      icon: '🌐', name: 'Web App Development',       full: 230000, install: 125000 },
@@ -37,6 +37,8 @@ const tracks = [
   { id: 'ui-ux-design',         icon: '🎨', name: 'Product Design (UI/UX)',    full: 180000, install: 100000 },
   { id: 'business-development', icon: '📈', name: 'Business Development',      full: 180000, install: 100000 },
 ];
+
+const isTrackFree = (trackId: string) => FREE_TRACK_IDS.includes(trackId);
 
 const experienceLevels = [
   'Complete beginner — no tech background',
@@ -65,40 +67,27 @@ const EMPTY: FormData = {
   paymentType: 'full',
 };
 
-declare global {
-  interface Window {
-    PaystackPop: {
-      setup: (config: {
-        key: string; email: string; amount: number; currency: string;
-        ref: string; metadata: object;
-        callback: (response: { reference: string }) => void;
-        onClose: () => void;
-      }) => { openIframe: () => void };
-    };
-  }
-}
-
-const redirectToWhatsApp = (data: FormData, ngnAmount: number, currency: Currency) => {
+const buildWhatsAppMessage = (data: FormData, currency: Currency) => {
   const track = tracks.find(t => t.id === data.track);
+  const isFree = isTrackFree(data.track);
+
+  if (isFree) {
+    return `Hello! I'd like to register for E-Technix (FREE track). Here are my details:\n\n*Name:* ${data.firstName} ${data.lastName}\n*Email:* ${data.email}\n*Phone:* ${data.phone}\n*Country:* ${data.country}\n*Track:* ${track?.name} (FREE — Limited-time offer)\n*Education:* ${data.education}\n*Experience:* ${data.experience}\n*Motivation:* ${data.motivation}\n*Goal:* ${data.goal}\n\nLooking forward to starting! 🚀`;
+  }
+
+  const ngnAmount = data.paymentType === 'full' ? (track?.full ?? 0) : (track?.install ?? 0);
   const displayAmount = fmtPrice(ngnAmount, currency);
-  const msg = `Hello! I just registered for E-Technix. Here are my details:\n\n*Name:* ${data.firstName} ${data.lastName}\n*Email:* ${data.email}\n*Phone:* ${data.phone}\n*Country:* ${data.country}\n*Track:* ${track?.name}\n*Payment:* ${displayAmount} (${data.paymentType === 'full' ? 'Full payment' : '1st Instalment'})\n*Education:* ${data.education}\n*Experience:* ${data.experience}\n*Motivation:* ${data.motivation}\n*Goal:* ${data.goal}\n\nLooking forward to starting! 🚀`;
+  return `Hello! I'd like to register for E-Technix. Here are my details:\n\n*Name:* ${data.firstName} ${data.lastName}\n*Email:* ${data.email}\n*Phone:* ${data.phone}\n*Country:* ${data.country}\n*Track:* ${track?.name}\n*Payment:* ${displayAmount} (${data.paymentType === 'full' ? 'Full payment' : '1st Instalment'})\n*Education:* ${data.education}\n*Experience:* ${data.experience}\n*Motivation:* ${data.motivation}\n*Goal:* ${data.goal}\n\nLooking forward to starting! 🚀`;
+};
+
+const redirectToWhatsApp = (data: FormData, currency: Currency) => {
+  const msg = buildWhatsAppMessage(data, currency);
   window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
 };
 
 export default function RegisterPage() {
   const [form, setForm] = useState<FormData>({ ...EMPTY });
-  const [success, setSuccess] = useState(false);
-  const [scriptLoaded, setScriptLoaded] = useState(false);
   const [currency, setCurrency] = useState<Currency>('NGN');
-
-  useEffect(() => {
-    if (document.getElementById('paystack-script')) { setScriptLoaded(true); return; }
-    const script = document.createElement('script');
-    script.id = 'paystack-script';
-    script.src = 'https://js.paystack.co/v1/inline.js';
-    script.onload = () => setScriptLoaded(true);
-    document.body.appendChild(script);
-  }, []);
 
   // Auto-detect currency by country
   useEffect(() => {
@@ -110,35 +99,17 @@ export default function RegisterPage() {
   const set = (field: keyof FormData, value: string) => setForm(f => ({ ...f, [field]: value }));
 
   const selectedTrack = tracks.find(t => t.id === form.track);
+  const trackIsFree = selectedTrack ? isTrackFree(selectedTrack.id) : false;
   const ngnAmount = selectedTrack
-    ? form.paymentType === 'full' ? selectedTrack.full : selectedTrack.install
+    ? (trackIsFree ? 0 : (form.paymentType === 'full' ? selectedTrack.full : selectedTrack.install))
     : 0;
 
   const isComplete = form.firstName && form.lastName && form.email && form.phone &&
     form.track && form.education && form.experience && form.motivation && form.goal;
 
-  const handlePay = () => {
-    if (!scriptLoaded || !window.PaystackPop) return;
-    // Always charge in NGN via Paystack regardless of display currency
-    const handler = window.PaystackPop.setup({
-      key: PAYSTACK_KEY,
-      email: form.email,
-      amount: ngnAmount * 100,
-      currency: 'NGN',
-      ref: `etechnix_${Date.now()}`,
-      metadata: {
-        custom_fields: [
-          { display_name: 'Full Name', variable_name: 'full_name', value: `${form.firstName} ${form.lastName}` },
-          { display_name: 'Track', variable_name: 'track', value: form.track },
-          { display_name: 'Payment Type', variable_name: 'payment_type', value: form.paymentType },
-          { display_name: 'Phone', variable_name: 'phone', value: form.phone },
-          { display_name: 'Display Currency', variable_name: 'display_currency', value: currency },
-        ],
-      },
-      callback: () => { setSuccess(true); redirectToWhatsApp(form, ngnAmount, currency); },
-      onClose: () => {},
-    });
-    handler.openIframe();
+  const handleRegister = () => {
+    if (!isComplete || !selectedTrack) return;
+    redirectToWhatsApp(form, currency);
   };
 
   const inputStyle = {
@@ -155,38 +126,38 @@ export default function RegisterPage() {
   };
   const groupStyle = { display: 'flex', flexDirection: 'column' as const, gap: '0.4rem' };
 
-  if (success) {
-    return (
-      <>
-        <Navbar />
-        <main style={{ paddingTop: '68px', minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem 2.5rem' }}>
-          <div style={{ textAlign: 'center', maxWidth: '500px' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1.5rem' }}>🎉</div>
-            <h1 style={{ fontFamily: 'var(--font-head)', fontSize: '2rem', fontWeight: 800, marginBottom: '1rem', letterSpacing: '-0.025em' }}>
-              Payment Successful!
-            </h1>
-            <p style={{ color: 'var(--muted)', fontSize: '1rem', lineHeight: 1.7, marginBottom: '2rem' }}>
-              Your registration is confirmed. You&apos;ve been redirected to WhatsApp — if not, click below and we&apos;ll get you set up right away.
-            </p>
-            <button onClick={() => redirectToWhatsApp(form, ngnAmount, currency)} style={{
-              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-              background: '#25D366', color: '#fff', fontFamily: 'var(--font-head)',
-              fontWeight: 700, fontSize: '0.95rem', padding: '0.9rem 2rem',
-              borderRadius: '8px', border: 'none', cursor: 'pointer',
-            }}>
-              Open WhatsApp →
-            </button>
-          </div>
-        </main>
-        <Footer />
-      </>
-    );
-  }
-
   return (
     <>
       <Navbar />
       <main style={{ paddingTop: '68px' }}>
+
+        {/* ── Promo Banner ── */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(52,211,102,0.12) 0%, rgba(0,200,255,0.10) 50%, rgba(255,107,43,0.08) 100%)',
+          borderBottom: '1px solid rgba(52,211,102,0.25)',
+          padding: '1rem 2.5rem',
+          textAlign: 'center',
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: '0.75rem', flexWrap: 'wrap',
+          }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              background: 'rgba(52,211,102,0.15)', border: '1px solid rgba(52,211,102,0.3)',
+              borderRadius: '999px', padding: '0.3rem 0.85rem',
+              fontSize: '0.75rem', fontWeight: 700, color: '#34D366',
+              letterSpacing: '0.05em', textTransform: 'uppercase',
+              animation: 'promoPulse 2s ease-in-out infinite',
+            }}>
+              🔥 Limited Time
+            </span>
+            <span style={{ fontSize: '0.88rem', color: 'var(--text)', fontWeight: 500 }}>
+              <strong>Web Dev, Mobile Apps & Data Analytics</strong> tracks are now <strong style={{ color: '#34D366' }}>completely FREE</strong>
+            </span>
+          </div>
+        </div>
+
         <div style={{ maxWidth: '1180px', margin: '0 auto', padding: '5rem 2.5rem 6rem' }}>
 
           {/* Header */}
@@ -212,8 +183,8 @@ export default function RegisterPage() {
             {/* Trust badges */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem' }}>
               {[
-                { icon: '🔒', text: 'Secure payment via Paystack' },
-                { icon: '↩️', text: '7-day money-back guarantee' },
+                { icon: '🔥', text: '3 tracks completely FREE' },
+                { icon: '💬', text: 'Register via WhatsApp' },
                 { icon: '🇬🇧', text: 'UK-Nigeria backed programme' },
                 { icon: '🎓', text: 'Certificate on completion' },
               ].map(b => (
@@ -229,36 +200,38 @@ export default function RegisterPage() {
             </div>
 
             <p style={{ color: 'var(--muted)', fontSize: '1rem', lineHeight: 1.7 }}>
-              Fill in your details, choose your track, and complete payment. After payment you&apos;ll be redirected to WhatsApp where we&apos;ll send everything you need to get started.
+              Fill in your details, choose your track, and register via WhatsApp. Our team will get you set up and ready to start right away.
             </p>
           </div>
 
-          {/* Currency switcher */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.78rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              View prices in:
-            </span>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              {(Object.keys(CURRENCY_META) as Currency[]).map(c => (
-                <button key={c} onClick={() => setCurrency(c)} style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '6px',
-                  padding: '0.4rem 1rem', borderRadius: '7px', cursor: 'pointer',
-                  border: `1px solid ${currency === c ? 'var(--cyan-border)' : 'var(--border)'}`,
-                  background: currency === c ? 'var(--cyan-dim)' : 'transparent',
-                  color: currency === c ? 'var(--cyan)' : 'var(--muted)',
-                  fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.82rem',
-                  transition: 'all 0.2s',
-                }}>
-                  {CURRENCY_META[c].flag} {CURRENCY_META[c].label}
-                </button>
-              ))}
-            </div>
-            {currency !== 'NGN' && (
-              <span style={{ fontSize: '0.72rem', color: 'var(--muted)', fontStyle: 'italic' }}>
-                Approx. conversion · Payment processed in NGN
+          {/* Currency switcher — only show if a paid track is selected or no track selected */}
+          {(!selectedTrack || !trackIsFree) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.78rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                View prices in:
               </span>
-            )}
-          </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {(Object.keys(CURRENCY_META) as Currency[]).map(c => (
+                  <button key={c} onClick={() => setCurrency(c)} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    padding: '0.4rem 1rem', borderRadius: '7px', cursor: 'pointer',
+                    border: `1px solid ${currency === c ? 'var(--cyan-border)' : 'var(--border)'}`,
+                    background: currency === c ? 'var(--cyan-dim)' : 'transparent',
+                    color: currency === c ? 'var(--cyan)' : 'var(--muted)',
+                    fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.82rem',
+                    transition: 'all 0.2s',
+                  }}>
+                    {CURRENCY_META[c].flag} {CURRENCY_META[c].label}
+                  </button>
+                ))}
+              </div>
+              {currency !== 'NGN' && (
+                <span style={{ fontSize: '0.72rem', color: 'var(--muted)', fontStyle: 'italic' }}>
+                  Approx. conversion
+                </span>
+              )}
+            </div>
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '2.5rem', alignItems: 'start' }} className="register-grid">
 
@@ -322,36 +295,79 @@ export default function RegisterPage() {
                   02 — Choose Your Track
                 </h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {tracks.map((track) => (
-                    <div key={track.id} onClick={() => set('track', track.id)} style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      gap: '1rem', padding: '1rem 1.25rem',
-                      background: form.track === track.id ? 'var(--cyan-dim)' : 'rgba(255,255,255,0.02)',
-                      border: `1px solid ${form.track === track.id ? 'var(--cyan-border)' : 'var(--border)'}`,
-                      borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s',
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                        <span style={{ fontSize: '1.2rem' }}>{track.icon}</span>
-                        <span style={{
-                          fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.9rem',
-                          color: form.track === track.id ? 'var(--cyan)' : 'var(--text)',
-                        }}>
-                          {track.name}
-                        </span>
-                      </div>
-                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{
-                          fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.9rem',
-                          color: form.track === track.id ? 'var(--cyan)' : 'var(--text)',
-                        }}>
-                          {fmtPrice(track.full, currency)}
+                  {tracks.map((track) => {
+                    const isFree = isTrackFree(track.id);
+                    const isSelected = form.track === track.id;
+                    return (
+                      <div key={track.id} onClick={() => set('track', track.id)} style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        gap: '1rem', padding: '1rem 1.25rem',
+                        background: isSelected
+                          ? (isFree ? 'rgba(52,211,102,0.08)' : 'var(--cyan-dim)')
+                          : 'rgba(255,255,255,0.02)',
+                        border: `1px solid ${isSelected
+                          ? (isFree ? 'rgba(52,211,102,0.3)' : 'var(--cyan-border)')
+                          : 'var(--border)'}`,
+                        borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s',
+                        position: 'relative', overflow: 'hidden',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                          <span style={{ fontSize: '1.2rem' }}>{track.icon}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                            <span style={{
+                              fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.9rem',
+                              color: isSelected ? (isFree ? '#34D366' : 'var(--cyan)') : 'var(--text)',
+                            }}>
+                              {track.name}
+                            </span>
+                            {isFree && (
+                              <span style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                background: 'rgba(52,211,102,0.15)',
+                                border: '1px solid rgba(52,211,102,0.3)',
+                                borderRadius: '4px', padding: '0.15rem 0.5rem',
+                                fontSize: '0.65rem', fontWeight: 800, color: '#34D366',
+                                letterSpacing: '0.08em', textTransform: 'uppercase',
+                              }}>
+                                🔥 FREE
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>
-                          or {fmtPrice(track.install, currency)} × 2
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          {isFree ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <span style={{
+                                fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.85rem',
+                                color: 'var(--muted)', textDecoration: 'line-through',
+                                opacity: 0.6,
+                              }}>
+                                {fmtPrice(track.full, currency)}
+                              </span>
+                              <span style={{
+                                fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1rem',
+                                color: '#34D366',
+                              }}>
+                                FREE
+                              </span>
+                            </div>
+                          ) : (
+                            <>
+                              <div style={{
+                                fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.9rem',
+                                color: isSelected ? 'var(--cyan)' : 'var(--text)',
+                              }}>
+                                {fmtPrice(track.full, currency)}
+                              </div>
+                              <div style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>
+                                or {fmtPrice(track.install, currency)} × 2
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -435,24 +451,44 @@ export default function RegisterPage() {
             <div style={{ position: 'sticky', top: '88px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '1.75rem' }}>
                 <h3 style={{ fontFamily: 'var(--font-head)', fontSize: '0.95rem', fontWeight: 700, marginBottom: '1.5rem' }}>
-                  Order Summary
+                  Registration Summary
                 </h3>
 
                 {/* Selected track */}
                 <div style={{
                   padding: '1rem', borderRadius: '10px',
-                  background: selectedTrack ? 'var(--cyan-dim)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${selectedTrack ? 'var(--cyan-border)' : 'var(--border)'}`,
+                  background: selectedTrack
+                    ? (trackIsFree ? 'rgba(52,211,102,0.08)' : 'var(--cyan-dim)')
+                    : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${selectedTrack
+                    ? (trackIsFree ? 'rgba(52,211,102,0.3)' : 'var(--cyan-border)')
+                    : 'var(--border)'}`,
                   marginBottom: '1.25rem',
                 }}>
                   {selectedTrack ? (
                     <>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--cyan)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+                      <div style={{
+                        fontSize: '0.72rem',
+                        color: trackIsFree ? '#34D366' : 'var(--cyan)',
+                        fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px',
+                      }}>
                         Selected Track
                       </div>
                       <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.95rem' }}>
                         {selectedTrack.icon} {selectedTrack.name}
                       </div>
+                      {trackIsFree && (
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '4px',
+                          background: 'rgba(52,211,102,0.15)',
+                          border: '1px solid rgba(52,211,102,0.3)',
+                          borderRadius: '4px', padding: '0.2rem 0.6rem', marginTop: '0.5rem',
+                          fontSize: '0.7rem', fontWeight: 700, color: '#34D366',
+                          letterSpacing: '0.05em',
+                        }}>
+                          🎉 FREE — Limited-time offer
+                        </div>
+                      )}
                     </>
                   ) : (
                     <div style={{ fontSize: '0.85rem', color: 'var(--muted)', textAlign: 'center' }}>
@@ -461,8 +497,8 @@ export default function RegisterPage() {
                   )}
                 </div>
 
-                {/* Payment type toggle */}
-                {selectedTrack && (
+                {/* Payment type toggle — only for paid tracks */}
+                {selectedTrack && !trackIsFree && (
                   <div style={{ marginBottom: '1.25rem' }}>
                     <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)', marginBottom: '0.6rem' }}>
                       Payment Type
@@ -483,7 +519,7 @@ export default function RegisterPage() {
                     </div>
                     {form.paymentType === 'installment' && (
                       <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.5rem', lineHeight: 1.5 }}>
-                        Pay the 1st instalment now. 2nd instalment is due at the start of Month 3.
+                        Pay the 1st instalment first. 2nd instalment is due at the start of Month 3.
                       </p>
                     )}
                   </div>
@@ -492,96 +528,109 @@ export default function RegisterPage() {
                 {/* Price breakdown */}
                 {selectedTrack && (
                   <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem', marginBottom: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--muted)' }}>
-                      <span>{form.paymentType === 'full' ? 'Programme fee' : '1st Instalment'}</span>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ color: 'var(--text)', fontWeight: 600 }}>{fmtPrice(ngnAmount, currency)}</div>
-                        {currency !== 'NGN' && (
-                          <div style={{ fontSize: '0.7rem', color: 'var(--muted)' }}>≈ ₦{ngnAmount.toLocaleString('en-NG')}</div>
+                    {trackIsFree ? (
+                      <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--muted)' }}>
+                          <span>Original price</span>
+                          <span style={{ textDecoration: 'line-through', opacity: 0.6 }}>
+                            {fmtPrice(selectedTrack.full, currency)}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--muted)' }}>
+                          <span>Promotional discount</span>
+                          <span style={{ color: '#34D366', fontWeight: 600 }}>
+                            −{fmtPrice(selectedTrack.full, currency)}
+                          </span>
+                        </div>
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-between',
+                          fontSize: '1.1rem', fontFamily: 'var(--font-head)', fontWeight: 800,
+                          borderTop: '1px solid var(--border)', paddingTop: '0.75rem', marginTop: '0.25rem',
+                        }}>
+                          <span>Total</span>
+                          <span style={{ color: '#34D366' }}>FREE</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--muted)' }}>
+                          <span>{form.paymentType === 'full' ? 'Programme fee' : '1st Instalment'}</span>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ color: 'var(--text)', fontWeight: 600 }}>{fmtPrice(ngnAmount, currency)}</div>
+                            {currency !== 'NGN' && (
+                              <div style={{ fontSize: '0.7rem', color: 'var(--muted)' }}>≈ ₦{ngnAmount.toLocaleString('en-NG')}</div>
+                            )}
+                          </div>
+                        </div>
+                        {form.paymentType === 'installment' && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--muted)' }}>
+                            <span>2nd Instalment (later)</span>
+                            <span>{fmtPrice(selectedTrack.install, currency)}</span>
+                          </div>
                         )}
-                      </div>
-                    </div>
-                    {form.paymentType === 'installment' && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--muted)' }}>
-                        <span>2nd Instalment (later)</span>
-                        <span>{fmtPrice(selectedTrack.install, currency)}</span>
-                      </div>
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-between',
+                          fontSize: '1rem', fontFamily: 'var(--font-head)', fontWeight: 800,
+                          borderTop: '1px solid var(--border)', paddingTop: '0.75rem', marginTop: '0.25rem',
+                        }}>
+                          <span>Due Today</span>
+                          <span style={{ color: 'var(--cyan)' }}>{fmtPrice(ngnAmount, currency)}</span>
+                        </div>
+                      </>
                     )}
-                    <div style={{
-                      display: 'flex', justifyContent: 'space-between',
-                      fontSize: '1rem', fontFamily: 'var(--font-head)', fontWeight: 800,
-                      borderTop: '1px solid var(--border)', paddingTop: '0.75rem', marginTop: '0.25rem',
-                    }}>
-                      <span>Due Today</span>
-                      <span style={{ color: 'var(--cyan)' }}>{fmtPrice(ngnAmount, currency)}</span>
-                    </div>
                   </div>
                 )}
 
-                {/* Pay button */}
+                {/* Register button */}
                 <button
-                  onClick={handlePay}
-                  disabled={!isComplete || !selectedTrack || !scriptLoaded}
+                  onClick={handleRegister}
+                  disabled={!isComplete || !selectedTrack}
                   style={{
                     width: '100%', padding: '1rem',
-                    background: isComplete && selectedTrack ? 'var(--cyan)' : 'rgba(0,200,255,0.25)',
-                    color: '#070D1A', fontFamily: 'var(--font-head)',
+                    background: isComplete && selectedTrack
+                      ? (trackIsFree ? '#25D366' : 'var(--cyan)')
+                      : 'rgba(0,200,255,0.25)',
+                    color: '#fff', fontFamily: 'var(--font-head)',
                     fontWeight: 700, fontSize: '1rem',
                     border: 'none', borderRadius: '10px',
                     cursor: isComplete && selectedTrack ? 'pointer' : 'not-allowed',
-                    transition: 'opacity 0.2s', marginTop: '0.5rem',
+                    transition: 'opacity 0.2s, transform 0.2s', marginTop: '0.5rem',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
                   }}
-                  onMouseEnter={e => { if (isComplete && selectedTrack) e.currentTarget.style.opacity = '0.88'; }}
-                  onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+                  onMouseEnter={e => { if (isComplete && selectedTrack) { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  {!selectedTrack ? 'Select a track to continue'
-                    : !isComplete ? 'Fill all fields to continue'
-                    : `Pay ${fmtPrice(ngnAmount, currency)} →`}
-                </button>
-
-                <p style={{ fontSize: '0.72rem', color: 'var(--muted)', textAlign: 'center', marginTop: '1rem', lineHeight: 1.5 }}>
-                  🔒 Secured by Paystack · 7-day money-back guarantee
-                </p>
-              </div>
-
-              {/* Money-back guarantee */}
-              <div style={{
-                background: 'rgba(52,211,102,0.06)', border: '1px solid rgba(52,211,102,0.2)',
-                borderRadius: '12px', padding: '1.25rem',
-              }}>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: '1.4rem', flexShrink: 0 }}>↩️</span>
-                  <div>
-                    <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.88rem', color: 'var(--text)', marginBottom: '4px' }}>
-                      7-Day Money-Back Guarantee
-                    </div>
-                    <p style={{ fontSize: '0.78rem', color: 'var(--muted)', lineHeight: 1.5, marginBottom: 0 }}>
-                      If you join and decide within 7 days it&apos;s not right for you, we&apos;ll refund your payment. No questions asked.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* WhatsApp alternative */}
-              <div style={{
-                background: 'rgba(37,211,102,0.06)', border: '1px solid rgba(37,211,102,0.2)',
-                borderRadius: '12px', padding: '1.25rem', textAlign: 'center',
-              }}>
-                <p style={{ fontSize: '0.82rem', color: 'var(--muted)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
-                  Prefer to pay manually or have questions first?
-                </p>
-                <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noopener noreferrer"
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                    color: '#25D366', fontWeight: 700, fontSize: '0.85rem',
-                    textDecoration: 'none', fontFamily: 'var(--font-head)',
-                  }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
                     <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.123 1.534 5.856L0 24l6.293-1.513A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.891 0-3.662-.5-5.197-1.375l-.372-.221-3.857.927.973-3.746-.241-.384A9.961 9.961 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
                   </svg>
-                  Chat on WhatsApp
-                </a>
+                  {!selectedTrack ? 'Select a track to continue'
+                    : !isComplete ? 'Fill all fields to continue'
+                    : trackIsFree ? 'Register via WhatsApp — FREE'
+                    : `Register via WhatsApp — ${fmtPrice(ngnAmount, currency)}`}
+                </button>
+
+                <p style={{ fontSize: '0.72rem', color: 'var(--muted)', textAlign: 'center', marginTop: '1rem', lineHeight: 1.5 }}>
+                  💬 You&apos;ll be redirected to WhatsApp with your details pre-filled
+                </p>
+              </div>
+
+              {/* WhatsApp info */}
+              <div style={{
+                background: 'rgba(37,211,102,0.06)', border: '1px solid rgba(37,211,102,0.2)',
+                borderRadius: '12px', padding: '1.25rem',
+              }}>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: '1.4rem', flexShrink: 0 }}>💬</span>
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.88rem', color: 'var(--text)', marginBottom: '4px' }}>
+                      How Registration Works
+                    </div>
+                    <p style={{ fontSize: '0.78rem', color: 'var(--muted)', lineHeight: 1.5, marginBottom: 0 }}>
+                      When you click register, WhatsApp opens with your details pre-filled. Send the message and our team will confirm your enrolment within 24 hours.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -590,6 +639,10 @@ export default function RegisterPage() {
       <Footer />
 
       <style>{`
+        @keyframes promoPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,102,0.3); }
+          50% { box-shadow: 0 0 12px 4px rgba(52,211,102,0.15); }
+        }
         @media (max-width: 900px) {
           .register-grid { grid-template-columns: 1fr !important; }
           .register-grid > div:last-child { position: static !important; }
