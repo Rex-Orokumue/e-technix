@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import CountdownTimer from '@/components/home/CountdownTimer';
 
 const WHATSAPP_NUMBER = '2348120288390'; // ← replace with real number
 
@@ -245,6 +246,9 @@ export default function ProgramsPage() {
             and real projects. Start with foundations, pick your track, build something
             real, then launch your career.
           </p>
+          <div style={{ marginTop: '1.5rem', maxWidth: '540px' }}>
+            <CountdownTimer variant="hero" />
+          </div>
         </section>
 
         {/* ── FREE Tracks Promo Banner ── */}

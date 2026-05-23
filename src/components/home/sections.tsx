@@ -537,6 +537,8 @@ export function CTASection() {
   );
 }
 // ─── Urgency Bar ──────────────────────────────────────────────────────────────
+import CountdownTimer from './CountdownTimer';
+
 export function UrgencyBar() {
   return (
     <div style={{
@@ -544,7 +546,7 @@ export function UrgencyBar() {
       borderBottom: '1px solid rgba(52,211,102,0.25)',
       padding: '0.75rem 2.5rem',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      gap: '1rem', flexWrap: 'wrap', textAlign: 'center',
+      gap: '1.5rem', flexWrap: 'wrap', textAlign: 'center',
     }}>
       <span style={{
         display: 'inline-flex', alignItems: 'center', gap: '4px',
@@ -552,6 +554,12 @@ export function UrgencyBar() {
       }}>
         🔥 <strong style={{ color: '#34D366' }}>3 tracks now FREE</strong> — Web Dev, Mobile Apps & Data Analytics
       </span>
+      <span style={{
+        width: '1px', height: '16px',
+        background: 'rgba(255,255,255,0.15)',
+        flexShrink: 0,
+      }} />
+      <CountdownTimer variant="banner" />
       <a href="/register" style={{
         display: 'inline-flex', alignItems: 'center', gap: '4px',
         color: '#34D366', fontWeight: 700, fontSize: '0.82rem',

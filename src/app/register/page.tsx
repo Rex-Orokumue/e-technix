@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import CountdownTimer from '@/components/home/CountdownTimer';
 
 const WHATSAPP_NUMBER = '2348120288390';
 
@@ -156,6 +157,7 @@ export default function RegisterPage() {
               <strong>Web Dev, Mobile Apps & Data Analytics</strong> tracks are now <strong style={{ color: '#34D366' }}>completely FREE</strong>
             </span>
           </div>
+          <CountdownTimer variant="banner" />
         </div>
 
         <div style={{ maxWidth: '1180px', margin: '0 auto', padding: '5rem 2.5rem 6rem' }}>

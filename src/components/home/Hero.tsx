@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import CountdownTimer from './CountdownTimer';
 
 const WHATSAPP_NUMBER = '2348120288390'; // ← replace with real number
 
@@ -211,6 +212,8 @@ export default function Hero() {
             Chat on WhatsApp
           </a>
         </motion.div>
+
+        <CountdownTimer variant="hero" />
       </div>
     </section>
   );
