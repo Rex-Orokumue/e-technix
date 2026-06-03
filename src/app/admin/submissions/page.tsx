@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { createAdminClient } from '@/lib/supabase/admin';
 import AdminSubmissionStatusSelect from '@/components/admin/AdminSubmissionStatusSelect';
 
