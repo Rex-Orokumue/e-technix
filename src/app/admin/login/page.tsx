@@ -21,8 +21,7 @@ export default function AdminLoginPage() {
     });
     setLoading(false);
     if (res.ok) {
-      router.push('/admin');
-      router.refresh();
+      window.location.href = '/admin';
     } else {
       setError('Invalid email or password');
     }
