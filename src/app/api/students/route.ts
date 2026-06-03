@@ -18,12 +18,18 @@ export async function POST(req: NextRequest) {
   if (!(await isAdminAuthenticated()))
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { full_name, email, track } = await req.json();
+  const { full_name, email, track, password } = await req.json();
+  if (!password || password.length < 6)
+    return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
+
   const supabase = createAdminClient();
 
-  // Invite user via Supabase Auth (sends magic link email)
-  const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(email, {
-    data: { full_name, track },
+  // Create auth user with email + password (no email confirmation needed)
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name, track },
   });
   if (authError) return NextResponse.json({ error: authError.message }, { status: 500 });
 

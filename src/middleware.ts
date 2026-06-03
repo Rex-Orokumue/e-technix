@@ -8,7 +8,7 @@ export async function middleware(request: NextRequest) {
   // ── Admin routes ──────────────────────────────────────────────────
   if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
     const token = request.cookies.get(COOKIE_NAME)?.value;
-    if (!token || !verifyAdminToken(token)) {
+    if (!token || !await verifyAdminToken(token)) {
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
     return NextResponse.next();
