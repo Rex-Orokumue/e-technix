@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 
-export default function AdminLogoutButton() {
+export default function AdminLogoutButton({ compact }: { compact?: boolean }) {
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -10,6 +10,18 @@ export default function AdminLogoutButton() {
     router.push('/admin/login');
     router.refresh();
   };
+
+  if (compact) {
+    return (
+      <button onClick={handleLogout} style={{
+        fontSize: '0.75rem', color: 'var(--muted)', background: 'transparent',
+        border: '1px solid var(--border)', borderRadius: '6px',
+        padding: '0.4rem 0.75rem', cursor: 'pointer', fontWeight: 600,
+      }}>
+        🚪 Logout
+      </button>
+    );
+  }
 
   return (
     <button onClick={handleLogout} style={{
