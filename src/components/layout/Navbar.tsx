@@ -10,6 +10,7 @@ const navLinks = [
   { href: '/certifications',  label: 'Certifications' },
   { href: '/about',           label: 'About' },
   { href: '/faq',             label: 'FAQ' },
+  { href: '/hub',             label: 'Student Hub' },
 ];
 
 export default function Navbar() {
