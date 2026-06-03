@@ -1,72 +1,156 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import {
-  upcomingSession,
-  pastSessions,
-  resourceCategories,
-  assignments,
-  type ResourceType,
-} from '@/lib/data/hub';
-
-const WHATSAPP_NUMBER = '2348120288390';
+import { createClient } from '@/lib/supabase/client';
 
 type Tab = 'sessions' | 'resources' | 'assignments' | 'reviews';
 
-const RESOURCE_TYPE_META: Record<ResourceType, { label: string; color: string; bg: string; icon: string }> = {
-  document: { label: 'Document', color: '#00C8FF', bg: 'rgba(0,200,255,0.1)', icon: '📄' },
-  video:    { label: 'Video',    color: '#FF6B2B', bg: 'rgba(255,107,43,0.1)', icon: '🎥' },
-  link:     { label: 'Link',     color: '#A78BFA', bg: 'rgba(167,139,250,0.1)', icon: '🔗' },
-  notion:   { label: 'Notion',   color: '#34D399', bg: 'rgba(52,211,153,0.1)', icon: '📝' },
+const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
+  submitted:         { label: 'Submitted',         color: '#7A8FAD', bg: 'rgba(122,143,173,0.1)' },
+  reviewing:         { label: 'Reviewing',         color: '#F59E0B', bg: 'rgba(245,158,11,0.1)' },
+  approved:          { label: 'Approved',          color: '#34D399', bg: 'rgba(52,211,153,0.1)' },
+  needs_corrections: { label: 'Needs Corrections', color: '#FF6B2B', bg: 'rgba(255,107,43,0.1)' },
 };
 
-const TRACK_OPTIONS = [
-  'Data Analytics',
-  'Web App Development',
-  'Mobile & Desktop Apps',
-  'AI & Agentic Systems',
-  'Product Design (UI/UX)',
-  'Business Development',
-];
+const RESOURCE_TYPE_META: Record<string, { icon: string; color: string; bg: string }> = {
+  document: { icon: '📄', color: '#00C8FF', bg: 'rgba(0,200,255,0.1)' },
+  video:    { icon: '🎥', color: '#FF6B2B', bg: 'rgba(255,107,43,0.1)' },
+  link:     { icon: '🔗', color: '#A78BFA', bg: 'rgba(167,139,250,0.1)' },
+  notion:   { icon: '📝', color: '#34D399', bg: 'rgba(52,211,153,0.1)' },
+};
 
 const STAR_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
+const WHATSAPP_NUMBER = '2348120288390';
 
 export default function HubPage() {
   const [tab, setTab] = useState<Tab>('sessions');
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [resources, setResources] = useState<any[]>([]);
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [student, setStudent] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Assignment form
-  const [aForm, setAForm] = useState({ name: '', track: '', assignment: '', link: '', note: '' });
-  const [aSubmitted, setASubmitted] = useState(false);
+  // Attendance state
+  const [attendanceCodes, setAttendanceCodes] = useState<Record<string, string>>({});
+  const [attendanceMarked, setAttendanceMarked] = useState<Record<string, boolean>>({});
+  const [attendanceErrors, setAttendanceErrors] = useState<Record<string, string>>({});
+
+  // Assignment submit
+  const [aForm, setAForm] = useState({ assignment_id: '', drive_link: '', note: '' });
+  const [aSubmitting, setASubmitting] = useState(false);
+  const [aSuccess, setASuccess] = useState('');
+  const [aError, setAError] = useState('');
 
   // Review form
-  const [rForm, setRForm] = useState({ name: '', session: '', rating: 0, feedback: '' });
-  const [rSubmitted, setRSubmitted] = useState(false);
+  const [rForm, setRForm] = useState({ session_id: '', rating: 0, feedback: '' });
+  const [rSubmitting, setRSubmitting] = useState(false);
+  const [rSuccess, setRSuccess] = useState('');
+  const [rError, setRError] = useState('');
 
-  const setA = (k: keyof typeof aForm, v: string) => setAForm(f => ({ ...f, [k]: v }));
-  const setR = (k: keyof typeof rForm, v: string | number) => setRForm(f => ({ ...f, [k]: v }));
+  const supabase = createClient();
 
-  const handleAssignmentSubmit = () => {
-    if (!aForm.name || !aForm.track || !aForm.assignment || !aForm.link) return;
-    const msg = `📚 *Assignment Submission*\n\n*Name:* ${aForm.name}\n*Track:* ${aForm.track}\n*Assignment:* ${aForm.assignment}\n*Google Drive Link:* ${aForm.link}${aForm.note ? `\n*Note:* ${aForm.note}` : ''}`;
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
-    setASubmitted(true);
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: s } = await supabase.from('students').select('*').eq('id', user.id).single();
+      setStudent(s);
+    }
+    const [s, r, a, sub] = await Promise.all([
+      fetch('/api/sessions').then(r => r.json()),
+      fetch('/api/resources').then(r => r.json()),
+      fetch('/api/assignments').then(r => r.json()),
+      fetch('/api/submissions').then(r => r.json()),
+    ]);
+    setSessions(Array.isArray(s) ? s : []);
+    setResources(Array.isArray(r) ? r : []);
+    setAssignments(Array.isArray(a) ? a : []);
+    setSubmissions(Array.isArray(sub) ? sub : []);
+    setLoading(false);
+  }, [supabase]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Group by phase + week
+  const groupByPhaseWeek = <T extends { phase: number; week: number }>(items: T[]) => {
+    const g: Record<string, T[]> = {};
+    for (const item of items) {
+      const key = `Phase ${item.phase} — Week ${item.week}`;
+      if (!g[key]) g[key] = [];
+      g[key].push(item);
+    }
+    return g;
   };
 
-  const handleReviewSubmit = () => {
-    if (!rForm.name || !rForm.session || !rForm.rating || !rForm.feedback) return;
-    const stars = '⭐'.repeat(rForm.rating as number);
-    const msg = `✍️ *Session Review*\n\n*From:* ${rForm.name}\n*Session:* ${rForm.session}\n*Rating:* ${stars} (${rForm.rating}/5 — ${STAR_LABELS[rForm.rating as number]})\n*Feedback:* ${rForm.feedback}`;
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
-    setRSubmitted(true);
+  const upcomingSession = sessions.find(s => !s.youtube_url && s.meet_link);
+
+  const markAttendance = async (sessionId: string) => {
+    const code = attendanceCodes[sessionId]?.trim();
+    if (!code) return;
+    const res = await fetch('/api/attendance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, code }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setAttendanceMarked(p => ({ ...p, [sessionId]: true }));
+      setAttendanceErrors(p => ({ ...p, [sessionId]: '' }));
+    } else {
+      setAttendanceErrors(p => ({ ...p, [sessionId]: data.error }));
+    }
+  };
+
+  const handleSubmitAssignment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setASubmitting(true);
+    setAError('');
+    const res = await fetch('/api/submissions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(aForm),
+    });
+    const data = await res.json();
+    setASubmitting(false);
+    if (res.ok) {
+      setASuccess('Assignment submitted successfully!');
+      setAForm({ assignment_id: '', drive_link: '', note: '' });
+      // Also notify via WhatsApp
+      const assignment = assignments.find(a => a.id === aForm.assignment_id);
+      const msg = `📚 *Assignment Submission*\n\n*Student:* ${student?.full_name}\n*Track:* ${student?.track}\n*Assignment:* ${assignment?.assignment_code} — ${assignment?.title}\n*Link:* ${aForm.drive_link}${aForm.note ? `\n*Note:* ${aForm.note}` : ''}`;
+      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+      load();
+    } else {
+      setAError(data.error || 'Failed to submit');
+    }
+  };
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRSubmitting(true);
+    setRError('');
+    const res = await fetch('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rForm),
+    });
+    const data = await res.json();
+    setRSubmitting(false);
+    if (res.ok) {
+      setRSuccess('Review submitted! Thank you.');
+      setRForm({ session_id: '', rating: 0, feedback: '' });
+    } else {
+      setRError(data.error || 'Failed to submit review');
+    }
   };
 
   const inputStyle = {
     width: '100%', padding: '0.75rem 1rem',
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid var(--border)', borderRadius: '8px',
-    color: 'var(--text)', fontFamily: 'var(--font-body)',
+    background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)',
+    borderRadius: '8px', color: 'var(--text)', fontFamily: 'var(--font-body)',
     fontSize: '0.9rem', outline: 'none', transition: 'border-color 0.2s',
   };
   const labelStyle = {
@@ -74,7 +158,6 @@ export default function HubPage() {
     letterSpacing: '0.05em', textTransform: 'uppercase' as const,
     marginBottom: '0.4rem', display: 'block',
   };
-  const groupStyle = { display: 'flex', flexDirection: 'column' as const, gap: '0.4rem' };
 
   const tabs: { id: Tab; label: string; icon: string }[] = [
     { id: 'sessions',    label: 'Past Sessions',  icon: '🎬' },
@@ -88,80 +171,30 @@ export default function HubPage() {
       <Navbar />
       <main style={{ paddingTop: '68px', minHeight: '100vh' }}>
 
-        {/* ── Header ── */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(0,200,255,0.06) 0%, rgba(255,107,43,0.04) 100%)',
-          borderBottom: '1px solid var(--border)',
-          padding: '4rem 2.5rem 3rem',
-        }}>
+        {/* Header */}
+        <div style={{ background: 'linear-gradient(135deg, rgba(0,200,255,0.06) 0%, rgba(255,107,43,0.04) 100%)', borderBottom: '1px solid var(--border)', padding: '4rem 2.5rem 3rem' }}>
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-              color: 'var(--cyan)', fontSize: '0.78rem', fontWeight: 700,
-              letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1rem',
-            }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--cyan)', fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1rem' }}>
               <span style={{ width: '24px', height: '2px', background: 'var(--cyan)', borderRadius: '1px' }} />
               Student Hub
             </div>
-            <h1 style={{
-              fontFamily: 'var(--font-head)',
-              fontSize: 'clamp(2rem, 4vw, 2.8rem)',
-              fontWeight: 800, lineHeight: 1.1,
-              letterSpacing: '-0.03em', marginBottom: '0.75rem',
-            }}>
-              Your Learning <span style={{ color: 'var(--cyan)' }}>Dashboard</span>
+            <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(2rem,4vw,2.8rem)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.03em', marginBottom: '0.75rem' }}>
+              {student ? `Welcome back, ${student.full_name.split(' ')[0]}` : 'Your Learning'} <span style={{ color: 'var(--cyan)' }}>Dashboard</span>
             </h1>
-            <p style={{ color: 'var(--muted)', fontSize: '1rem', maxWidth: '560px', lineHeight: 1.7, marginBottom: 0 }}>
-              Everything you need in one place — session replays, resources, assignment submissions, and more.
-            </p>
+            {student && <p style={{ color: 'var(--muted)', fontSize: '0.88rem', marginBottom: 0 }}>Track: <strong style={{ color: 'var(--text)' }}>{student.track}</strong></p>}
 
-            {/* Upcoming session card */}
+            {/* Upcoming session */}
             {upcomingSession && (
-              <div style={{
-                marginTop: '2rem',
-                background: 'var(--surface)', border: '1px solid var(--cyan-border)',
-                borderRadius: '14px', padding: '1.5rem',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                gap: '1.5rem', flexWrap: 'wrap',
-              }}>
+              <div style={{ marginTop: '2rem', background: 'var(--surface)', border: '1px solid var(--cyan-border)', borderRadius: '14px', padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1.5rem', flexWrap: 'wrap' }}>
                 <div>
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '6px',
-                    background: 'rgba(52,211,102,0.12)', border: '1px solid rgba(52,211,102,0.25)',
-                    borderRadius: '999px', padding: '0.2rem 0.75rem',
-                    fontSize: '0.7rem', fontWeight: 700, color: '#34D366',
-                    letterSpacing: '0.06em', textTransform: 'uppercase',
-                    marginBottom: '0.6rem',
-                  }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34D366', display: 'inline-block', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(52,211,102,0.12)', border: '1px solid rgba(52,211,102,0.25)', borderRadius: '999px', padding: '0.2rem 0.75rem', fontSize: '0.7rem', fontWeight: 700, color: '#34D366', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34D366', display: 'inline-block' }} />
                     Next Session
                   </div>
-                  <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>
-                    {upcomingSession.title}
-                  </div>
-                  <div style={{ fontSize: '0.83rem', color: 'var(--muted)' }}>
-                    {upcomingSession.date} · {upcomingSession.time}
-                  </div>
-                  <div style={{ fontSize: '0.82rem', color: 'var(--muted)', marginTop: '6px', maxWidth: '480px', lineHeight: 1.5 }}>
-                    {upcomingSession.description}
-                  </div>
+                  <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>{upcomingSession.title}</div>
+                  <div style={{ fontSize: '0.83rem', color: 'var(--muted)' }}>{upcomingSession.date}{upcomingSession.description && ` · ${upcomingSession.description}`}</div>
                 </div>
-                <a
-                  href={upcomingSession.meetLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                    background: 'var(--cyan)', color: '#070D1A',
-                    padding: '0.75rem 1.5rem', borderRadius: '8px',
-                    fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.88rem',
-                    textDecoration: 'none', whiteSpace: 'nowrap' as const,
-                    transition: 'opacity 0.2s',
-                    flexShrink: 0,
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-                  onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-                >
+                <a href={upcomingSession.meet_link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--cyan)', color: '#070D1A', padding: '0.75rem 1.5rem', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.88rem', textDecoration: 'none', flexShrink: 0 }}>
                   🎥 Join Session
                 </a>
               </div>
@@ -169,533 +202,272 @@ export default function HubPage() {
           </div>
         </div>
 
-        {/* ── Tab Bar ── */}
-        <div style={{
-          borderBottom: '1px solid var(--border)',
-          background: 'var(--surface)',
-          position: 'sticky', top: '68px', zIndex: 50,
-        }}>
-          <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 2.5rem', display: 'flex', gap: '0', overflowX: 'auto' }}>
+        {/* Tab bar */}
+        <div style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface)', position: 'sticky', top: '68px', zIndex: 50 }}>
+          <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 2.5rem', display: 'flex', overflowX: 'auto' }}>
             {tabs.map(t => (
-              <button key={t.id} onClick={() => setTab(t.id)} style={{
-                display: 'flex', alignItems: 'center', gap: '0.4rem',
-                padding: '1rem 1.25rem', background: 'transparent', border: 'none',
-                borderBottom: `2px solid ${tab === t.id ? 'var(--cyan)' : 'transparent'}`,
-                color: tab === t.id ? 'var(--cyan)' : 'var(--muted)',
-                fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.85rem',
-                cursor: 'pointer', whiteSpace: 'nowrap' as const,
-                transition: 'color 0.2s, border-color 0.2s',
-              }}>
+              <button key={t.id} onClick={() => setTab(t.id)} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '1rem 1.25rem', background: 'transparent', border: 'none', borderBottom: `2px solid ${tab === t.id ? 'var(--cyan)' : 'transparent'}`, color: tab === t.id ? 'var(--cyan)' : 'var(--muted)', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'color 0.2s' }}>
                 <span>{t.icon}</span> {t.label}
               </button>
             ))}
           </div>
         </div>
 
-        {/* ── Tab Content ── */}
+        {/* Content */}
         <div style={{ maxWidth: '900px', margin: '0 auto', padding: '3rem 2.5rem 6rem' }}>
 
-          {/* SESSIONS */}
-          {tab === 'sessions' && (
-            <div>
-              <SectionHeader
-                title="Past Sessions"
-                subtitle="Watch replays of every live session. Catch up on anything you missed or revisit a topic."
-              />
-              {pastSessions.length === 0 ? (
-                <EmptyState icon="🎬" message="No recorded sessions yet. Check back after the first live session!" />
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  {pastSessions.map(session => (
-                    <div key={session.id} style={{
-                      background: 'var(--surface)', border: '1px solid var(--border)',
-                      borderRadius: '14px', overflow: 'hidden',
-                    }}>
-                      <div style={{ padding: '1.5rem', display: 'flex', gap: '1.5rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                        <div style={{
-                          width: '52px', height: '52px', borderRadius: '10px',
-                          background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.1rem',
-                          color: 'var(--cyan)', flexShrink: 0,
-                        }}>
-                          {String(session.id).padStart(2, '0')}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '6px' }}>
-                            <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '1rem', margin: 0 }}>
-                              {session.title}
-                            </h3>
-                          </div>
-                          <div style={{ fontSize: '0.78rem', color: 'var(--muted)', marginBottom: '0.75rem' }}>
-                            {session.date} · {session.duration}
-                          </div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                            {session.topics.map(topic => (
-                              <span key={topic} style={{
-                                fontSize: '0.72rem', background: 'var(--surface2)',
-                                border: '1px solid var(--border)', borderRadius: '4px',
-                                padding: '0.2rem 0.5rem', color: 'var(--muted)',
-                              }}>
-                                {topic}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                        <a
-                          href={session.youtubeUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                            background: '#FF0000', color: '#fff',
-                            padding: '0.6rem 1.1rem', borderRadius: '7px',
-                            fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.82rem',
-                            textDecoration: 'none', flexShrink: 0,
-                            transition: 'opacity 0.2s',
-                          }}
-                          onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-                          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-                        >
-                          ▶ Watch Replay
-                        </a>
-                      </div>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--muted)' }}>Loading…</div>
+          ) : (
+
+            <>
+              {/* SESSIONS */}
+              {tab === 'sessions' && (
+                <div>
+                  <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.5rem', marginBottom: '0.4rem' }}>Past Sessions</h2>
+                  <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '2rem' }}>Watch replays and mark your attendance for each session.</p>
+
+                  {sessions.filter(s => s.youtube_url).length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '4rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px' }}>
+                      <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🎬</div>
+                      <p style={{ color: 'var(--muted)' }}>No recorded sessions yet.</p>
                     </div>
-                  ))}
+                  ) : (
+                    Object.entries(groupByPhaseWeek(sessions.filter(s => s.youtube_url))).map(([group, items]) => (
+                      <div key={group} style={{ marginBottom: '2.5rem' }}>
+                        <h3 style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>{group}</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          {items.map(session => {
+                            const isMarked = attendanceMarked[session.id];
+                            const codeActive = session.attendance_code && (!session.attendance_code_expires_at || new Date(session.attendance_code_expires_at) > new Date());
+                            return (
+                              <div key={session.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
+                                <div style={{ padding: '1.5rem', display: 'flex', gap: '1.25rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                                  <div style={{ width: '50px', height: '50px', borderRadius: '10px', background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1rem', color: 'var(--cyan)', flexShrink: 0 }}>
+                                    {String(session.session_number).padStart(2, '0')}
+                                  </div>
+                                  <div style={{ flex: 1 }}>
+                                    <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.95rem', marginBottom: '4px' }}>{session.title}</h3>
+                                    <div style={{ fontSize: '0.78rem', color: 'var(--muted)', marginBottom: '0.6rem' }}>{session.date}{session.duration && ` · ${session.duration}`}</div>
+                                    {session.topics?.length > 0 && (
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                                        {session.topics.map((t: string) => (
+                                          <span key={t} style={{ fontSize: '0.7rem', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '4px', padding: '0.15rem 0.45rem', color: 'var(--muted)' }}>{t}</span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', flexShrink: 0 }}>
+                                    <a href={session.youtube_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: '#FF0000', color: '#fff', padding: '0.55rem 1rem', borderRadius: '7px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.8rem', textDecoration: 'none' }}>▶ Watch</a>
+                                    <button onClick={() => { setTab('reviews'); setRForm(f => ({ ...f, session_id: session.id })); }} style={{ padding: '0.55rem 1rem', borderRadius: '7px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>⭐ Review</button>
+                                  </div>
+                                </div>
+                                {/* Attendance */}
+                                {codeActive && (
+                                  <div style={{ borderTop: '1px solid var(--border)', padding: '1rem 1.5rem', background: 'rgba(52,211,102,0.04)' }}>
+                                    {isMarked ? (
+                                      <div style={{ fontSize: '0.82rem', color: '#34D366', fontWeight: 600 }}>✓ Attendance marked</div>
+                                    ) : (
+                                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                        <input style={{ ...inputStyle, maxWidth: '180px', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.82rem', padding: '0.5rem 0.75rem' }}
+                                          placeholder="Enter code (ETX-...)"
+                                          value={attendanceCodes[session.id] ?? ''}
+                                          onChange={e => setAttendanceCodes(p => ({ ...p, [session.id]: e.target.value }))}
+                                          onFocus={e => (e.target.style.borderColor = 'rgba(52,211,102,0.4)')}
+                                          onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
+                                        <button onClick={() => markAttendance(session.id)} style={{ padding: '0.5rem 1rem', background: 'rgba(52,211,102,0.12)', border: '1px solid rgba(52,211,102,0.25)', borderRadius: '7px', color: '#34D366', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
+                                          Mark Attendance
+                                        </button>
+                                        {attendanceErrors[session.id] && <span style={{ fontSize: '0.78rem', color: '#FF5555' }}>{attendanceErrors[session.id]}</span>}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          {/* RESOURCES */}
-          {tab === 'resources' && (
-            <div>
-              <SectionHeader
-                title="Resources"
-                subtitle="All documents, videos, Notion pages, and external links shared during the programme."
-              />
-              {resourceCategories.map(cat => (
-                cat.items.length > 0 && (
-                  <div key={cat.name} style={{ marginBottom: '2.5rem' }}>
-                    <h3 style={{
-                      fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.85rem',
-                      color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em',
-                      marginBottom: '1rem',
-                      display: 'flex', alignItems: 'center', gap: '0.5rem',
-                    }}>
-                      <span>{cat.icon}</span> {cat.name}
-                    </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {cat.items.map(item => {
-                        const meta = RESOURCE_TYPE_META[item.type];
+              {/* RESOURCES */}
+              {tab === 'resources' && (
+                <div>
+                  <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.5rem', marginBottom: '0.4rem' }}>Resources</h2>
+                  <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '2rem' }}>All documents, videos, and links shared during the programme, organised by phase and week.</p>
+
+                  {resources.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '4rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px' }}>
+                      <p style={{ color: 'var(--muted)' }}>No resources yet.</p>
+                    </div>
+                  ) : (
+                    Object.entries(groupByPhaseWeek(resources)).map(([group, items]) => (
+                      <div key={group} style={{ marginBottom: '2.5rem' }}>
+                        <h3 style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>{group}</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                          {items.map((r: any) => {
+                            const meta = RESOURCE_TYPE_META[r.type] ?? RESOURCE_TYPE_META.link;
+                            return (
+                              <a key={r.id} href={r.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1rem 1.25rem', textDecoration: 'none', transition: 'border-color 0.2s' }}
+                                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border-bright)')}
+                                onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
+                                <div style={{ width: '38px', height: '38px', borderRadius: '8px', background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>{meta.icon}</div>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.88rem', color: 'var(--text)', marginBottom: '2px' }}>{r.title}</div>
+                                  {r.description && <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{r.description}</div>}
+                                </div>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--muted)', flexShrink: 0 }}>
+                                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                                </svg>
+                              </a>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* ASSIGNMENTS */}
+              {tab === 'assignments' && (
+                <div>
+                  <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.5rem', marginBottom: '0.4rem' }}>Assignments</h2>
+                  <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '2rem' }}>View your assignments and submit your Google Drive links.</p>
+
+                  {/* Assignment list */}
+                  {Object.entries(groupByPhaseWeek(assignments)).map(([group, items]) => (
+                    <div key={group} style={{ marginBottom: '2rem' }}>
+                      <h3 style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>{group}</h3>
+                      {items.map((a: any) => {
+                        const sub = submissions.find(s => s.assignment_id === a.id);
+                        const statusMeta = sub ? STATUS_META[sub.status] : null;
                         return (
-                          <a
-                            key={item.title}
-                            href={item.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: '1rem',
-                              background: 'var(--surface)', border: '1px solid var(--border)',
-                              borderRadius: '12px', padding: '1.1rem 1.25rem',
-                              textDecoration: 'none', transition: 'border-color 0.2s, background 0.2s',
-                            }}
-                            onMouseEnter={e => {
-                              e.currentTarget.style.borderColor = 'var(--border-bright)';
-                              e.currentTarget.style.background = 'var(--surface2)';
-                            }}
-                            onMouseLeave={e => {
-                              e.currentTarget.style.borderColor = 'var(--border)';
-                              e.currentTarget.style.background = 'var(--surface)';
-                            }}
-                          >
-                            <div style={{
-                              width: '40px', height: '40px', borderRadius: '8px',
-                              background: meta.bg, display: 'flex', alignItems: 'center',
-                              justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0,
-                            }}>
-                              {meta.icon}
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.9rem', color: 'var(--text)', marginBottom: '3px' }}>
-                                {item.title}
+                          <div key={a.id} style={{ background: 'var(--surface)', border: `1px solid ${a.status === 'active' ? 'var(--cyan-border)' : 'var(--border)'}`, borderRadius: '14px', padding: '1.4rem', marginBottom: '0.75rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '0.6rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                                <span style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '0.72rem', color: 'var(--cyan)', background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', borderRadius: '4px', padding: '0.15rem 0.5rem' }}>{a.assignment_code}</span>
+                                <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.92rem', margin: 0 }}>{a.title}</h3>
                               </div>
-                              <div style={{ fontSize: '0.78rem', color: 'var(--muted)', lineHeight: 1.5 }}>
-                                {item.description}
+                              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                {statusMeta && (
+                                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: statusMeta.color, background: statusMeta.bg, border: `1px solid ${statusMeta.color}40`, borderRadius: '999px', padding: '0.2rem 0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                    {statusMeta.label}
+                                  </span>
+                                )}
+                                {a.due_date && <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>Due: {a.due_date}</span>}
                               </div>
                             </div>
-                            <span style={{
-                              fontSize: '0.68rem', fontWeight: 700,
-                              color: meta.color, background: meta.bg,
-                              border: `1px solid ${meta.color}40`,
-                              borderRadius: '4px', padding: '0.2rem 0.5rem',
-                              textTransform: 'uppercase' as const, letterSpacing: '0.05em',
-                              flexShrink: 0,
-                            }}>
-                              {meta.label}
-                            </span>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--muted)', flexShrink: 0 }}>
-                              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                            </svg>
-                          </a>
+                            <p style={{ fontSize: '0.84rem', color: 'var(--muted)', lineHeight: 1.6, marginBottom: a.guidelines?.length ? '0.75rem' : 0 }}>{a.description}</p>
+                            {a.guidelines?.length > 0 && (
+                              <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+                                {a.guidelines.map((g: string) => <li key={g} style={{ fontSize: '0.78rem', color: 'var(--muted)', marginBottom: '3px' }}>{g}</li>)}
+                              </ul>
+                            )}
+                            {sub?.admin_feedback && (
+                              <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: 'rgba(255,107,43,0.06)', border: '1px solid rgba(255,107,43,0.2)', borderRadius: '8px', fontSize: '0.82rem', color: 'var(--text)' }}>
+                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--orange)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '4px' }}>Instructor Feedback</span>
+                                {sub.admin_feedback}
+                              </div>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
-                  </div>
-                )
-              ))}
-            </div>
-          )}
+                  ))}
 
-          {/* ASSIGNMENTS */}
-          {tab === 'assignments' && (
-            <div>
-              <SectionHeader
-                title="Assignments"
-                subtitle="View your current assignments and submit your Google Drive link when ready."
-              />
-
-              {/* Assignment cards */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '3rem' }}>
-                {assignments.map(assignment => (
-                  <div key={assignment.id} style={{
-                    background: 'var(--surface)', border: `1px solid ${assignment.status === 'active' ? 'var(--cyan-border)' : 'var(--border)'}`,
-                    borderRadius: '14px', padding: '1.5rem',
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <span style={{
-                          fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '0.75rem',
-                          color: 'var(--cyan)', background: 'var(--cyan-dim)',
-                          border: '1px solid var(--cyan-border)', borderRadius: '5px',
-                          padding: '0.2rem 0.6rem', letterSpacing: '0.04em',
-                        }}>
-                          {assignment.id}
-                        </span>
-                        <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.95rem', margin: 0 }}>
-                          {assignment.title}
-                        </h3>
+                  {/* Submit form */}
+                  <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '2rem', marginTop: '1rem' }}>
+                    <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '1rem', marginBottom: '0.4rem' }}>Submit an Assignment</h3>
+                    <p style={{ fontSize: '0.82rem', color: 'var(--muted)', marginBottom: '1.5rem' }}>Save your work to Google Drive, set sharing to &ldquo;Anyone with the link&rdquo;, then submit.</p>
+                    {aSuccess ? (
+                      <div style={{ textAlign: 'center', padding: '2rem' }}>
+                        <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>📬</div>
+                        <p style={{ color: '#34D366', fontWeight: 600 }}>{aSuccess}</p>
+                        <button onClick={() => setASuccess('')} style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', padding: '0.5rem 1rem', borderRadius: '7px', cursor: 'pointer', fontSize: '0.82rem', marginTop: '1rem' }}>Submit another</button>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
-                        <span style={{
-                          fontSize: '0.7rem', fontWeight: 700,
-                          color: assignment.status === 'active' ? '#34D366' : 'var(--muted)',
-                          background: assignment.status === 'active' ? 'rgba(52,211,102,0.12)' : 'rgba(255,255,255,0.04)',
-                          border: `1px solid ${assignment.status === 'active' ? 'rgba(52,211,102,0.25)' : 'var(--border)'}`,
-                          borderRadius: '999px', padding: '0.25rem 0.7rem',
-                          textTransform: 'uppercase' as const, letterSpacing: '0.05em',
-                        }}>
-                          {assignment.status === 'active' ? '● Open' : '✓ Closed'}
-                        </span>
-                        <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>
-                          Due: {assignment.dueDate}
-                        </span>
-                      </div>
-                    </div>
-                    <p style={{ fontSize: '0.87rem', color: 'var(--muted)', lineHeight: 1.65, marginBottom: assignment.guidelines ? '1rem' : 0 }}>
-                      {assignment.description}
-                    </p>
-                    {assignment.guidelines && (
-                      <div>
-                        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
-                          Guidelines
+                    ) : (
+                      <form onSubmit={handleSubmitAssignment} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+                        <div>
+                          <label style={labelStyle}>Assignment *</label>
+                          <select style={{ ...inputStyle, cursor: 'pointer' }} value={aForm.assignment_id} onChange={e => setAForm(f => ({ ...f, assignment_id: e.target.value }))} required onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')}>
+                            <option value="">Select assignment</option>
+                            {assignments.filter(a => a.status === 'active').map(a => (
+                              <option key={a.id} value={a.id}>{a.assignment_code} — {a.title}</option>
+                            ))}
+                          </select>
                         </div>
-                        <ul style={{ margin: 0, paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                          {assignment.guidelines.map(g => (
-                            <li key={g} style={{ fontSize: '0.82rem', color: 'var(--muted)', lineHeight: 1.5 }}>{g}</li>
-                          ))}
-                        </ul>
-                      </div>
+                        <div>
+                          <label style={labelStyle}>Google Drive Link *</label>
+                          <input style={inputStyle} placeholder="https://drive.google.com/..." value={aForm.drive_link} onChange={e => setAForm(f => ({ ...f, drive_link: e.target.value }))} required onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Note (optional)</label>
+                          <textarea style={{ ...inputStyle, minHeight: '70px', resize: 'vertical', lineHeight: 1.6 }} placeholder="Anything you'd like to add…" value={aForm.note} onChange={e => setAForm(f => ({ ...f, note: e.target.value }))} onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
+                        </div>
+                        {aError && <div style={{ padding: '0.6rem 1rem', background: 'rgba(255,51,51,0.08)', border: '1px solid rgba(255,51,51,0.25)', borderRadius: '7px', fontSize: '0.82rem', color: '#FF5555' }}>{aError}</div>}
+                        <button type="submit" disabled={aSubmitting} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.85rem 2rem', background: aSubmitting ? 'rgba(37,211,102,0.2)' : '#25D366', color: '#fff', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.88rem', border: 'none', borderRadius: '9px', cursor: aSubmitting ? 'not-allowed' : 'pointer', alignSelf: 'flex-start' }}>
+                          {aSubmitting ? 'Submitting…' : '📤 Submit Assignment'}
+                        </button>
+                      </form>
                     )}
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
 
-              {/* Submission form */}
-              <div style={{
-                background: 'var(--surface)', border: '1px solid var(--border)',
-                borderRadius: '16px', padding: '2rem',
-              }}>
-                <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '1rem', marginBottom: '0.4rem' }}>
-                  Submit Your Assignment
-                </h3>
-                <p style={{ fontSize: '0.83rem', color: 'var(--muted)', marginBottom: '1.75rem', lineHeight: 1.6 }}>
-                  Save your work to Google Drive, set sharing to &ldquo;Anyone with the link can view&rdquo;, then paste the link below.
-                </p>
-
-                {aSubmitted ? (
-                  <SuccessState
-                    icon="📬"
-                    title="Submission sent!"
-                    message="Your assignment link has been sent via WhatsApp. You'll receive a confirmation from the instructor."
-                    onReset={() => { setASubmitted(false); setAForm({ name: '', track: '', assignment: '', link: '', note: '' }); }}
-                  />
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }} className="hub-form-grid">
-                      <div style={groupStyle}>
-                        <label style={labelStyle}>Your Full Name *</label>
-                        <input
-                          style={inputStyle} placeholder="John Doe"
-                          value={aForm.name} onChange={e => setA('name', e.target.value)}
-                          onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-                          onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-                        />
+              {/* REVIEWS */}
+              {tab === 'reviews' && (
+                <div>
+                  <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.5rem', marginBottom: '0.4rem' }}>Leave a Review</h2>
+                  <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '2rem' }}>Your feedback helps improve every session.</p>
+                  <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '2rem' }}>
+                    {rSuccess ? (
+                      <div style={{ textAlign: 'center', padding: '2.5rem' }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🙏</div>
+                        <p style={{ color: '#34D366', fontWeight: 600 }}>{rSuccess}</p>
+                        <button onClick={() => setRSuccess('')} style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', padding: '0.5rem 1rem', borderRadius: '7px', cursor: 'pointer', fontSize: '0.82rem', marginTop: '1rem' }}>Review another session</button>
                       </div>
-                      <div style={groupStyle}>
-                        <label style={labelStyle}>Your Track *</label>
-                        <select
-                          style={{ ...inputStyle, cursor: 'pointer' }}
-                          value={aForm.track} onChange={e => setA('track', e.target.value)}
-                          onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-                          onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-                        >
-                          <option value="">Select your track</option>
-                          {TRACK_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                    <div style={groupStyle}>
-                      <label style={labelStyle}>Assignment *</label>
-                      <select
-                        style={{ ...inputStyle, cursor: 'pointer' }}
-                        value={aForm.assignment} onChange={e => setA('assignment', e.target.value)}
-                        onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-                        onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-                      >
-                        <option value="">Select assignment</option>
-                        {assignments.filter(a => a.status === 'active').map(a => (
-                          <option key={a.id} value={`${a.id} — ${a.title}`}>{a.id} — {a.title}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div style={groupStyle}>
-                      <label style={labelStyle}>Google Drive Link *</label>
-                      <input
-                        style={inputStyle} placeholder="https://drive.google.com/..."
-                        value={aForm.link} onChange={e => setA('link', e.target.value)}
-                        onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-                        onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-                      />
-                    </div>
-                    <div style={groupStyle}>
-                      <label style={labelStyle}>Additional Note (optional)</label>
-                      <textarea
-                        style={{ ...inputStyle, minHeight: '80px', resize: 'vertical', lineHeight: 1.6 }}
-                        placeholder="Anything you'd like to add..."
-                        value={aForm.note} onChange={e => setA('note', e.target.value)}
-                        onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-                        onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-                      />
-                    </div>
-                    <button
-                      onClick={handleAssignmentSubmit}
-                      disabled={!aForm.name || !aForm.track || !aForm.assignment || !aForm.link}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                        padding: '0.9rem 2rem',
-                        background: (aForm.name && aForm.track && aForm.assignment && aForm.link) ? '#25D366' : 'rgba(37,211,102,0.2)',
-                        color: '#fff', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.9rem',
-                        border: 'none', borderRadius: '9px',
-                        cursor: (aForm.name && aForm.track && aForm.assignment && aForm.link) ? 'pointer' : 'not-allowed',
-                        transition: 'opacity 0.2s', alignSelf: 'flex-start' as const,
-                      }}
-                      onMouseEnter={e => { if (aForm.name && aForm.track && aForm.assignment && aForm.link) e.currentTarget.style.opacity = '0.88'; }}
-                      onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-                    >
-                      <WAIcon /> Submit via WhatsApp
-                    </button>
-                    <p style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '-0.5rem' }}>
-                      Your submission will open WhatsApp with a pre-filled message to the instructor.
-                    </p>
+                    ) : (
+                      <form onSubmit={handleSubmitReview} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <div>
+                          <label style={labelStyle}>Session *</label>
+                          <select style={{ ...inputStyle, cursor: 'pointer' }} value={rForm.session_id} onChange={e => setRForm(f => ({ ...f, session_id: e.target.value }))} required onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')}>
+                            <option value="">Select a session</option>
+                            {sessions.filter(s => s.youtube_url).map(s => (
+                              <option key={s.id} value={s.id}>{s.title}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Rating *</label>
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            {[1,2,3,4,5].map(star => (
+                              <button key={star} type="button" onClick={() => setRForm(f => ({ ...f, rating: star }))} style={{ background: 'transparent', border: 'none', fontSize: '2rem', cursor: 'pointer', opacity: rForm.rating >= star ? 1 : 0.25, transition: 'opacity 0.15s, transform 0.15s', transform: rForm.rating >= star ? 'scale(1.1)' : 'scale(1)', padding: 0 }}>⭐</button>
+                            ))}
+                            {rForm.rating > 0 && <span style={{ fontSize: '0.85rem', color: 'var(--muted)', marginLeft: '0.5rem' }}>{STAR_LABELS[rForm.rating]}</span>}
+                          </div>
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Feedback *</label>
+                          <textarea style={{ ...inputStyle, minHeight: '110px', resize: 'vertical', lineHeight: 1.6 }} placeholder="What did you learn? What could be improved? Was the pace right?" value={rForm.feedback} onChange={e => setRForm(f => ({ ...f, feedback: e.target.value }))} required onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
+                        </div>
+                        {rError && <div style={{ padding: '0.6rem 1rem', background: 'rgba(255,51,51,0.08)', border: '1px solid rgba(255,51,51,0.25)', borderRadius: '7px', fontSize: '0.82rem', color: '#FF5555' }}>{rError}</div>}
+                        <button type="submit" disabled={rSubmitting || !rForm.session_id || !rForm.rating || !rForm.feedback} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.85rem 2rem', background: (rSubmitting || !rForm.session_id || !rForm.rating || !rForm.feedback) ? 'rgba(37,211,102,0.2)' : '#25D366', color: '#fff', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.88rem', border: 'none', borderRadius: '9px', cursor: (rSubmitting || !rForm.session_id || !rForm.rating || !rForm.feedback) ? 'not-allowed' : 'pointer', alignSelf: 'flex-start' }}>
+                          {rSubmitting ? 'Sending…' : '⭐ Submit Review'}
+                        </button>
+                      </form>
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* REVIEWS */}
-          {tab === 'reviews' && (
-            <div>
-              <SectionHeader
-                title="Leave a Review"
-                subtitle="Your feedback helps improve every session. Tell us what worked, what didn't, and what you'd like more of."
-              />
-              <div style={{
-                background: 'var(--surface)', border: '1px solid var(--border)',
-                borderRadius: '16px', padding: '2rem',
-              }}>
-                {rSubmitted ? (
-                  <SuccessState
-                    icon="🙏"
-                    title="Thank you for the feedback!"
-                    message="Your review has been sent. It genuinely helps us improve every session."
-                    onReset={() => { setRSubmitted(false); setRForm({ name: '', session: '', rating: 0, feedback: '' }); }}
-                  />
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }} className="hub-form-grid">
-                      <div style={groupStyle}>
-                        <label style={labelStyle}>Your Name *</label>
-                        <input
-                          style={inputStyle} placeholder="John Doe"
-                          value={rForm.name} onChange={e => setR('name', e.target.value)}
-                          onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-                          onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-                        />
-                      </div>
-                      <div style={groupStyle}>
-                        <label style={labelStyle}>Session to Review *</label>
-                        <select
-                          style={{ ...inputStyle, cursor: 'pointer' }}
-                          value={rForm.session} onChange={e => setR('session', e.target.value)}
-                          onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-                          onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-                        >
-                          <option value="">Select a session</option>
-                          {pastSessions.map(s => (
-                            <option key={s.id} value={s.title}>{s.title}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Star rating */}
-                    <div style={groupStyle}>
-                      <label style={labelStyle}>Rating *</label>
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                        {[1, 2, 3, 4, 5].map(star => (
-                          <button
-                            key={star}
-                            onClick={() => setR('rating', star)}
-                            style={{
-                              background: 'transparent', border: 'none',
-                              fontSize: '2rem', cursor: 'pointer',
-                              opacity: (rForm.rating as number) >= star ? 1 : 0.25,
-                              transition: 'opacity 0.15s, transform 0.15s',
-                              transform: (rForm.rating as number) >= star ? 'scale(1.1)' : 'scale(1)',
-                              padding: 0, lineHeight: 1,
-                            }}
-                            onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
-                            onMouseLeave={e => (e.currentTarget.style.opacity = (rForm.rating as number) >= star ? '1' : '0.25')}
-                          >
-                            ⭐
-                          </button>
-                        ))}
-                        {rForm.rating > 0 && (
-                          <span style={{ fontSize: '0.85rem', color: 'var(--muted)', marginLeft: '0.5rem' }}>
-                            {STAR_LABELS[rForm.rating as number]}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div style={groupStyle}>
-                      <label style={labelStyle}>Your Feedback *</label>
-                      <textarea
-                        style={{ ...inputStyle, minHeight: '120px', resize: 'vertical', lineHeight: 1.6 }}
-                        placeholder="What did you learn? What was most useful? What could be improved? Was the pace right? Any topics you'd like covered next?"
-                        value={rForm.feedback} onChange={e => setR('feedback', e.target.value)}
-                        onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-                        onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-                      />
-                    </div>
-
-                    <button
-                      onClick={handleReviewSubmit}
-                      disabled={!rForm.name || !rForm.session || !rForm.rating || !rForm.feedback}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                        padding: '0.9rem 2rem',
-                        background: (rForm.name && rForm.session && rForm.rating && rForm.feedback) ? '#25D366' : 'rgba(37,211,102,0.2)',
-                        color: '#fff', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.9rem',
-                        border: 'none', borderRadius: '9px',
-                        cursor: (rForm.name && rForm.session && rForm.rating && rForm.feedback) ? 'pointer' : 'not-allowed',
-                        transition: 'opacity 0.2s', alignSelf: 'flex-start' as const,
-                      }}
-                      onMouseEnter={e => { if (rForm.name && rForm.session && rForm.rating && rForm.feedback) e.currentTarget.style.opacity = '0.88'; }}
-                      onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-                    >
-                      <WAIcon /> Send Review via WhatsApp
-                    </button>
-                    <p style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '-0.75rem' }}>
-                      Your review opens WhatsApp with a pre-filled message to the instructor.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
       <Footer />
-
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
-        @media (max-width: 640px) {
-          .hub-form-grid { grid-template-columns: 1fr !important; }
-        }
-        select option { background: #0D1526; }
-      `}</style>
     </>
-  );
-}
-
-function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <div style={{ marginBottom: '2rem' }}>
-      <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.5rem', marginBottom: '0.4rem', letterSpacing: '-0.02em' }}>
-        {title}
-      </h2>
-      <p style={{ color: 'var(--muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 0 }}>
-        {subtitle}
-      </p>
-    </div>
-  );
-}
-
-function EmptyState({ icon, message }: { icon: string; message: string }) {
-  return (
-    <div style={{
-      textAlign: 'center', padding: '4rem 2rem',
-      background: 'var(--surface)', border: '1px solid var(--border)',
-      borderRadius: '14px',
-    }}>
-      <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>{icon}</div>
-      <p style={{ color: 'var(--muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>{message}</p>
-    </div>
-  );
-}
-
-function SuccessState({ icon, title, message, onReset }: { icon: string; title: string; message: string; onReset: () => void }) {
-  return (
-    <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
-      <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>{icon}</div>
-      <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.5rem' }}>{title}</h3>
-      <p style={{ color: 'var(--muted)', fontSize: '0.88rem', lineHeight: 1.6, marginBottom: '1.5rem', maxWidth: '380px', margin: '0 auto 1.5rem' }}>{message}</p>
-      <button onClick={onReset} style={{
-        background: 'transparent', border: '1px solid var(--border)',
-        color: 'var(--muted)', padding: '0.6rem 1.25rem', borderRadius: '7px',
-        fontFamily: 'var(--font-body)', fontSize: '0.85rem', cursor: 'pointer',
-        transition: 'border-color 0.2s',
-      }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border-bright)')}
-      onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-      >
-        Submit another
-      </button>
-    </div>
-  );
-}
-
-function WAIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.123 1.534 5.856L0 24l6.293-1.513A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.891 0-3.662-.5-5.197-1.375l-.372-.221-3.857.927.973-3.746-.241-.384A9.961 9.961 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
-    </svg>
   );
 }
