@@ -32,6 +32,7 @@ export default function HubPage() {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [student, setStudent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [announcement, setAnnouncement] = useState<{ message: string } | null>(null);
 
   // Attendance state
   const [attendanceCodes, setAttendanceCodes] = useState<Record<string, string>>({});
@@ -55,26 +56,46 @@ export default function HubPage() {
   const load = useCallback(async () => {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
+    let studentData: any = null;
     if (user) {
       const { data: s } = await supabase.from('students').select('*').eq('id', user.id).single();
+      studentData = s;
       setStudent(s);
     }
-    const [s, r, a, sub] = await Promise.all([
-      fetch('/api/sessions').then(r => r.json()),
-      fetch('/api/resources').then(r => r.json()),
-      fetch('/api/assignments').then(r => r.json()),
+    const track = studentData?.track ? `?track=${encodeURIComponent(studentData.track)}` : '';
+    const [s, r, a, sub, ann] = await Promise.all([
+      fetch(`/api/sessions${track}`).then(r => r.json()),
+      fetch(`/api/resources${track}`).then(r => r.json()),
+      fetch(`/api/assignments${track}`).then(r => r.json()),
       fetch('/api/submissions').then(r => r.json()),
+      fetch('/api/announcements').then(r => r.json()),
     ]);
     setSessions(Array.isArray(s) ? s : []);
     setResources(Array.isArray(r) ? r : []);
     setAssignments(Array.isArray(a) ? a : []);
     setSubmissions(Array.isArray(sub) ? sub : []);
+    setAnnouncement(ann && ann.message ? ann : null);
     setLoading(false);
   }, [supabase]);
 
   useEffect(() => { load(); }, [load]);
 
-  // Group by phase + week
+  // Folder open state: "p1" = Phase 1, "p1w2" = Phase 1 Week 2
+  const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({ p1: true, p2: true });
+  const toggleFolder = (key: string) => setOpenFolders(prev => ({ ...prev, [key]: !prev[key] }));
+
+  // Build phase → week → items tree
+  const buildTree = <T extends { phase: number; week: number }>(items: T[]) => {
+    const tree: Record<number, Record<number, T[]>> = {};
+    for (const item of items) {
+      if (!tree[item.phase]) tree[item.phase] = {};
+      if (!tree[item.phase][item.week]) tree[item.phase][item.week] = [];
+      tree[item.phase][item.week].push(item);
+    }
+    return tree;
+  };
+
+  // Group by phase + week (kept for sessions tab)
   const groupByPhaseWeek = <T extends { phase: number; week: number }>(items: T[]) => {
     const g: Record<string, T[]> = {};
     for (const item of items) {
@@ -84,6 +105,21 @@ export default function HubPage() {
     }
     return g;
   };
+
+  const folderBtnStyle = (open: boolean): React.CSSProperties => ({
+    display: 'flex', alignItems: 'center', gap: '0.6rem',
+    width: '100%', background: 'var(--surface)', border: '1px solid var(--border)',
+    borderRadius: '10px', padding: '0.75rem 1rem', cursor: 'pointer',
+    fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.88rem',
+    color: 'var(--text)', textAlign: 'left',
+  });
+  const weekFolderStyle = (open: boolean): React.CSSProperties => ({
+    display: 'flex', alignItems: 'center', gap: '0.5rem',
+    width: '100%', background: 'transparent', border: '1px solid var(--border)',
+    borderRadius: '8px', padding: '0.6rem 0.9rem', cursor: 'pointer',
+    fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.8rem',
+    color: 'var(--muted)', textAlign: 'left',
+  });
 
   const upcomingSession = sessions.find(s => !s.youtube_url && s.meet_link);
   // Always evaluate against GMT+1 (WAT) regardless of student's device timezone
@@ -184,6 +220,14 @@ export default function HubPage() {
       <Navbar />
       <main style={{ paddingTop: '68px', minHeight: '100vh' }}>
 
+        {/* Announcement banner */}
+        {announcement && (
+          <div style={{ background: 'rgba(255,107,43,0.08)', borderBottom: '1px solid rgba(255,107,43,0.25)', padding: '0.75rem 2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ fontSize: '1rem', flexShrink: 0 }}>📢</span>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text)', margin: 0, lineHeight: 1.5 }}>{announcement.message}</p>
+          </div>
+        )}
+
         {/* Header */}
         <div style={{ background: 'linear-gradient(135deg, rgba(0,200,255,0.06) 0%, rgba(255,107,43,0.04) 100%)', borderBottom: '1px solid var(--border)', padding: '4rem 2.5rem 3rem' }}>
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
@@ -273,7 +317,7 @@ export default function HubPage() {
               {tab === 'sessions' && (
                 <div>
                   <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.5rem', marginBottom: '0.4rem' }}>Past Sessions</h2>
-                  <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '2rem' }}>Watch replays and mark your attendance for each session.</p>
+                  <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Watch replays and mark your attendance for each session.</p>
 
                   {sessions.filter(s => s.youtube_url).length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '4rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px' }}>
@@ -281,62 +325,90 @@ export default function HubPage() {
                       <p style={{ color: 'var(--muted)' }}>No recorded sessions yet.</p>
                     </div>
                   ) : (
-                    Object.entries(groupByPhaseWeek(sessions.filter(s => s.youtube_url))).map(([group, items]) => (
-                      <div key={group} style={{ marginBottom: '2.5rem' }}>
-                        <h3 style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>{group}</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                          {items.map(session => {
-                            const isMarked = attendanceMarked[session.id];
-                            const codeActive = session.attendance_code && (!session.attendance_code_expires_at || new Date(session.attendance_code_expires_at) > new Date());
-                            return (
-                              <div key={session.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
-                                <div style={{ padding: '1.5rem', display: 'flex', gap: '1.25rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                                  <div style={{ width: '50px', height: '50px', borderRadius: '10px', background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1rem', color: 'var(--cyan)', flexShrink: 0 }}>
-                                    {String(session.session_number).padStart(2, '0')}
-                                  </div>
-                                  <div style={{ flex: 1 }}>
-                                    <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.95rem', marginBottom: '4px' }}>{session.title}</h3>
-                                    <div style={{ fontSize: '0.78rem', color: 'var(--muted)', marginBottom: '0.6rem' }}>{session.date}{session.duration && ` · ${session.duration}`}</div>
-                                    {session.topics?.length > 0 && (
-                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                                        {session.topics.map((t: string) => (
-                                          <span key={t} style={{ fontSize: '0.7rem', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '4px', padding: '0.15rem 0.45rem', color: 'var(--muted)' }}>{t}</span>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', flexShrink: 0 }}>
-                                    <a href={session.youtube_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: '#FF0000', color: '#fff', padding: '0.55rem 1rem', borderRadius: '7px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.8rem', textDecoration: 'none' }}>▶ Watch</a>
-                                    <button onClick={() => { setTab('reviews'); setRForm(f => ({ ...f, session_id: session.id })); }} style={{ padding: '0.55rem 1rem', borderRadius: '7px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>⭐ Review</button>
-                                  </div>
-                                </div>
-                                {/* Attendance */}
-                                {codeActive && (
-                                  <div style={{ borderTop: '1px solid var(--border)', padding: '1rem 1.5rem', background: 'rgba(52,211,102,0.04)' }}>
-                                    {isMarked ? (
-                                      <div style={{ fontSize: '0.82rem', color: '#34D366', fontWeight: 600 }}>✓ Attendance marked</div>
-                                    ) : (
-                                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                                        <input style={{ ...inputStyle, maxWidth: '180px', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.82rem', padding: '0.5rem 0.75rem' }}
-                                          placeholder="Enter code (ETX-...)"
-                                          value={attendanceCodes[session.id] ?? ''}
-                                          onChange={e => setAttendanceCodes(p => ({ ...p, [session.id]: e.target.value }))}
-                                          onFocus={e => (e.target.style.borderColor = 'rgba(52,211,102,0.4)')}
-                                          onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
-                                        <button onClick={() => markAttendance(session.id)} style={{ padding: '0.5rem 1rem', background: 'rgba(52,211,102,0.12)', border: '1px solid rgba(52,211,102,0.25)', borderRadius: '7px', color: '#34D366', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
-                                          Mark Attendance
-                                        </button>
-                                        {attendanceErrors[session.id] && <span style={{ fontSize: '0.78rem', color: '#FF5555' }}>{attendanceErrors[session.id]}</span>}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {Object.entries(buildTree(sessions.filter(s => s.youtube_url))).map(([phase, weeks]) => {
+                        const phaseKey = `sp${phase}`;
+                        const phaseOpen = openFolders[phaseKey] !== false;
+                        return (
+                          <div key={phase}>
+                            <button style={folderBtnStyle(phaseOpen)} onClick={() => toggleFolder(phaseKey)}>
+                              <span style={{ fontSize: '1rem' }}>{phaseOpen ? '📂' : '📁'}</span>
+                              <span style={{ flex: 1 }}>Phase {phase}</span>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{phaseOpen ? '▲' : '▼'}</span>
+                            </button>
+                            {phaseOpen && (
+                              <div style={{ marginLeft: '1.25rem', marginTop: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                {Object.entries(weeks).map(([week, items]) => {
+                                  const weekKey = `sp${phase}w${week}`;
+                                  const weekOpen = openFolders[weekKey] !== false;
+                                  return (
+                                    <div key={week}>
+                                      <button style={weekFolderStyle(weekOpen)} onClick={() => toggleFolder(weekKey)}>
+                                        <span>{weekOpen ? '📂' : '📁'}</span>
+                                        <span style={{ flex: 1 }}>Week {week}</span>
+                                        <span style={{ fontSize: '0.7rem' }}>{(items as any[]).length} session{(items as any[]).length !== 1 ? 's' : ''} {weekOpen ? '▲' : '▼'}</span>
+                                      </button>
+                                      {weekOpen && (
+                                        <div style={{ marginLeft: '1.25rem', marginTop: '0.3rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                          {(items as any[]).map((session: any) => {
+                                            const isMarked = attendanceMarked[session.id];
+                                            const codeActive = session.attendance_code && (!session.attendance_code_expires_at || new Date(session.attendance_code_expires_at) > new Date());
+                                            return (
+                                              <div key={session.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
+                                                <div style={{ padding: '1.25rem 1.5rem', display: 'flex', gap: '1.25rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                                                  <div style={{ width: '44px', height: '44px', borderRadius: '9px', background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '0.95rem', color: 'var(--cyan)', flexShrink: 0 }}>
+                                                    {String(session.session_number).padStart(2, '0')}
+                                                  </div>
+                                                  <div style={{ flex: 1 }}>
+                                                    <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.92rem', marginBottom: '3px' }}>{session.title}</h3>
+                                                    <div style={{ fontSize: '0.76rem', color: 'var(--muted)', marginBottom: '0.5rem' }}>{session.date}{session.duration && ` · ${session.duration}`}</div>
+                                                    {session.topics?.length > 0 && (
+                                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                                                        {session.topics.map((t: string) => (
+                                                          <span key={t} style={{ fontSize: '0.68rem', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '4px', padding: '0.1rem 0.4rem', color: 'var(--muted)' }}>{t}</span>
+                                                        ))}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', flexShrink: 0 }}>
+                                                    <a href={session.youtube_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: '#FF0000', color: '#fff', padding: '0.5rem 0.9rem', borderRadius: '7px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none' }}>▶ Watch</a>
+                                                    <button onClick={() => { setTab('reviews'); setRForm(f => ({ ...f, session_id: session.id })); }} style={{ padding: '0.5rem 0.9rem', borderRadius: '7px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>⭐ Review</button>
+                                                  </div>
+                                                </div>
+                                                {codeActive && (
+                                                  <div style={{ borderTop: '1px solid var(--border)', padding: '0.85rem 1.5rem', background: 'rgba(52,211,102,0.04)' }}>
+                                                    {isMarked ? (
+                                                      <div style={{ fontSize: '0.82rem', color: '#34D366', fontWeight: 600 }}>✓ Attendance marked</div>
+                                                    ) : (
+                                                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                                        <input style={{ ...inputStyle, maxWidth: '180px', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.82rem', padding: '0.5rem 0.75rem' }}
+                                                          placeholder="Enter code (ETX-...)"
+                                                          value={attendanceCodes[session.id] ?? ''}
+                                                          onChange={e => setAttendanceCodes(p => ({ ...p, [session.id]: e.target.value }))}
+                                                          onFocus={e => (e.target.style.borderColor = 'rgba(52,211,102,0.4)')}
+                                                          onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
+                                                        <button onClick={() => markAttendance(session.id)} style={{ padding: '0.5rem 1rem', background: 'rgba(52,211,102,0.12)', border: '1px solid rgba(52,211,102,0.25)', borderRadius: '7px', color: '#34D366', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
+                                                          Mark Attendance
+                                                        </button>
+                                                        {attendanceErrors[session.id] && <span style={{ fontSize: '0.78rem', color: '#FF5555' }}>{attendanceErrors[session.id]}</span>}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                )}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
                               </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
               )}
@@ -345,37 +417,66 @@ export default function HubPage() {
               {tab === 'resources' && (
                 <div>
                   <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.5rem', marginBottom: '0.4rem' }}>Resources</h2>
-                  <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '2rem' }}>All documents, videos, and links shared during the programme, organised by phase and week.</p>
+                  <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>All documents, videos, and links for your track, organised by phase and week.</p>
 
                   {resources.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '4rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px' }}>
                       <p style={{ color: 'var(--muted)' }}>No resources yet.</p>
                     </div>
                   ) : (
-                    Object.entries(groupByPhaseWeek(resources)).map(([group, items]) => (
-                      <div key={group} style={{ marginBottom: '2.5rem' }}>
-                        <h3 style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>{group}</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                          {items.map((r: any) => {
-                            const meta = RESOURCE_TYPE_META[r.type] ?? RESOURCE_TYPE_META.link;
-                            return (
-                              <a key={r.id} href={r.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1rem 1.25rem', textDecoration: 'none', transition: 'border-color 0.2s' }}
-                                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border-bright)')}
-                                onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
-                                <div style={{ width: '38px', height: '38px', borderRadius: '8px', background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>{meta.icon}</div>
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.88rem', color: 'var(--text)', marginBottom: '2px' }}>{r.title}</div>
-                                  {r.description && <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{r.description}</div>}
-                                </div>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--muted)', flexShrink: 0 }}>
-                                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                                </svg>
-                              </a>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {Object.entries(buildTree(resources)).map(([phase, weeks]) => {
+                        const phaseKey = `p${phase}`;
+                        const phaseOpen = openFolders[phaseKey] !== false;
+                        return (
+                          <div key={phase}>
+                            <button style={folderBtnStyle(phaseOpen)} onClick={() => toggleFolder(phaseKey)}>
+                              <span style={{ fontSize: '1rem' }}>{phaseOpen ? '📂' : '📁'}</span>
+                              <span style={{ flex: 1 }}>Phase {phase}</span>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{phaseOpen ? '▲' : '▼'}</span>
+                            </button>
+                            {phaseOpen && (
+                              <div style={{ marginLeft: '1.25rem', marginTop: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                {Object.entries(weeks).map(([week, items]) => {
+                                  const weekKey = `p${phase}w${week}`;
+                                  const weekOpen = openFolders[weekKey] !== false;
+                                  return (
+                                    <div key={week}>
+                                      <button style={weekFolderStyle(weekOpen)} onClick={() => toggleFolder(weekKey)}>
+                                        <span>{weekOpen ? '📂' : '📁'}</span>
+                                        <span style={{ flex: 1 }}>Week {week}</span>
+                                        <span style={{ fontSize: '0.7rem' }}>{(items as any[]).length} item{(items as any[]).length !== 1 ? 's' : ''} {weekOpen ? '▲' : '▼'}</span>
+                                      </button>
+                                      {weekOpen && (
+                                        <div style={{ marginLeft: '1.25rem', marginTop: '0.3rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                          {(items as any[]).map((r: any) => {
+                                            const meta = RESOURCE_TYPE_META[r.type] ?? RESOURCE_TYPE_META.link;
+                                            return (
+                                              <a key={r.id} href={r.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', padding: '0.85rem 1rem', textDecoration: 'none', transition: 'border-color 0.2s' }}
+                                                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border-bright)')}
+                                                onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
+                                                <div style={{ width: '34px', height: '34px', borderRadius: '7px', background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', flexShrink: 0 }}>{meta.icon}</div>
+                                                <div style={{ flex: 1 }}>
+                                                  <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.85rem', color: 'var(--text)', marginBottom: '2px' }}>{r.title}</div>
+                                                  {r.description && <div style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>{r.description}</div>}
+                                                </div>
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--muted)', flexShrink: 0 }}>
+                                                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                                                </svg>
+                                              </a>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
               )}
@@ -384,51 +485,80 @@ export default function HubPage() {
               {tab === 'assignments' && (
                 <div>
                   <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.5rem', marginBottom: '0.4rem' }}>Assignments</h2>
-                  <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '2rem' }}>View your assignments and submit your Google Drive links.</p>
+                  <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Your track assignments, organised by phase and week.</p>
 
-                  {/* Assignment list */}
-                  {Object.entries(groupByPhaseWeek(assignments)).map(([group, items]) => (
-                    <div key={group} style={{ marginBottom: '2rem' }}>
-                      <h3 style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>{group}</h3>
-                      {items.map((a: any) => {
-                        const sub = submissions.find(s => s.assignment_id === a.id);
-                        const statusMeta = sub ? STATUS_META[sub.status] : null;
+                  {/* Assignment folder tree */}
+                  {assignments.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>
+                      {Object.entries(buildTree(assignments)).map(([phase, weeks]) => {
+                        const phaseKey = `ap${phase}`;
+                        const phaseOpen = openFolders[phaseKey] !== false;
                         return (
-                          <div key={a.id} style={{ background: 'var(--surface)', border: `1px solid ${a.status === 'active' ? 'var(--cyan-border)' : 'var(--border)'}`, borderRadius: '14px', padding: '1.4rem', marginBottom: '0.75rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '0.6rem' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                                <span style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '0.72rem', color: 'var(--cyan)', background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', borderRadius: '4px', padding: '0.15rem 0.5rem' }}>{a.assignment_code}</span>
-                                <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.92rem', margin: 0 }}>{a.title}</h3>
-                              </div>
-                              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                {statusMeta && (
-                                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: statusMeta.color, background: statusMeta.bg, border: `1px solid ${statusMeta.color}40`, borderRadius: '999px', padding: '0.2rem 0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                                    {statusMeta.label}
-                                  </span>
-                                )}
-                                {a.due_date && <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>Due: {a.due_date}</span>}
-                              </div>
-                            </div>
-                            <p style={{ fontSize: '0.84rem', color: 'var(--muted)', lineHeight: 1.6, marginBottom: a.guidelines?.length ? '0.75rem' : 0 }}>{a.description}</p>
-                            {a.guidelines?.length > 0 && (
-                              <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
-                                {a.guidelines.map((g: string) => <li key={g} style={{ fontSize: '0.78rem', color: 'var(--muted)', marginBottom: '3px' }}>{g}</li>)}
-                              </ul>
-                            )}
-                            {sub?.admin_feedback && (
-                              <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: 'rgba(255,107,43,0.06)', border: '1px solid rgba(255,107,43,0.2)', borderRadius: '8px', fontSize: '0.82rem', color: 'var(--text)' }}>
-                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--orange)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '4px' }}>Instructor Feedback</span>
-                                {sub.admin_feedback}
+                          <div key={phase}>
+                            <button style={folderBtnStyle(phaseOpen)} onClick={() => toggleFolder(phaseKey)}>
+                              <span style={{ fontSize: '1rem' }}>{phaseOpen ? '📂' : '📁'}</span>
+                              <span style={{ flex: 1 }}>Phase {phase}</span>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{phaseOpen ? '▲' : '▼'}</span>
+                            </button>
+                            {phaseOpen && (
+                              <div style={{ marginLeft: '1.25rem', marginTop: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                {Object.entries(weeks).map(([week, weekItems]) => {
+                                  const weekKey = `ap${phase}w${week}`;
+                                  const weekOpen = openFolders[weekKey] !== false;
+                                  return (
+                                    <div key={week}>
+                                      <button style={weekFolderStyle(weekOpen)} onClick={() => toggleFolder(weekKey)}>
+                                        <span>{weekOpen ? '📂' : '📁'}</span>
+                                        <span style={{ flex: 1 }}>Week {week}</span>
+                                        <span style={{ fontSize: '0.7rem' }}>{(weekItems as any[]).length} assignment{(weekItems as any[]).length !== 1 ? 's' : ''} {weekOpen ? '▲' : '▼'}</span>
+                                      </button>
+                                      {weekOpen && (
+                                        <div style={{ marginLeft: '1.25rem', marginTop: '0.3rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                          {(weekItems as any[]).map((a: any) => {
+                                            const sub = submissions.find(s => s.assignment_id === a.id);
+                                            const statusMeta = sub ? STATUS_META[sub.status] : null;
+                                            return (
+                                              <div key={a.id} style={{ background: 'var(--surface)', border: `1px solid ${a.status === 'active' ? 'var(--cyan-border)' : 'var(--border)'}`, borderRadius: '12px', padding: '1.25rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                                    <span style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '0.7rem', color: 'var(--cyan)', background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', borderRadius: '4px', padding: '0.15rem 0.5rem' }}>{a.assignment_code}</span>
+                                                    <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>{a.title}</h3>
+                                                  </div>
+                                                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                    {statusMeta && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: statusMeta.color, background: statusMeta.bg, border: `1px solid ${statusMeta.color}40`, borderRadius: '999px', padding: '0.2rem 0.7rem', textTransform: 'uppercase' }}>{statusMeta.label}</span>}
+                                                    {a.due_date && <span style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>Due: {a.due_date}</span>}
+                                                  </div>
+                                                </div>
+                                                <p style={{ fontSize: '0.83rem', color: 'var(--muted)', lineHeight: 1.6, marginBottom: a.guidelines?.length ? '0.6rem' : 0 }}>{a.description}</p>
+                                                {a.guidelines?.length > 0 && (
+                                                  <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+                                                    {a.guidelines.map((g: string) => <li key={g} style={{ fontSize: '0.77rem', color: 'var(--muted)', marginBottom: '3px' }}>{g}</li>)}
+                                                  </ul>
+                                                )}
+                                                {sub?.admin_feedback && (
+                                                  <div style={{ marginTop: '0.6rem', padding: '0.7rem', background: 'rgba(255,107,43,0.06)', border: '1px solid rgba(255,107,43,0.2)', borderRadius: '8px', fontSize: '0.81rem', color: 'var(--text)' }}>
+                                                    <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--orange)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '4px' }}>Instructor Feedback</span>
+                                                    {sub.admin_feedback}
+                                                  </div>
+                                                )}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
                         );
                       })}
                     </div>
-                  ))}
+                  )}
 
                   {/* Submit form */}
-                  <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '2rem', marginTop: '1rem' }}>
+                  <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '2rem', marginTop: '1.5rem' }}>
                     <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '1rem', marginBottom: '0.4rem' }}>Submit an Assignment</h3>
                     <p style={{ fontSize: '0.82rem', color: 'var(--muted)', marginBottom: '1.5rem' }}>Save your work to Google Drive, set sharing to &ldquo;Anyone with the link&rdquo;, then submit.</p>
                     {aSuccess ? (
@@ -441,10 +571,10 @@ export default function HubPage() {
                       <form onSubmit={handleSubmitAssignment} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
                         <div>
                           <label style={labelStyle}>Assignment *</label>
-                          <select style={{ ...inputStyle, cursor: 'pointer' }} value={aForm.assignment_id} onChange={e => setAForm(f => ({ ...f, assignment_id: e.target.value }))} required onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')}>
-                            <option value="">Select assignment</option>
+                          <select style={{ ...inputStyle, cursor: 'pointer', colorScheme: 'dark' }} value={aForm.assignment_id} onChange={e => setAForm(f => ({ ...f, assignment_id: e.target.value }))} required onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')}>
+                            <option value="" style={{ background: '#0f1829', color: '#94a3b8' }}>Select assignment</option>
                             {assignments.filter(a => a.status === 'active').map(a => (
-                              <option key={a.id} value={a.id}>{a.assignment_code} — {a.title}</option>
+                              <option key={a.id} value={a.id} style={{ background: '#0f1829', color: '#e2e8f0' }}>{a.assignment_code} — {a.title}</option>
                             ))}
                           </select>
                         </div>
@@ -482,10 +612,10 @@ export default function HubPage() {
                       <form onSubmit={handleSubmitReview} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                         <div>
                           <label style={labelStyle}>Session *</label>
-                          <select style={{ ...inputStyle, cursor: 'pointer' }} value={rForm.session_id} onChange={e => setRForm(f => ({ ...f, session_id: e.target.value }))} required onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')}>
-                            <option value="">Select a session</option>
+                          <select style={{ ...inputStyle, cursor: 'pointer', colorScheme: 'dark' }} value={rForm.session_id} onChange={e => setRForm(f => ({ ...f, session_id: e.target.value }))} required onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')}>
+                            <option value="" style={{ background: '#0f1829', color: '#94a3b8' }}>Select a session</option>
                             {sessions.filter(s => s.youtube_url).map(s => (
-                              <option key={s.id} value={s.id}>{s.title}</option>
+                              <option key={s.id} value={s.id} style={{ background: '#0f1829', color: '#e2e8f0' }}>{s.title}</option>
                             ))}
                           </select>
                         </div>

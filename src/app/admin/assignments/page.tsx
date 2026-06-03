@@ -54,6 +54,7 @@ export default async function AdminAssignmentsPage() {
                     {a.due_date && <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>Due: {a.due_date}</div>}
                   </div>
                   <AdminToggleStatus id={a.id} currentStatus={a.status} endpoint="/api/assignments" />
+                  <Link href={`/admin/assignments/${a.id}`} style={{ padding: '0.4rem 0.75rem', borderRadius: '6px', background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--muted)', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.75rem', textDecoration: 'none' }}>Edit</Link>
                   <AdminDeleteButton endpoint={`/api/assignments/${a.id}`} />
                 </div>
               ))}

@@ -2,16 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 
-export async function GET(req: NextRequest) {
-  const track = new URL(req.url).searchParams.get('track');
+export async function GET() {
   const supabase = createAdminClient();
-  let query = supabase.from('assignments').select('*').order('phase').order('week').order('assignment_code');
-  if (track) {
-    query = query.or(`tracks.is.null,tracks.cs.{"${track}"}`);
-  }
-  const { data, error } = await query;
+  const { data, error } = await supabase
+    .from('announcements')
+    .select('*')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(1);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  return NextResponse.json(data?.[0] ?? null);
 }
 
 export async function POST(req: NextRequest) {
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await req.json();
   const supabase = createAdminClient();
-  const { data, error } = await supabase.from('assignments').insert(body).select().single();
+  const { data, error } = await supabase.from('announcements').insert(body).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data, { status: 201 });
 }

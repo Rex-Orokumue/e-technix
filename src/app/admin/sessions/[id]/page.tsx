@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import TrackPicker from '@/components/admin/TrackPicker';
 
 export default function EditSessionPage() {
   const router = useRouter();
@@ -10,6 +11,7 @@ export default function EditSessionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [topicsInput, setTopicsInput] = useState('');
+  const [tracks, setTracks] = useState<string[] | null>(null);
   const [form, setForm] = useState({
     phase: '1', week: '1', session_number: '1',
     title: '', date: '', duration: '', youtube_url: '', meet_link: '', description: '',
@@ -25,6 +27,7 @@ export default function EditSessionPage() {
           youtube_url: s.youtube_url ?? '', meet_link: s.meet_link ?? '', description: s.description ?? '',
         });
         setTopicsInput((s.topics ?? []).join('\n'));
+        setTracks(s.tracks ?? null);
       }
       setLoading(false);
     });
@@ -46,6 +49,7 @@ export default function EditSessionPage() {
         week: parseInt(form.week),
         session_number: parseInt(form.session_number),
         topics,
+        tracks: tracks && tracks.length > 0 ? tracks : null,
       }),
     });
     setSaving(false);
@@ -110,6 +114,10 @@ export default function EditSessionPage() {
           <textarea style={{ ...inputStyle, minHeight: '80px', resize: 'vertical', lineHeight: 1.6 }}
             value={topicsInput} onChange={e => setTopicsInput(e.target.value)}
             onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
+        <div>
+          <label style={labelStyle}>Visible to</label>
+          <TrackPicker value={tracks} onChange={setTracks} />
+        </div>
         {error && <div style={{ padding: '0.6rem 1rem', background: 'rgba(255,51,51,0.08)', border: '1px solid rgba(255,51,51,0.25)', borderRadius: '7px', fontSize: '0.82rem', color: '#FF5555' }}>{error}</div>}
         <button type="submit" disabled={saving} style={{ padding: '0.9rem', background: saving ? 'rgba(0,200,255,0.3)' : 'var(--cyan)', color: '#070D1A', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.9rem', border: 'none', borderRadius: '9px', cursor: saving ? 'not-allowed' : 'pointer' }}>
           {saving ? 'Saving…' : 'Save Changes'}

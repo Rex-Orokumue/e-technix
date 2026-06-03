@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import TrackPicker from '@/components/admin/TrackPicker';
 
-export default function NewAssignmentPage() {
+export default function EditAssignmentPage() {
   const router = useRouter();
+  const { id } = useParams<{ id: string }>();
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [guidelinesInput, setGuidelinesInput] = useState('');
@@ -13,12 +15,33 @@ export default function NewAssignmentPage() {
   const [form, setForm] = useState({ phase: '1', week: '1', assignment_code: '', title: '', description: '', due_date: '' });
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
+  useEffect(() => {
+    fetch('/api/assignments')
+      .then(r => r.json())
+      .then((items: any[]) => {
+        const a = items.find(a => a.id === id);
+        if (!a) return;
+        setForm({
+          phase: String(a.phase ?? 1),
+          week: String(a.week ?? 1),
+          assignment_code: a.assignment_code ?? '',
+          title: a.title ?? '',
+          description: a.description ?? '',
+          due_date: a.due_date ?? '',
+        });
+        setGuidelinesInput(Array.isArray(a.guidelines) ? a.guidelines.join('\n') : '');
+        setTracks(a.tracks ?? null);
+        setLoading(false);
+      });
+  }, [id]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setError('');
     const guidelines = guidelinesInput.split('\n').map(g => g.trim()).filter(Boolean);
-    const res = await fetch('/api/assignments', {
-      method: 'POST',
+    const res = await fetch(`/api/assignments/${id}`, {
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...form,
@@ -36,11 +59,13 @@ export default function NewAssignmentPage() {
   const inputStyle = { width: '100%', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '0.9rem', outline: 'none', colorScheme: 'dark' as const };
   const labelStyle = { fontSize: '0.72rem', fontWeight: 700 as const, color: 'var(--muted)', letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginBottom: '0.4rem', display: 'block' };
 
+  if (loading) return <div style={{ color: 'var(--muted)', padding: '2rem' }}>Loading…</div>;
+
   return (
     <div style={{ maxWidth: '650px' }}>
       <div style={{ marginBottom: '2rem' }}>
         <button onClick={() => router.back()} style={{ background: 'transparent', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '0.85rem', marginBottom: '1rem', padding: 0 }}>← Back</button>
-        <h1 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.6rem', letterSpacing: '-0.02em' }}>Add Assignment</h1>
+        <h1 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.6rem', letterSpacing: '-0.02em' }}>Edit Assignment</h1>
       </div>
       <form onSubmit={handleSubmit} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
@@ -50,17 +75,17 @@ export default function NewAssignmentPage() {
           <div><label style={labelStyle}>Week</label>
             <input type="number" min="1" style={inputStyle} value={form.week} onChange={e => set('week', e.target.value)} required onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
           <div><label style={labelStyle}>Code</label>
-            <input style={inputStyle} placeholder="A01" value={form.assignment_code} onChange={e => set('assignment_code', e.target.value)} required onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
+            <input style={inputStyle} value={form.assignment_code} onChange={e => set('assignment_code', e.target.value)} required onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
         </div>
 
         <div><label style={labelStyle}>Title *</label>
-          <input style={inputStyle} placeholder="Assignment 1 — Introduce Yourself" value={form.title} onChange={e => set('title', e.target.value)} required onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
+          <input style={inputStyle} value={form.title} onChange={e => set('title', e.target.value)} required onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
 
         <div><label style={labelStyle}>Description *</label>
-          <textarea style={{ ...inputStyle, minHeight: '90px', resize: 'vertical', lineHeight: 1.6 }} placeholder="What students need to do…" value={form.description} onChange={e => set('description', e.target.value)} required onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
+          <textarea style={{ ...inputStyle, minHeight: '90px', resize: 'vertical', lineHeight: 1.6 }} value={form.description} onChange={e => set('description', e.target.value)} required onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
 
         <div><label style={labelStyle}>Guidelines (one per line)</label>
-          <textarea style={{ ...inputStyle, minHeight: '80px', resize: 'vertical', lineHeight: 1.6 }} placeholder={'Minimum 300 words\nShare Google Drive link\nSet sharing to Anyone with the link'} value={guidelinesInput} onChange={e => setGuidelinesInput(e.target.value)} onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
+          <textarea style={{ ...inputStyle, minHeight: '80px', resize: 'vertical', lineHeight: 1.6 }} value={guidelinesInput} onChange={e => setGuidelinesInput(e.target.value)} onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
 
         <div><label style={labelStyle}>Due Date</label>
           <input type="date" style={inputStyle} value={form.due_date} onChange={e => set('due_date', e.target.value)} onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
@@ -72,7 +97,7 @@ export default function NewAssignmentPage() {
 
         {error && <div style={{ padding: '0.6rem 1rem', background: 'rgba(255,51,51,0.08)', border: '1px solid rgba(255,51,51,0.25)', borderRadius: '7px', fontSize: '0.82rem', color: '#FF5555' }}>{error}</div>}
         <button type="submit" disabled={saving} style={{ padding: '0.9rem', background: saving ? 'rgba(0,200,255,0.3)' : 'var(--cyan)', color: '#070D1A', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.9rem', border: 'none', borderRadius: '9px', cursor: saving ? 'not-allowed' : 'pointer' }}>
-          {saving ? 'Saving…' : 'Save Assignment'}
+          {saving ? 'Saving…' : 'Save Changes'}
         </button>
       </form>
     </div>

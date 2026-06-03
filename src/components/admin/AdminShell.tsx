@@ -6,12 +6,14 @@ import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 
 const navItems = [
-  { href: '/admin',             label: 'Dashboard',   icon: '📊' },
-  { href: '/admin/sessions',    label: 'Sessions',    icon: '🎬' },
-  { href: '/admin/resources',   label: 'Resources',   icon: '📚' },
-  { href: '/admin/assignments', label: 'Assignments', icon: '📝' },
-  { href: '/admin/submissions', label: 'Submissions', icon: '📬' },
-  { href: '/admin/students',    label: 'Students',    icon: '👥' },
+  { href: '/admin',               label: 'Dashboard',     icon: '📊' },
+  { href: '/admin/sessions',      label: 'Sessions',      icon: '🎬' },
+  { href: '/admin/resources',     label: 'Resources',     icon: '📚' },
+  { href: '/admin/assignments',   label: 'Assignments',   icon: '📝' },
+  { href: '/admin/submissions',   label: 'Submissions',   icon: '📬' },
+  { href: '/admin/students',      label: 'Students',      icon: '👥' },
+  { href: '/admin/attendance',    label: 'Attendance',    icon: '✅' },
+  { href: '/admin/announcements', label: 'Announcements', icon: '📢' },
 ];
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {

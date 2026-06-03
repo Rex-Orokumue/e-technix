@@ -66,6 +66,7 @@ export default async function AdminResourcesPage() {
                       textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0,
                     }}>{meta.label}</span>
                     <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: 'var(--muted)', textDecoration: 'none', flexShrink: 0 }}>↗ View</a>
+                    <Link href={`/admin/resources/${r.id}`} style={{ padding: '0.4rem 0.75rem', borderRadius: '6px', background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--muted)', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.75rem', textDecoration: 'none', flexShrink: 0 }}>Edit</Link>
                     <AdminDeleteButton endpoint={`/api/resources/${r.id}`} />
                   </div>
                 );
