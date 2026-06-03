@@ -1,3 +1,5 @@
+'use server';
+
 import { createHmac } from 'crypto';
 import { cookies } from 'next/headers';
 

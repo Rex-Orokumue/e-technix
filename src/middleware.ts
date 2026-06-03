@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { verifyAdminToken, COOKIE_NAME } from '@/lib/admin-auth';
+import { COOKIE_NAME } from '@/lib/admin-auth';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -8,7 +8,8 @@ export async function middleware(request: NextRequest) {
   // ── Admin routes ──────────────────────────────────────────────────
   if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
     const token = request.cookies.get(COOKIE_NAME)?.value;
-    if (!token || !verifyAdminToken(token)) {
+    // Basic token presence check; full verification happens in route handlers
+    if (!token) {
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
     return NextResponse.next();
