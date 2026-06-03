@@ -29,7 +29,8 @@ export default function AdminSessionCard({ session }: { session: Session }) {
   const generateAttendanceCode = async () => {
     setGeneratingCode(true);
     const code = `ETX-S${session.session_number}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-    const expires = new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(); // 3 hours
+    // Expire at 9:00 PM GMT+1 on the session date — regardless of when code was generated
+    const expires = new Date(`${session.date}T21:00:00+01:00`).toISOString();
     await fetch(`/api/sessions/${session.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },

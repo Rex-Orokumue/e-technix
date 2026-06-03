@@ -86,6 +86,19 @@ export default function HubPage() {
   };
 
   const upcomingSession = sessions.find(s => !s.youtube_url && s.meet_link);
+  // Always evaluate against GMT+1 (WAT) regardless of student's device timezone
+  const nowGMT1 = new Date(Date.now() + 60 * 60 * 1000);
+  const todayGMT1 = nowGMT1.toISOString().slice(0, 10);
+  const currentMinsGMT1 = nowGMT1.getUTCHours() * 60 + nowGMT1.getUTCMinutes();
+  const SESSION_START_MINS = 19 * 60;        // 7:00 PM GMT+1
+  const SESSION_END_MINS = 21 * 60;          // 9:00 PM GMT+1
+  const SESSION_JOIN_MINS = 19 * 60 - 15;   // 6:45 PM GMT+1 — 15 mins before
+  const isLiveToday = upcomingSession
+    ? upcomingSession.date === todayGMT1 && currentMinsGMT1 >= SESSION_START_MINS && currentMinsGMT1 < SESSION_END_MINS
+    : false;
+  const canJoin = upcomingSession
+    ? upcomingSession.date === todayGMT1 && currentMinsGMT1 >= SESSION_JOIN_MINS && currentMinsGMT1 < SESSION_END_MINS
+    : false;
 
   const markAttendance = async (sessionId: string) => {
     const code = attendanceCodes[sessionId]?.trim();
@@ -185,18 +198,53 @@ export default function HubPage() {
 
             {/* Upcoming session */}
             {upcomingSession && (
-              <div style={{ marginTop: '2rem', background: 'var(--surface)', border: '1px solid var(--cyan-border)', borderRadius: '14px', padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1.5rem', flexWrap: 'wrap' }}>
-                <div>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(52,211,102,0.12)', border: '1px solid rgba(52,211,102,0.25)', borderRadius: '999px', padding: '0.2rem 0.75rem', fontSize: '0.7rem', fontWeight: 700, color: '#34D366', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34D366', display: 'inline-block' }} />
-                    Next Session
+              <div style={{ marginTop: '2rem', background: 'var(--surface)', border: '1px solid var(--cyan-border)', borderRadius: '14px', overflow: 'hidden' }}>
+                <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1.5rem', flexWrap: 'wrap' }}>
+                  <div>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: isLiveToday ? 'rgba(52,211,102,0.12)' : 'rgba(0,200,255,0.08)', border: `1px solid ${isLiveToday ? 'rgba(52,211,102,0.25)' : 'var(--cyan-border)'}`, borderRadius: '999px', padding: '0.2rem 0.75rem', fontSize: '0.7rem', fontWeight: 700, color: isLiveToday ? '#34D366' : 'var(--cyan)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isLiveToday ? '#34D366' : 'var(--cyan)', display: 'inline-block' }} />
+                      {isLiveToday ? 'Live Now' : 'Upcoming'}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>{upcomingSession.title}</div>
+                    <div style={{ fontSize: '0.83rem', color: 'var(--muted)' }}>{upcomingSession.date}{upcomingSession.description && ` · ${upcomingSession.description}`}</div>
                   </div>
-                  <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>{upcomingSession.title}</div>
-                  <div style={{ fontSize: '0.83rem', color: 'var(--muted)' }}>{upcomingSession.date}{upcomingSession.description && ` · ${upcomingSession.description}`}</div>
+                  {upcomingSession.meet_link && (
+                    canJoin ? (
+                      <a href={upcomingSession.meet_link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--cyan)', color: '#070D1A', padding: '0.75rem 1.5rem', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.88rem', textDecoration: 'none', flexShrink: 0 }}>
+                        🎥 Join Session
+                      </a>
+                    ) : (
+                      <div title="Link opens 15 minutes before 7:00 PM" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0,200,255,0.08)', color: 'var(--muted)', padding: '0.75rem 1.5rem', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.88rem', flexShrink: 0, cursor: 'not-allowed', border: '1px solid var(--border)' }}>
+                        🔒 Join Session
+                      </div>
+                    )
+                  )}
                 </div>
-                <a href={upcomingSession.meet_link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--cyan)', color: '#070D1A', padding: '0.75rem 1.5rem', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.88rem', textDecoration: 'none', flexShrink: 0 }}>
-                  🎥 Join Session
-                </a>
+
+                {/* Attendance for live session — only on the day of */}
+                {isLiveToday && upcomingSession.attendance_code && (!upcomingSession.attendance_code_expires_at || new Date(upcomingSession.attendance_code_expires_at) > new Date()) && (
+                  <div style={{ borderTop: '1px solid var(--border)', padding: '1rem 1.5rem', background: 'rgba(52,211,102,0.04)' }}>
+                    {attendanceMarked[upcomingSession.id] ? (
+                      <div style={{ fontSize: '0.82rem', color: '#34D366', fontWeight: 600 }}>✓ Attendance marked for this session</div>
+                    ) : (
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--muted)', marginRight: '0.25rem' }}>Mark your attendance:</span>
+                        <input
+                          style={{ padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '0.82rem', outline: 'none', maxWidth: '180px', textTransform: 'uppercase', letterSpacing: '0.08em' }}
+                          placeholder="Enter code (ETX-...)"
+                          value={attendanceCodes[upcomingSession.id] ?? ''}
+                          onChange={e => setAttendanceCodes(p => ({ ...p, [upcomingSession.id]: e.target.value }))}
+                          onFocus={e => (e.target.style.borderColor = 'rgba(52,211,102,0.4)')}
+                          onBlur={e => (e.target.style.borderColor = 'var(--border)')}
+                        />
+                        <button onClick={() => markAttendance(upcomingSession.id)} style={{ padding: '0.5rem 1rem', background: 'rgba(52,211,102,0.12)', border: '1px solid rgba(52,211,102,0.25)', borderRadius: '7px', color: '#34D366', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
+                          Mark Attendance
+                        </button>
+                        {attendanceErrors[upcomingSession.id] && <span style={{ fontSize: '0.78rem', color: '#FF5555' }}>{attendanceErrors[upcomingSession.id]}</span>}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
