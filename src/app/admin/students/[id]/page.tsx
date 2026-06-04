@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { TRACKS } from '@/lib/tracks';
 
 interface Student {
   id: string;
@@ -10,6 +11,12 @@ interface Student {
   track: string;
   enrolled_at: string;
   is_active: boolean;
+  bio?: string | null;
+  phone?: string | null;
+  linkedin_url?: string | null;
+  github_url?: string | null;
+  portfolio_url?: string | null;
+  location?: string | null;
 }
 
 export default function StudentDetailPage() {
@@ -22,6 +29,12 @@ export default function StudentDetailPage() {
   const [resetting, setResetting] = useState(false);
   const [resetMsg, setResetMsg] = useState('');
   const [resetError, setResetError] = useState('');
+
+  const [editingTrack, setEditingTrack] = useState(false);
+  const [newTrack, setNewTrack] = useState('');
+  const [trackSaving, setTrackSaving] = useState(false);
+  const [trackMsg, setTrackMsg] = useState('');
+  const [trackError, setTrackError] = useState('');
 
   useEffect(() => {
     Promise.all([
@@ -42,6 +55,28 @@ export default function StudentDetailPage() {
       setLoading(false);
     });
   }, [id]);
+
+  const handleTrackSave = async () => {
+    if (!newTrack || newTrack === student?.track) { setEditingTrack(false); return; }
+    setTrackSaving(true);
+    setTrackError('');
+    const res = await fetch(`/api/students/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ track: newTrack }),
+    });
+    setTrackSaving(false);
+    if (res.ok) {
+      const updated = await res.json();
+      setStudent(s => s ? { ...s, track: updated.track } : s);
+      setTrackMsg('Track updated.');
+      setEditingTrack(false);
+      setTimeout(() => setTrackMsg(''), 3000);
+    } else {
+      const d = await res.json();
+      setTrackError(d.error || 'Failed to update track');
+    }
+  };
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +113,30 @@ export default function StudentDetailPage() {
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '1.5rem', marginBottom: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
         <div>
           <div style={labelStyle}>Track</div>
-          <span style={{ background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', borderRadius: '5px', padding: '0.2rem 0.6rem', fontSize: '0.78rem', color: 'var(--cyan)', fontWeight: 600 }}>{student.track}</span>
+          {editingTrack ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <select
+                value={newTrack}
+                onChange={e => setNewTrack(e.target.value)}
+                style={{ padding: '0.4rem 0.6rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--cyan-border)', borderRadius: '6px', color: 'var(--text)', fontSize: '0.82rem', cursor: 'pointer', colorScheme: 'dark' }}
+              >
+                {TRACKS.map(t => <option key={t} value={t} style={{ background: '#0f1829' }}>{t}</option>)}
+              </select>
+              <div style={{ display: 'flex', gap: '0.4rem' }}>
+                <button onClick={handleTrackSave} disabled={trackSaving} style={{ padding: '0.3rem 0.75rem', background: 'var(--cyan)', color: '#070D1A', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.75rem', border: 'none', borderRadius: '5px', cursor: trackSaving ? 'not-allowed' : 'pointer' }}>
+                  {trackSaving ? '…' : 'Save'}
+                </button>
+                <button onClick={() => { setEditingTrack(false); setTrackError(''); }} style={{ padding: '0.3rem 0.75rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: '0.75rem', borderRadius: '5px', cursor: 'pointer' }}>Cancel</button>
+              </div>
+              {trackError && <div style={{ fontSize: '0.75rem', color: '#FF5555' }}>{trackError}</div>}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span style={{ background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', borderRadius: '5px', padding: '0.2rem 0.6rem', fontSize: '0.78rem', color: 'var(--cyan)', fontWeight: 600 }}>{student.track}</span>
+              <button onClick={() => { setNewTrack(student.track); setEditingTrack(true); setTrackMsg(''); }} style={{ background: 'transparent', border: 'none', color: 'var(--muted)', fontSize: '0.75rem', cursor: 'pointer', padding: 0 }}>✏️ Edit</button>
+              {trackMsg && <span style={{ fontSize: '0.73rem', color: '#34D366' }}>{trackMsg}</span>}
+            </div>
+          )}
         </div>
         <div>
           <div style={labelStyle}>Status</div>
@@ -94,16 +152,57 @@ export default function StudentDetailPage() {
 
       {/* Progress stats */}
       {stats && (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '1.5rem', marginBottom: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '2rem', color: attPct >= 80 ? '#34D366' : attPct >= 50 ? '#F59E0B' : '#FF5555' }}>{attPct}%</div>
-            <div style={{ ...labelStyle, marginBottom: 0, marginTop: '0.3rem' }}>Attendance</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.2rem' }}>{stats.attendance} / {stats.sessions} sessions</div>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '1.5rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {/* Attendance */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
+              <span style={{ ...labelStyle, marginBottom: 0 }}>Attendance</span>
+              <span style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.1rem', color: attPct >= 80 ? '#34D366' : attPct >= 50 ? '#F59E0B' : '#FF5555' }}>{attPct}%</span>
+            </div>
+            <div style={{ height: '8px', background: 'rgba(255,255,255,0.06)', borderRadius: '999px', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${attPct}%`, borderRadius: '999px', background: attPct >= 80 ? '#34D366' : attPct >= 50 ? '#F59E0B' : '#FF5555', transition: 'width 0.4s ease' }} />
+            </div>
+            <div style={{ fontSize: '0.73rem', color: 'var(--muted)', marginTop: '0.3rem' }}>{stats.attendance} of {stats.sessions} sessions attended</div>
           </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '2rem', color: 'var(--cyan)' }}>{stats.submitted}/{stats.total}</div>
-            <div style={{ ...labelStyle, marginBottom: 0, marginTop: '0.3rem' }}>Assignments</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.2rem' }}>submitted</div>
+          {/* Assignments */}
+          {(() => {
+            const assignPct = stats.total > 0 ? Math.round((stats.submitted / stats.total) * 100) : 0;
+            return (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
+                  <span style={{ ...labelStyle, marginBottom: 0 }}>Assignments Submitted</span>
+                  <span style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.1rem', color: 'var(--cyan)' }}>{stats.submitted}/{stats.total}</span>
+                </div>
+                <div style={{ height: '8px', background: 'rgba(255,255,255,0.06)', borderRadius: '999px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${assignPct}%`, borderRadius: '999px', background: 'var(--cyan)', transition: 'width 0.4s ease' }} />
+                </div>
+                <div style={{ fontSize: '0.73rem', color: 'var(--muted)', marginTop: '0.3rem' }}>{assignPct}% completion rate</div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* Student profile details */}
+      {(student.bio || student.phone || student.location || student.linkedin_url || student.github_url || student.portfolio_url) && (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+          <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '1rem', marginBottom: '1rem' }}>Profile Details</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {student.bio && (
+              <div>
+                <div style={labelStyle}>Bio</div>
+                <p style={{ fontSize: '0.88rem', color: 'var(--text)', lineHeight: 1.6, margin: 0 }}>{student.bio}</p>
+              </div>
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              {student.phone && <div><div style={labelStyle}>Phone</div><div style={{ fontSize: '0.85rem' }}>{student.phone}</div></div>}
+              {student.location && <div><div style={labelStyle}>Location</div><div style={{ fontSize: '0.85rem' }}>{student.location}</div></div>}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {student.linkedin_url && <a href={student.linkedin_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.78rem', color: 'var(--cyan)', background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', borderRadius: '6px', padding: '0.25rem 0.65rem', textDecoration: 'none' }}>🔗 LinkedIn</a>}
+              {student.github_url && <a href={student.github_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.78rem', color: 'var(--muted)', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '0.25rem 0.65rem', textDecoration: 'none' }}>🐙 GitHub</a>}
+              {student.portfolio_url && <a href={student.portfolio_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.78rem', color: '#A78BFA', background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)', borderRadius: '6px', padding: '0.25rem 0.65rem', textDecoration: 'none' }}>🌐 Portfolio</a>}
+            </div>
           </div>
         </div>
       )}

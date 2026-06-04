@@ -70,6 +70,24 @@ export default function AttendanceReportPage() {
 
   const optStyle = { background: '#0f1829', color: '#e2e8f0' };
 
+  const exportCSV = () => {
+    const headers = ['Student', 'Track', 'Attendance %', ...sessions.map(s => `S${s.session_number} (${s.date})`)];
+    const rows = filteredStudents.map(student => [
+      student.full_name,
+      student.track,
+      `${pct(student.id)}%`,
+      ...sessions.map(sess => attended(student.id, sess.id) ? '1' : '0'),
+    ]);
+    const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `attendance-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) return <div style={{ color: 'var(--muted)', padding: '2rem' }}>Loading…</div>;
 
   return (
@@ -79,14 +97,22 @@ export default function AttendanceReportPage() {
           <h1 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.8rem', letterSpacing: '-0.02em', marginBottom: '0.2rem' }}>Attendance Report</h1>
           <p style={{ color: 'var(--muted)', fontSize: '0.88rem' }}>{filteredStudents.length} students · {sessions.length} completed session{sessions.length !== 1 ? 's' : ''}</p>
         </div>
-        <select
-          value={trackFilter}
-          onChange={e => setTrackFilter(e.target.value)}
-          style={{ padding: '0.55rem 1rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontSize: '0.85rem', cursor: 'pointer' }}
-        >
-          <option value="" style={optStyle}>All Tracks</option>
-          {tracks.map(t => <option key={t} value={t} style={optStyle}>{t}</option>)}
-        </select>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <select
+            value={trackFilter}
+            onChange={e => setTrackFilter(e.target.value)}
+            style={{ padding: '0.55rem 1rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontSize: '0.85rem', cursor: 'pointer' }}
+          >
+            <option value="" style={optStyle}>All Tracks</option>
+            {tracks.map(t => <option key={t} value={t} style={optStyle}>{t}</option>)}
+          </select>
+          <button
+            onClick={exportCSV}
+            style={{ padding: '0.55rem 1rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'var(--font-head)', fontWeight: 600, whiteSpace: 'nowrap' }}
+          >
+            ↓ Export CSV
+          </button>
+        </div>
       </div>
 
       <p style={{ color: 'var(--muted)', fontSize: '0.78rem', marginBottom: '1.5rem' }}>Click any cell to manually mark or unmark attendance.</p>

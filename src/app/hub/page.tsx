@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import HubShell from '@/components/hub/HubShell';
+import ScheduleTab from '@/components/hub/ScheduleTab';
+import ChatTab from '@/components/hub/ChatTab';
+import ProfileTab from '@/components/hub/ProfileTab';
+import { usePushNotifications } from '@/components/hub/usePushNotifications';
 
-type Tab = 'sessions' | 'resources' | 'assignments' | 'reviews';
+type Tab = 'sessions' | 'resources' | 'assignments' | 'reviews' | 'schedule' | 'chat' | 'profile';
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
   submitted:         { label: 'Submitted',         color: '#7A8FAD', bg: 'rgba(122,143,173,0.1)' },
@@ -26,6 +29,11 @@ const WHATSAPP_NUMBER = '2348120288390';
 
 export default function HubPage() {
   const [tab, setTab] = useState<Tab>('sessions');
+  useEffect(() => {
+    const saved = localStorage.getItem('hub-tab') as Tab | null;
+    if (saved) setTab(saved);
+  }, []);
+  const changeTab = (t: Tab) => { setTab(t); localStorage.setItem('hub-tab', t); };
   const [sessions, setSessions] = useState<any[]>([]);
   const [resources, setResources] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
@@ -33,11 +41,13 @@ export default function HubPage() {
   const [student, setStudent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [announcement, setAnnouncement] = useState<{ message: string } | null>(null);
+  const [pushDismissed, setPushDismissed] = useState(false);
 
   // Attendance state
   const [attendanceCodes, setAttendanceCodes] = useState<Record<string, string>>({});
   const [attendanceMarked, setAttendanceMarked] = useState<Record<string, boolean>>({});
   const [attendanceErrors, setAttendanceErrors] = useState<Record<string, string>>({});
+  const [myAttendanceCount, setMyAttendanceCount] = useState(0);;
 
   // Assignment submit
   const [aForm, setAForm] = useState({ assignment_id: '', drive_link: '', note: '' });
@@ -51,7 +61,43 @@ export default function HubPage() {
   const [rSuccess, setRSuccess] = useState('');
   const [rError, setRError] = useState('');
 
+  // Session reviews (lazy loaded per session)
+  const [sessionReviews, setSessionReviews] = useState<Record<string, any[]>>({});
+  const [openReviews, setOpenReviews] = useState<Record<string, boolean>>({});
+
+  const toggleSessionReviews = async (sessionId: string) => {
+    const nowOpen = !openReviews[sessionId];
+    setOpenReviews(p => ({ ...p, [sessionId]: nowOpen }));
+    if (nowOpen) {
+      setSessionReviews(p => ({ ...p, [sessionId]: undefined as any }));
+      try {
+        const res = await fetch(`/api/reviews/session/${sessionId}`);
+        console.log('[reviews] status', res.status, 'for session', sessionId);
+        const data = await res.json();
+        console.log('[reviews] data', data);
+        setSessionReviews(p => ({ ...p, [sessionId]: Array.isArray(data) ? data : [] }));
+      } catch (err) {
+        console.error('[reviews] fetch error', err);
+        setSessionReviews(p => ({ ...p, [sessionId]: [] }));
+      }
+    }
+  };
+
+  // Submission edit state
+  const [editingSubId, setEditingSubId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ drive_link: '', note: '' });
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
+
+  // Live clock for countdown (updates every second)
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
   const supabase = createClient();
+  const { needsPrompt: pushNeedsPrompt, subscribe: subscribePush } = usePushNotifications(student?.id ?? null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -63,17 +109,22 @@ export default function HubPage() {
       setStudent(s);
     }
     const track = studentData?.track ? `?track=${encodeURIComponent(studentData.track)}` : '';
-    const [s, r, a, sub, ann] = await Promise.all([
+    const userId = studentData?.id ?? null;
+    const [s, r, a, sub, ann, attResult] = await Promise.all([
       fetch(`/api/sessions${track}`).then(r => r.json()),
       fetch(`/api/resources${track}`).then(r => r.json()),
       fetch(`/api/assignments${track}`).then(r => r.json()),
       fetch('/api/submissions').then(r => r.json()),
       fetch('/api/announcements').then(r => r.json()),
+      userId
+        ? supabase.from('attendance').select('session_id', { count: 'exact', head: false }).eq('student_id', userId)
+        : Promise.resolve({ count: 0 }),
     ]);
     setSessions(Array.isArray(s) ? s : []);
     setResources(Array.isArray(r) ? r : []);
     setAssignments(Array.isArray(a) ? a : []);
     setSubmissions(Array.isArray(sub) ? sub : []);
+    setMyAttendanceCount((attResult as any).count ?? 0);
     setAnnouncement(ann && ann.message ? ann : null);
     setLoading(false);
   }, [supabase]);
@@ -123,18 +174,35 @@ export default function HubPage() {
 
   const upcomingSession = sessions.find(s => !s.youtube_url && s.meet_link);
   // Always evaluate against GMT+1 (WAT) regardless of student's device timezone
-  const nowGMT1 = new Date(Date.now() + 60 * 60 * 1000);
+  const nowGMT1 = new Date(now + 60 * 60 * 1000);
   const todayGMT1 = nowGMT1.toISOString().slice(0, 10);
   const currentMinsGMT1 = nowGMT1.getUTCHours() * 60 + nowGMT1.getUTCMinutes();
   const SESSION_START_MINS = 19 * 60;        // 7:00 PM GMT+1
   const SESSION_END_MINS = 21 * 60;          // 9:00 PM GMT+1
   const SESSION_JOIN_MINS = 19 * 60 - 15;   // 6:45 PM GMT+1 — 15 mins before
-  const isLiveToday = upcomingSession
-    ? upcomingSession.date === todayGMT1 && currentMinsGMT1 >= SESSION_START_MINS && currentMinsGMT1 < SESSION_END_MINS
-    : false;
-  const canJoin = upcomingSession
-    ? upcomingSession.date === todayGMT1 && currentMinsGMT1 >= SESSION_JOIN_MINS && currentMinsGMT1 < SESSION_END_MINS
-    : false;
+  const isSessionToday = upcomingSession ? upcomingSession.date === todayGMT1 : false;
+  const isCompleted = isSessionToday && currentMinsGMT1 >= SESSION_END_MINS;
+  const isInSession = isSessionToday && currentMinsGMT1 >= SESSION_START_MINS && !isCompleted;
+  const isLiveToday = isInSession; // kept for attendance check below
+  const canJoin = isSessionToday && currentMinsGMT1 >= SESSION_JOIN_MINS && !isCompleted;
+
+  // Countdown to session start (or end if in session)
+  const sessionCountdown = (() => {
+    if (!upcomingSession?.date) return null;
+    const sessionDateGMT1 = new Date(`${upcomingSession.date}T18:00:00Z`); // 7PM GMT+1 = 18:00 UTC
+    const sessionEndGMT1  = new Date(`${upcomingSession.date}T20:00:00Z`); // 9PM GMT+1 = 20:00 UTC
+    const target = isInSession ? sessionEndGMT1 : isCompleted ? null : sessionDateGMT1;
+    if (!target) return null;
+    const diffMs = target.getTime() - now;
+    if (diffMs <= 0) return null;
+    const totalSecs = Math.floor(diffMs / 1000);
+    const h = Math.floor(totalSecs / 3600);
+    const m = Math.floor((totalSecs % 3600) / 60);
+    const s = totalSecs % 60;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  })();
 
   const markAttendance = async (sessionId: string) => {
     const code = attendanceCodes[sessionId]?.trim();
@@ -167,13 +235,51 @@ export default function HubPage() {
     if (res.ok) {
       setASuccess('Assignment submitted successfully!');
       setAForm({ assignment_id: '', drive_link: '', note: '' });
-      // Also notify via WhatsApp
+      // Notify via WhatsApp (reminder only — check admin dashboard for details)
       const assignment = assignments.find(a => a.id === aForm.assignment_id);
-      const msg = `📚 *Assignment Submission*\n\n*Student:* ${student?.full_name}\n*Track:* ${student?.track}\n*Assignment:* ${assignment?.assignment_code} — ${assignment?.title}\n*Link:* ${aForm.drive_link}${aForm.note ? `\n*Note:* ${aForm.note}` : ''}`;
+      const msg = `Hi! ${student?.full_name} just submitted ${assignment?.assignment_code} — ${assignment?.title}. Please check the admin dashboard to review it.`;
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
       load();
     } else {
       setAError(data.error || 'Failed to submit');
+    }
+  };
+
+  const deadlineLabel = (dueDate: string | null | undefined) => {
+    if (!dueDate) return null;
+    const due = new Date(dueDate);
+    const todayUTC = new Date(todayGMT1);
+    const diffDays = Math.round((due.getTime() - todayUTC.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) return { text: 'Overdue', color: '#FF5555', bg: 'rgba(255,51,51,0.08)' };
+    if (diffDays === 0) return { text: 'Due today', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)' };
+    if (diffDays === 1) return { text: '1 day left', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)' };
+    if (diffDays <= 3) return { text: `${diffDays} days left`, color: '#F59E0B', bg: 'rgba(245,158,11,0.08)' };
+    return { text: `${diffDays} days left`, color: 'var(--muted)', bg: 'rgba(255,255,255,0.04)' };
+  };
+
+  const startEdit = (sub: any) => {
+    setEditingSubId(sub.id);
+    setEditForm({ drive_link: sub.drive_link, note: sub.note ?? '' });
+    setEditError('');
+  };
+
+  const handleEditSubmission = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSubId) return;
+    setEditSaving(true);
+    setEditError('');
+    const res = await fetch(`/api/submissions/${editingSubId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editForm),
+    });
+    const data = await res.json();
+    setEditSaving(false);
+    if (res.ok) {
+      setEditingSubId(null);
+      load();
+    } else {
+      setEditError(data.error || 'Failed to update');
     }
   };
 
@@ -210,15 +316,36 @@ export default function HubPage() {
 
   const tabs: { id: Tab; label: string; icon: string }[] = [
     { id: 'sessions',    label: 'Past Sessions',  icon: '🎬' },
+    { id: 'schedule',    label: 'Schedule',       icon: '📅' },
     { id: 'resources',   label: 'Resources',      icon: '📚' },
     { id: 'assignments', label: 'Assignments',    icon: '📝' },
     { id: 'reviews',     label: 'Leave a Review', icon: '⭐' },
+    { id: 'chat',        label: 'Chat',           icon: '💬' },
   ];
 
   return (
-    <>
-      <Navbar />
-      <main style={{ paddingTop: '68px', minHeight: '100vh' }}>
+    <HubShell tab={tab} setTab={changeTab} student={student}>
+      <div style={{ minHeight: '100vh' }}>
+
+        {/* Push notification opt-in banner */}
+        {pushNeedsPrompt && !pushDismissed && (
+          <div style={{ background: 'rgba(0,200,255,0.06)', borderBottom: '1px solid rgba(0,200,255,0.2)', padding: '0.65rem 2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '1rem', flexShrink: 0 }}>🔔</span>
+            <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: 0, flex: 1 }}>Enable push notifications to get announcements instantly.</p>
+            <button
+              onClick={subscribePush}
+              style={{ padding: '0.4rem 1rem', background: 'var(--cyan)', color: '#070D1A', border: 'none', borderRadius: '6px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', flexShrink: 0 }}
+            >
+              Enable
+            </button>
+            <button
+              onClick={() => setPushDismissed(true)}
+              style={{ padding: '0.4rem 0.6rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', borderRadius: '6px', fontFamily: 'var(--font-head)', fontSize: '0.78rem', cursor: 'pointer', flexShrink: 0 }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Announcement banner */}
         {announcement && (
@@ -240,17 +367,61 @@ export default function HubPage() {
             </h1>
             {student && <p style={{ color: 'var(--muted)', fontSize: '0.88rem', marginBottom: 0 }}>Track: <strong style={{ color: 'var(--text)' }}>{student.track}</strong></p>}
 
+            {/* Student progress bars */}
+            {student && !loading && (() => {
+              const completedSessions = sessions.filter(s => s.youtube_url);
+              const totalSessions = completedSessions.length;
+              const attPct = totalSessions > 0 ? Math.round((myAttendanceCount / totalSessions) * 100) : 0;
+              const totalAssignments = assignments.length;
+              const submitted = submissions.filter(s => s.student_id === student.id).length;
+              const assignPct = totalAssignments > 0 ? Math.round((submitted / totalAssignments) * 100) : 0;
+              if (totalSessions === 0 && totalAssignments === 0) return null;
+              return (
+                <div style={{ marginTop: '1.5rem', display: 'grid', gridTemplateColumns: totalSessions > 0 && totalAssignments > 0 ? '1fr 1fr' : '1fr', gap: '1.25rem' }}>
+                  {totalSessions > 0 && (
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Attendance</span>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: attPct >= 80 ? '#34D366' : attPct >= 50 ? '#F59E0B' : '#FF5555' }}>{attPct}% · {myAttendanceCount}/{totalSessions}</span>
+                      </div>
+                      <div style={{ height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '999px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${attPct}%`, background: attPct >= 80 ? '#34D366' : attPct >= 50 ? '#F59E0B' : '#FF5555', borderRadius: '999px', transition: 'width 0.4s ease' }} />
+                      </div>
+                    </div>
+                  )}
+                  {totalAssignments > 0 && (
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assignments</span>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--cyan)' }}>{submitted}/{totalAssignments}</span>
+                      </div>
+                      <div style={{ height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '999px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${assignPct}%`, background: 'var(--cyan)', borderRadius: '999px', transition: 'width 0.4s ease' }} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Upcoming session */}
             {upcomingSession && (
               <div style={{ marginTop: '2rem', background: 'var(--surface)', border: '1px solid var(--cyan-border)', borderRadius: '14px', overflow: 'hidden' }}>
                 <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1.5rem', flexWrap: 'wrap' }}>
                   <div>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: isLiveToday ? 'rgba(52,211,102,0.12)' : 'rgba(0,200,255,0.08)', border: `1px solid ${isLiveToday ? 'rgba(52,211,102,0.25)' : 'var(--cyan-border)'}`, borderRadius: '999px', padding: '0.2rem 0.75rem', fontSize: '0.7rem', fontWeight: 700, color: isLiveToday ? '#34D366' : 'var(--cyan)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
-                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isLiveToday ? '#34D366' : 'var(--cyan)', display: 'inline-block' }} />
-                      {isLiveToday ? 'Live Now' : 'Upcoming'}
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: isCompleted ? 'rgba(122,143,173,0.1)' : isInSession ? 'rgba(52,211,102,0.12)' : 'rgba(0,200,255,0.08)', border: `1px solid ${isCompleted ? 'rgba(122,143,173,0.25)' : isInSession ? 'rgba(52,211,102,0.25)' : 'var(--cyan-border)'}`, borderRadius: '999px', padding: '0.2rem 0.75rem', fontSize: '0.7rem', fontWeight: 700, color: isCompleted ? '#7A8FAD' : isInSession ? '#34D366' : 'var(--cyan)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isCompleted ? '#7A8FAD' : isInSession ? '#34D366' : 'var(--cyan)', display: 'inline-block' }} />
+                      {isCompleted ? 'Completed' : isInSession ? 'In Session' : 'Upcoming'}
                     </div>
                     <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>{upcomingSession.title}</div>
-                    <div style={{ fontSize: '0.83rem', color: 'var(--muted)' }}>{upcomingSession.date}{upcomingSession.description && ` · ${upcomingSession.description}`}</div>
+                    <div style={{ fontSize: '0.83rem', color: 'var(--muted)' }}>
+                      {upcomingSession.date}{upcomingSession.description && ` · ${upcomingSession.description}`}
+                      {sessionCountdown && (
+                        <span style={{ marginLeft: '0.75rem', fontFamily: 'var(--font-head)', fontWeight: 700, color: isInSession ? '#34D366' : 'var(--cyan)', fontSize: '0.8rem' }}>
+                          {isInSession ? `Ends in ${sessionCountdown}` : `Starts in ${sessionCountdown}`}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   {upcomingSession.meet_link && (
                     canJoin ? (
@@ -291,17 +462,6 @@ export default function HubPage() {
                 )}
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Tab bar */}
-        <div style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface)', position: 'sticky', top: '68px', zIndex: 50 }}>
-          <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 2.5rem', display: 'flex', overflowX: 'auto' }}>
-            {tabs.map(t => (
-              <button key={t.id} onClick={() => setTab(t.id)} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '1rem 1.25rem', background: 'transparent', border: 'none', borderBottom: `2px solid ${tab === t.id ? 'var(--cyan)' : 'transparent'}`, color: tab === t.id ? 'var(--cyan)' : 'var(--muted)', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'color 0.2s' }}>
-                <span>{t.icon}</span> {t.label}
-              </button>
-            ))}
           </div>
         </div>
 
@@ -373,6 +533,9 @@ export default function HubPage() {
                                                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', flexShrink: 0 }}>
                                                     <a href={session.youtube_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: '#FF0000', color: '#fff', padding: '0.5rem 0.9rem', borderRadius: '7px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none' }}>▶ Watch</a>
                                                     <button onClick={() => { setTab('reviews'); setRForm(f => ({ ...f, session_id: session.id })); }} style={{ padding: '0.5rem 0.9rem', borderRadius: '7px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>⭐ Review</button>
+                                                    <button onClick={() => toggleSessionReviews(session.id)} style={{ padding: '0.5rem 0.9rem', borderRadius: '7px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>
+                                                      {openReviews[session.id] ? 'Hide Reviews' : `See Reviews`}
+                                                    </button>
                                                   </div>
                                                 </div>
                                                 {codeActive && (
@@ -391,6 +554,41 @@ export default function HubPage() {
                                                           Mark Attendance
                                                         </button>
                                                         {attendanceErrors[session.id] && <span style={{ fontSize: '0.78rem', color: '#FF5555' }}>{attendanceErrors[session.id]}</span>}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                )}
+                                                {/* Peer reviews panel */}
+                                                {openReviews[session.id] && (
+                                                  <div style={{ borderTop: '1px solid var(--border)', padding: '1rem 1.5rem', background: 'rgba(167,139,250,0.03)' }}>
+                                                    {!sessionReviews[session.id] ? (
+                                                      <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>Loading reviews…</div>
+                                                    ) : sessionReviews[session.id].length === 0 ? (
+                                                      <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>No reviews yet — be the first! ⭐</div>
+                                                    ) : (
+                                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                                        <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                                          {sessionReviews[session.id].length} review{sessionReviews[session.id].length !== 1 ? 's' : ''} · avg {(sessionReviews[session.id].reduce((s: number, r: any) => s + r.rating, 0) / sessionReviews[session.id].length).toFixed(1)} ⭐
+                                                        </div>
+                                                        {sessionReviews[session.id].map((r: any, i: number) => (
+                                                          <div key={i} style={{ paddingBottom: '0.75rem', borderBottom: i < sessionReviews[session.id].length - 1 ? '1px solid var(--border)' : 'none' }}>
+                                                            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                                                              <span style={{ fontSize: '0.85rem', flexShrink: 0 }}>{'⭐'.repeat(r.rating)}</span>
+                                                              <div style={{ flex: 1 }}>
+                                                                {r.students?.full_name && (
+                                                                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text)', marginBottom: '3px' }}>{r.students.full_name}</div>
+                                                                )}
+                                                                <p style={{ fontSize: '0.8rem', color: 'var(--muted)', lineHeight: 1.6, margin: 0 }}>{r.feedback}</p>
+                                                              </div>
+                                                            </div>
+                                                            {r.admin_reply && (
+                                                              <div style={{ marginTop: '0.5rem', padding: '0.5rem 0.65rem', background: 'rgba(0,200,255,0.05)', border: '1px solid var(--cyan-border)', borderRadius: '6px' }}>
+                                                                <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>Instructor reply</div>
+                                                                <p style={{ fontSize: '0.78rem', color: 'var(--text)', lineHeight: 1.5, margin: 0 }}>{r.admin_reply}</p>
+                                                              </div>
+                                                            )}
+                                                          </div>
+                                                        ))}
                                                       </div>
                                                     )}
                                                   </div>
@@ -515,7 +713,7 @@ export default function HubPage() {
                                       {weekOpen && (
                                         <div style={{ marginLeft: '1.25rem', marginTop: '0.3rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                           {(weekItems as any[]).map((a: any) => {
-                                            const sub = submissions.find(s => s.assignment_id === a.id);
+                                            const sub = submissions.find(s => s.assignment_id === a.id && s.student_id === student?.id);
                                             const statusMeta = sub ? STATUS_META[sub.status] : null;
                                             return (
                                               <div key={a.id} style={{ background: 'var(--surface)', border: `1px solid ${a.status === 'active' ? 'var(--cyan-border)' : 'var(--border)'}`, borderRadius: '12px', padding: '1.25rem' }}>
@@ -524,9 +722,14 @@ export default function HubPage() {
                                                     <span style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '0.7rem', color: 'var(--cyan)', background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', borderRadius: '4px', padding: '0.15rem 0.5rem' }}>{a.assignment_code}</span>
                                                     <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>{a.title}</h3>
                                                   </div>
-                                                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
                                                     {statusMeta && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: statusMeta.color, background: statusMeta.bg, border: `1px solid ${statusMeta.color}40`, borderRadius: '999px', padding: '0.2rem 0.7rem', textTransform: 'uppercase' }}>{statusMeta.label}</span>}
-                                                    {a.due_date && <span style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>Due: {a.due_date}</span>}
+                                                    {a.due_date && (() => {
+                                                      const dl = deadlineLabel(a.due_date);
+                                                      return dl
+                                                        ? <span style={{ fontSize: '0.7rem', fontWeight: 700, color: dl.color, background: dl.bg, border: `1px solid ${dl.color}40`, borderRadius: '999px', padding: '0.2rem 0.6rem' }}>{dl.text}</span>
+                                                        : <span style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>Due: {a.due_date}</span>;
+                                                    })()}
                                                   </div>
                                                 </div>
                                                 <p style={{ fontSize: '0.83rem', color: 'var(--muted)', lineHeight: 1.6, marginBottom: a.guidelines?.length ? '0.6rem' : 0 }}>{a.description}</p>
@@ -539,6 +742,42 @@ export default function HubPage() {
                                                   <div style={{ marginTop: '0.6rem', padding: '0.7rem', background: 'rgba(255,107,43,0.06)', border: '1px solid rgba(255,107,43,0.2)', borderRadius: '8px', fontSize: '0.81rem', color: 'var(--text)' }}>
                                                     <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--orange)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '4px' }}>Instructor Feedback</span>
                                                     {sub.admin_feedback}
+                                                  </div>
+                                                )}
+
+                                                {/* Submission view + edit */}
+                                                {sub && (
+                                                  <div style={{ marginTop: '0.75rem', padding: '0.85rem', background: 'rgba(0,200,255,0.04)', border: '1px solid var(--cyan-border)', borderRadius: '10px' }}>
+                                                    {editingSubId === sub.id ? (
+                                                      <form onSubmit={handleEditSubmission} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                                        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Edit Submission {sub.edit_count >= 2 ? '(last edit)' : `(edit ${sub.edit_count + 1}/2)`}</div>
+                                                        <div>
+                                                          <label style={{ ...labelStyle, fontSize: '0.68rem' }}>Google Drive Link</label>
+                                                          <input style={{ ...inputStyle, fontSize: '0.82rem', padding: '0.5rem 0.75rem' }} value={editForm.drive_link} onChange={e => setEditForm(f => ({ ...f, drive_link: e.target.value }))} required onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
+                                                        </div>
+                                                        <div>
+                                                          <label style={{ ...labelStyle, fontSize: '0.68rem' }}>Note (optional)</label>
+                                                          <textarea style={{ ...inputStyle, fontSize: '0.82rem', padding: '0.5rem 0.75rem', minHeight: '55px', resize: 'vertical', lineHeight: 1.5 }} value={editForm.note} onChange={e => setEditForm(f => ({ ...f, note: e.target.value }))} onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
+                                                        </div>
+                                                        {editError && <div style={{ fontSize: '0.78rem', color: '#FF5555' }}>{editError}</div>}
+                                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                          <button type="submit" disabled={editSaving} style={{ padding: '0.5rem 1rem', background: 'var(--cyan)', color: '#070D1A', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.8rem', border: 'none', borderRadius: '7px', cursor: editSaving ? 'not-allowed' : 'pointer' }}>{editSaving ? 'Saving…' : 'Save Changes'}</button>
+                                                          <button type="button" onClick={() => setEditingSubId(null)} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.8rem', borderRadius: '7px', cursor: 'pointer' }}>Cancel</button>
+                                                        </div>
+                                                      </form>
+                                                    ) : (
+                                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                                                        <div>
+                                                          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Your Submission</div>
+                                                          <a href={sub.drive_link} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.8rem', color: 'var(--cyan)', textDecoration: 'none' }}>↗ View submitted file</a>
+                                                          {sub.note && <div style={{ fontSize: '0.74rem', color: 'var(--muted)', marginTop: '2px', fontStyle: 'italic' }}>{sub.note}</div>}
+                                                          {sub.edit_count > 0 && <div style={{ fontSize: '0.68rem', color: 'var(--muted)', marginTop: '2px' }}>Edited {sub.edit_count}× · {2 - sub.edit_count} edit{2 - sub.edit_count !== 1 ? 's' : ''} remaining</div>}
+                                                        </div>
+                                                        {sub.edit_count < 2 && a.status === 'active' && (
+                                                          <button onClick={() => startEdit(sub)} style={{ padding: '0.45rem 0.9rem', background: 'transparent', border: '1px solid var(--cyan-border)', color: 'var(--cyan)', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.78rem', borderRadius: '7px', cursor: 'pointer', flexShrink: 0 }}>✏️ Edit</button>
+                                                        )}
+                                                      </div>
+                                                    )}
                                                   </div>
                                                 )}
                                               </div>
@@ -641,11 +880,31 @@ export default function HubPage() {
                   </div>
                 </div>
               )}
+
+              {/* SCHEDULE */}
+              {tab === 'schedule' && (
+                <div>
+                  <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.5rem', marginBottom: '0.4rem' }}>Schedule</h2>
+                  <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>All sessions for your track, in chronological order.</p>
+                  <ScheduleTab sessions={sessions} todayGMT1={todayGMT1} currentMinsGMT1={currentMinsGMT1} />
+                </div>
+              )}
+
+              {/* CHAT */}
+              {tab === 'chat' && student && (
+                <div>
+                  <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.5rem', marginBottom: '0.4rem' }}>Chat</h2>
+                  <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>General cohort, your track channel, and group chats for paired work.</p>
+                  <ChatTab studentId={student.id} studentName={student.full_name} />
+                </div>
+              )}
+
+              {/* PROFILE */}
+              {tab === 'profile' && student && <ProfileTab student={student} onSave={s => setStudent(s)} />}
             </>
           )}
         </div>
-      </main>
-      <Footer />
-    </>
+      </div>
+    </HubShell>
   );
 }

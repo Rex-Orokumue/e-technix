@@ -11,9 +11,11 @@ const navItems = [
   { href: '/admin/resources',     label: 'Resources',     icon: '📚' },
   { href: '/admin/assignments',   label: 'Assignments',   icon: '📝' },
   { href: '/admin/submissions',   label: 'Submissions',   icon: '📬' },
+  { href: '/admin/reviews',       label: 'Reviews',       icon: '⭐' },
   { href: '/admin/students',      label: 'Students',      icon: '👥' },
   { href: '/admin/attendance',    label: 'Attendance',    icon: '✅' },
   { href: '/admin/announcements', label: 'Announcements', icon: '📢' },
+  { href: '/admin/chat',          label: 'Chat',          icon: '💬' },
 ];
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
@@ -45,7 +47,7 @@ function LogoutButton() {
   const router = useRouter();
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
-    window.location.href = '/admin/login';
+    window.location.href = '/';
   };
   return (
     <button onClick={handleLogout} style={{

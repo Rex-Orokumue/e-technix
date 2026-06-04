@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import AdminSubmissionStatusSelect from '@/components/admin/AdminSubmissionStatusSelect';
+import AdminDeleteSubmission from '@/components/admin/AdminDeleteSubmission';
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
   submitted:         { label: 'Submitted',         color: '#7A8FAD', bg: 'rgba(122,143,173,0.1)' },
@@ -49,6 +50,11 @@ export default async function AdminSubmissionsPage() {
                       {student?.full_name ?? 'Unknown'}
                     </span>
                     <span style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>{student?.track}</span>
+                    {sub.edit_count > 0 && (
+                      <span style={{ fontSize: '0.65rem', color: '#F59E0B', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: '999px', padding: '0.1rem 0.5rem' }}>
+                        edited {sub.edit_count}×
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--muted)', marginBottom: '6px' }}>
                     {assignment?.assignment_code} — {assignment?.title}
@@ -60,6 +66,12 @@ export default async function AdminSubmissionsPage() {
                     ↗ View Submission
                   </a>
                   {sub.note && <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '4px', fontStyle: 'italic' }}>&ldquo;{sub.note}&rdquo;</div>}
+                  {sub.admin_feedback && (
+                    <div style={{ marginTop: '6px', padding: '0.5rem 0.7rem', background: 'rgba(255,107,43,0.05)', border: '1px solid rgba(255,107,43,0.15)', borderRadius: '6px', fontSize: '0.74rem', color: 'var(--muted)' }}>
+                      <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--orange)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '2px' }}>Remarks</span>
+                      {sub.admin_feedback}
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end', flexShrink: 0 }}>
@@ -69,10 +81,11 @@ export default async function AdminSubmissionsPage() {
                     borderRadius: '999px', padding: '0.2rem 0.7rem',
                     textTransform: 'uppercase', letterSpacing: '0.04em',
                   }}>{meta.label}</span>
-                  <AdminSubmissionStatusSelect id={sub.id} currentStatus={sub.status} />
+                  <AdminSubmissionStatusSelect id={sub.id} currentStatus={sub.status} currentFeedback={sub.admin_feedback} />
                   <div style={{ fontSize: '0.7rem', color: 'var(--muted)' }}>
                     {new Date(sub.submitted_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </div>
+                  <AdminDeleteSubmission id={sub.id} />
                 </div>
               </div>
             );

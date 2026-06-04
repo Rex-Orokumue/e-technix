@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import TrackPicker from '@/components/admin/TrackPicker';
 
@@ -11,6 +11,20 @@ export default function NewAssignmentPage() {
   const [guidelinesInput, setGuidelinesInput] = useState('');
   const [tracks, setTracks] = useState<string[] | null>(null);
   const [form, setForm] = useState({ phase: '1', week: '1', assignment_code: '', title: '', description: '', due_date: '' });
+
+  useEffect(() => {
+    fetch('/api/assignments').then(r => r.json()).then((assignments: any[]) => {
+      if (!Array.isArray(assignments) || assignments.length === 0) {
+        setForm(f => ({ ...f, assignment_code: 'A01' }));
+        return;
+      }
+      const max = assignments.reduce((best, a) => {
+        const n = parseInt((a.assignment_code ?? '').replace(/\D/g, ''), 10);
+        return isNaN(n) ? best : Math.max(best, n);
+      }, 0);
+      setForm(f => ({ ...f, assignment_code: `A${String(max + 1).padStart(2, '0')}` }));
+    }).catch(() => {});
+  }, []);
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSubmit = async (e: React.FormEvent) => {
