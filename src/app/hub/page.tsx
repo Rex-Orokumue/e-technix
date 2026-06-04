@@ -325,11 +325,33 @@ export default function HubPage() {
 
   return (
     <HubShell tab={tab} setTab={changeTab} student={student}>
+      <style>{`
+        .hub-banner { padding: 0.65rem 2.5rem; }
+        .hub-hero   { padding: 3.5rem 2.5rem 2.5rem; }
+        .hub-content-wrap { padding: 2.5rem 2.5rem 6rem; }
+        .hub-progress-grid { grid-template-columns: 1fr 1fr; }
+        .hub-session-row { flex-direction: row; align-items: center; }
+        .hub-session-actions { flex-shrink: 0; }
+        .hub-att-row { flex-direction: row; }
+        .hub-card-inner { padding: 1.25rem 1.5rem; }
+        .hub-card-btns  { flex-shrink: 0; }
+        @media (max-width: 640px) {
+          .hub-banner { padding: 0.65rem 1rem; }
+          .hub-hero   { padding: 1.75rem 1rem 1.5rem; }
+          .hub-content-wrap { padding: 1.5rem 1rem 5rem; }
+          .hub-progress-grid { grid-template-columns: 1fr !important; }
+          .hub-session-row { flex-wrap: wrap; }
+          .hub-session-actions { width: 100%; justify-content: flex-start; }
+          .hub-att-row { flex-wrap: wrap; }
+          .hub-card-inner { padding: 1rem; }
+          .hub-card-btns  { flex-shrink: unset; width: 100%; }
+        }
+      `}</style>
       <div style={{ minHeight: '100vh' }}>
 
         {/* Push notification opt-in banner */}
         {pushNeedsPrompt && !pushDismissed && (
-          <div style={{ background: 'rgba(0,200,255,0.06)', borderBottom: '1px solid rgba(0,200,255,0.2)', padding: '0.65rem 2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div className="hub-banner" style={{ background: 'rgba(0,200,255,0.06)', borderBottom: '1px solid rgba(0,200,255,0.2)', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '1rem', flexShrink: 0 }}>🔔</span>
             <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: 0, flex: 1 }}>Enable push notifications to get announcements instantly.</p>
             <button
@@ -349,14 +371,14 @@ export default function HubPage() {
 
         {/* Announcement banner */}
         {announcement && (
-          <div style={{ background: 'rgba(255,107,43,0.08)', borderBottom: '1px solid rgba(255,107,43,0.25)', padding: '0.75rem 2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div className="hub-banner" style={{ background: 'rgba(255,107,43,0.08)', borderBottom: '1px solid rgba(255,107,43,0.25)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <span style={{ fontSize: '1rem', flexShrink: 0 }}>📢</span>
             <p style={{ fontSize: '0.88rem', color: 'var(--text)', margin: 0, lineHeight: 1.5 }}>{announcement.message}</p>
           </div>
         )}
 
         {/* Header */}
-        <div style={{ background: 'linear-gradient(135deg, rgba(0,200,255,0.06) 0%, rgba(255,107,43,0.04) 100%)', borderBottom: '1px solid var(--border)', padding: '4rem 2.5rem 3rem' }}>
+        <div className="hub-hero" style={{ background: 'linear-gradient(135deg, rgba(0,200,255,0.06) 0%, rgba(255,107,43,0.04) 100%)', borderBottom: '1px solid var(--border)' }}>
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--cyan)', fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1rem' }}>
               <span style={{ width: '24px', height: '2px', background: 'var(--cyan)', borderRadius: '1px' }} />
@@ -377,7 +399,7 @@ export default function HubPage() {
               const assignPct = totalAssignments > 0 ? Math.round((submitted / totalAssignments) * 100) : 0;
               if (totalSessions === 0 && totalAssignments === 0) return null;
               return (
-                <div style={{ marginTop: '1.5rem', display: 'grid', gridTemplateColumns: totalSessions > 0 && totalAssignments > 0 ? '1fr 1fr' : '1fr', gap: '1.25rem' }}>
+                <div className="hub-progress-grid" style={{ marginTop: '1.5rem', display: 'grid', gridTemplateColumns: totalSessions > 0 && totalAssignments > 0 ? '1fr 1fr' : '1fr', gap: '1.25rem' }}>
                   {totalSessions > 0 && (
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
@@ -407,7 +429,7 @@ export default function HubPage() {
             {/* Upcoming session */}
             {upcomingSession && (
               <div style={{ marginTop: '2rem', background: 'var(--surface)', border: '1px solid var(--cyan-border)', borderRadius: '14px', overflow: 'hidden' }}>
-                <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1.5rem', flexWrap: 'wrap' }}>
+                <div className="hub-session-row" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
                   <div>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: isCompleted ? 'rgba(122,143,173,0.1)' : isInSession ? 'rgba(52,211,102,0.12)' : 'rgba(0,200,255,0.08)', border: `1px solid ${isCompleted ? 'rgba(122,143,173,0.25)' : isInSession ? 'rgba(52,211,102,0.25)' : 'var(--cyan-border)'}`, borderRadius: '999px', padding: '0.2rem 0.75rem', fontSize: '0.7rem', fontWeight: 700, color: isCompleted ? '#7A8FAD' : isInSession ? '#34D366' : 'var(--cyan)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
                       <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isCompleted ? '#7A8FAD' : isInSession ? '#34D366' : 'var(--cyan)', display: 'inline-block' }} />
@@ -466,7 +488,7 @@ export default function HubPage() {
         </div>
 
         {/* Content */}
-        <div style={{ maxWidth: '900px', margin: '0 auto', padding: '3rem 2.5rem 6rem' }}>
+        <div className="hub-content-wrap" style={{ maxWidth: '900px', margin: '0 auto' }}>
 
           {loading ? (
             <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--muted)' }}>Loading…</div>
@@ -515,7 +537,7 @@ export default function HubPage() {
                                             const codeActive = session.attendance_code && (!session.attendance_code_expires_at || new Date(session.attendance_code_expires_at) > new Date());
                                             return (
                                               <div key={session.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
-                                                <div style={{ padding: '1.25rem 1.5rem', display: 'flex', gap: '1.25rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                                                <div className="hub-card-inner" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
                                                   <div style={{ width: '44px', height: '44px', borderRadius: '9px', background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '0.95rem', color: 'var(--cyan)', flexShrink: 0 }}>
                                                     {String(session.session_number).padStart(2, '0')}
                                                   </div>
@@ -530,11 +552,11 @@ export default function HubPage() {
                                                       </div>
                                                     )}
                                                   </div>
-                                                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', flexShrink: 0 }}>
+                                                  <div className="hub-card-btns" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
                                                     <a href={session.youtube_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: '#FF0000', color: '#fff', padding: '0.5rem 0.9rem', borderRadius: '7px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none' }}>▶ Watch</a>
                                                     <button onClick={() => { setTab('reviews'); setRForm(f => ({ ...f, session_id: session.id })); }} style={{ padding: '0.5rem 0.9rem', borderRadius: '7px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>⭐ Review</button>
                                                     <button onClick={() => toggleSessionReviews(session.id)} style={{ padding: '0.5rem 0.9rem', borderRadius: '7px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>
-                                                      {openReviews[session.id] ? 'Hide Reviews' : `See Reviews`}
+                                                      {openReviews[session.id] ? 'Hide Reviews' : 'See Reviews'}
                                                     </button>
                                                   </div>
                                                 </div>

@@ -69,7 +69,7 @@ export default function ProfileTab({ student, onSave }: { student: Student; onSa
       <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '2rem' }}>Add personal details so your cohort can connect with you.</p>
 
       {/* Read-only info */}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '1.25rem', marginBottom: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '1.25rem', marginBottom: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
         <div>
           <div style={labelStyle}>Full Name</div>
           <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{student.full_name}</div>
@@ -102,7 +102,7 @@ export default function ProfileTab({ student, onSave }: { student: Student; onSa
           />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
           <div>
             <label style={labelStyle}>Phone</label>
             <input style={inputStyle} placeholder="+234 800 000 0000" value={form.phone} onChange={e => set('phone', e.target.value)} onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} />

@@ -83,8 +83,8 @@ export default function ScheduleTab({
 
               return (
                 <div key={session.id} style={{
-                  display: 'flex', gap: '1rem', alignItems: 'flex-start',
-                  padding: '1rem 1.25rem', borderRadius: '12px',
+                  display: 'flex', gap: '0.75rem', alignItems: 'flex-start', flexWrap: 'wrap',
+                  padding: '0.9rem 1rem', borderRadius: '12px',
                   background: status === 'live' ? 'rgba(52,211,102,0.04)' : status === 'today' ? 'rgba(0,200,255,0.04)' : 'var(--surface)',
                   border: `1px solid ${status === 'live' || status === 'today' ? ss.border : 'var(--border)'}`,
                   opacity: isPast ? 0.7 : 1,
@@ -121,7 +121,7 @@ export default function ScheduleTab({
                   </div>
 
                   {/* Action */}
-                  <div style={{ flexShrink: 0 }}>
+                  <div style={{ flexShrink: 0, marginLeft: 'auto' }}>
                     {status === 'past' && session.youtube_url && (
                       <a href={session.youtube_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: '#FF0000', color: '#fff', padding: '0.4rem 0.8rem', borderRadius: '6px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.75rem', textDecoration: 'none' }}>▶ Watch</a>
                     )}
