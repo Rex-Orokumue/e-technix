@@ -207,19 +207,25 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
         return (
           <div key={type} style={{ marginBottom: '0.75rem' }}>
             <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '0.2rem 0.5rem', marginBottom: '0.2rem' }}>{labels[type]}</div>
-            {group.map(ch => (
-              <button key={ch.id} onClick={() => { setActiveChannel(ch); onSelect?.(); }} style={{
-                display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%',
-                padding: '0.6rem 0.75rem', borderRadius: '7px', border: 'none', cursor: 'pointer',
-                background: activeChannel?.id === ch.id ? 'rgba(167,139,250,0.12)' : 'transparent',
-                color: activeChannel?.id === ch.id ? '#A78BFA' : 'var(--text)',
-                fontFamily: 'var(--font-body)', fontSize: '0.85rem', textAlign: 'left',
-                transition: 'background 0.15s',
-              }}>
-                <span style={{ flexShrink: 0 }}>{CHANNEL_ICONS[ch.type]}</span>
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Admin</span>
-              </button>
-            ))}
+            {group.map(ch => {
+              const isDirect = ch.type === 'direct';
+              const isActive = activeChannel?.id === ch.id;
+              return (
+                <button key={ch.id} onClick={() => { setActiveChannel(ch); onSelect?.(); }} style={{
+                  display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%',
+                  padding: '0.6rem 0.75rem', borderRadius: '7px', border: 'none', cursor: 'pointer',
+                  background: isActive ? (isDirect ? 'rgba(167,139,250,0.12)' : 'rgba(0,200,255,0.1)') : 'transparent',
+                  color: isActive ? (isDirect ? '#A78BFA' : 'var(--cyan)') : 'var(--text)',
+                  fontFamily: 'var(--font-body)', fontSize: '0.85rem', textAlign: 'left',
+                  transition: 'background 0.15s',
+                }}>
+                  <span style={{ flexShrink: 0 }}>{CHANNEL_ICONS[ch.type]}</span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {isDirect ? 'Admin' : ch.name}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         );
       })}
