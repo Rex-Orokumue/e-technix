@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   // Push notification to all subscribed students
   if (process.env.VAPID_PRIVATE_KEY && data?.message) {
     const { data: subs } = await supabase.from('push_subscriptions').select('*');
-    const payload = JSON.stringify({ title: '📢 e-technix Announcement', body: data.message, url: '/hub' });
+    const payload = JSON.stringify({ title: '📢 e-technix Announcement', body: data.message, url: '/hub?tab=sessions' });
     await Promise.allSettled((subs ?? []).map(sub =>
       webpush.sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, payload)
         .catch(async err => {

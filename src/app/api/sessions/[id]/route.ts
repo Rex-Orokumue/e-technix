@@ -21,7 +21,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     sendPushToAll({
       title: '🎬 Session Recording Available',
       body: `${data.title} is now available to watch.`,
-      url: '/hub',
+      url: '/hub?tab=sessions',
     }).catch(console.error);
   }
 

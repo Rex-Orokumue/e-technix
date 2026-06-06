@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     const payload = {
       title: '📚 New Resource Added',
       body: data.title,
-      url: '/hub',
+      url: '/hub?tab=resources',
     };
     // If resource is track-specific, only notify that track; otherwise notify all
     const tracks: string[] | null = data.tracks;

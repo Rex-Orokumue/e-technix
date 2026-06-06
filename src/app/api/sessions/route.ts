@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     sendPushToAll({
       title: '📅 New Session Scheduled',
       body: data.title,
-      url: '/hub',
+      url: '/hub?tab=schedule',
     }).catch(console.error);
   }
   return NextResponse.json(data, { status: 201 });
