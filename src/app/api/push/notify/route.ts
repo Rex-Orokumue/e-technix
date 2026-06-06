@@ -17,6 +17,10 @@ export async function POST(req: NextRequest) {
 
   const { title, body, url } = await req.json();
   const supabase = createAdminClient();
+
+  // Remove any subscriptions registered on localhost — they'll never work in production
+  await supabase.from('push_subscriptions').delete().like('endpoint', '%localhost%');
+
   const { data: subs } = await supabase.from('push_subscriptions').select('*');
 
   const payload = JSON.stringify({ title, body, url: url ?? '/hub' });

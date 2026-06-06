@@ -16,6 +16,8 @@ interface PushPayload {
 }
 
 async function dispatch(subs: any[], payload: PushPayload) {
+  // Filter out any localhost subscriptions that snuck in during dev
+  subs = subs.filter(s => !s.endpoint.includes('localhost'));
   if (!subs.length || !process.env.VAPID_PRIVATE_KEY) return;
   const supabase = createAdminClient();
   const body = JSON.stringify({ ...payload, url: payload.url ?? '/hub' });
