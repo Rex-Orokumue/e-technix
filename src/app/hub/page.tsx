@@ -28,10 +28,18 @@ const STAR_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
 const WHATSAPP_NUMBER = '2348120288390';
 
 export default function HubPage() {
+  const VALID_TABS: Tab[] = ['sessions', 'resources', 'assignments', 'reviews', 'schedule', 'chat', 'profile'];
   const [tab, setTab] = useState<Tab>('sessions');
   useEffect(() => {
-    const saved = localStorage.getItem('hub-tab') as Tab | null;
-    if (saved) setTab(saved);
+    // URL param takes priority (used by push notification deep links e.g. /hub?tab=chat)
+    const params = new URLSearchParams(window.location.search);
+    const urlTab = params.get('tab') as Tab | null;
+    if (urlTab && VALID_TABS.includes(urlTab)) {
+      setTab(urlTab);
+    } else {
+      const saved = localStorage.getItem('hub-tab') as Tab | null;
+      if (saved && VALID_TABS.includes(saved)) setTab(saved);
+    }
   }, []);
   const changeTab = (t: Tab) => { setTab(t); localStorage.setItem('hub-tab', t); };
   const [sessions, setSessions] = useState<any[]>([]);

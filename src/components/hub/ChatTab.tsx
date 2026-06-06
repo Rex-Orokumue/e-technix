@@ -53,6 +53,8 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastTimestampRef = useRef<string | null>(null);
+  // Track the active channel ID in a ref so async fetches can check if they're still relevant
+  const activeChannelIdRef = useRef<string | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -76,6 +78,8 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
     const res = await fetch(url);
     const data = await res.json();
     const msgs: Message[] = Array.isArray(data) ? data : [];
+    // Discard if the user switched channels while this was in flight
+    if (activeChannelIdRef.current !== channelId) return;
     if (before) {
       setMessages(prev => [...msgs, ...prev]);
     } else {
@@ -87,6 +91,9 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
 
   useEffect(() => {
     if (!activeChannel) return;
+    // Update ref immediately so in-flight fetches from the previous channel are discarded
+    activeChannelIdRef.current = activeChannel.id;
+    setMessages([]);          // Clear stale messages instantly on switch
     lastTimestampRef.current = null;
     setPinnedIndex(0);
     setReplyingTo(null);
@@ -95,10 +102,13 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
 
   useEffect(() => {
     if (!activeChannel) return;
+    const channelId = activeChannel.id;
     const id = setInterval(async () => {
-      const res = await fetch(`/api/chat/messages?channel_id=${activeChannel.id}`);
+      const res = await fetch(`/api/chat/messages?channel_id=${channelId}`);
       const data = await res.json();
       if (!Array.isArray(data)) return;
+      // Discard if the user has switched away from this channel
+      if (activeChannelIdRef.current !== channelId) return;
       setMessages(prev => {
         const prevMap = new Map(prev.map(m => [m.id, m]));
         const merged = prev.map(m => {

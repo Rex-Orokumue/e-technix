@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       .from('chat_channels').select('type, track, name').eq('id', channel_id).single();
     if (channel) {
       const preview = content.trim().length > 60 ? content.trim().slice(0, 57) + '…' : content.trim();
-      const payload = { title: '💬 Admin', body: preview, url: '/hub' };
+      const payload = { title: '💬 Admin', body: preview, url: '/hub?tab=chat' };
       if (channel.type === 'general') {
         sendPushToAll(payload).catch(console.error);
       } else if (channel.type === 'track' && channel.track) {

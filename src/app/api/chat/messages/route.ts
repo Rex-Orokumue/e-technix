@@ -120,7 +120,7 @@ async function notifyChannelMembers(
   excludeStudentId: string | null
 ) {
   const preview = content.length > 60 ? content.slice(0, 57) + '…' : content;
-  const payload = { title: senderLabel, body: preview, url: '/hub' };
+  const payload = { title: senderLabel, body: preview, url: '/hub?tab=chat' };
 
   if (channel.type === 'general') {
     await sendPushToAll(payload, excludeStudentId ?? undefined);

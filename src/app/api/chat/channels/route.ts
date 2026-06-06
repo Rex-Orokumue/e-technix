@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
     sendPushToStudents(member_ids, {
       title: '👥 You were added to a group',
       body: `You've been added to "${channel.name}" in chat.`,
-      url: '/hub',
+      url: '/hub?tab=chat',
     }).catch(console.error);
   }
 
