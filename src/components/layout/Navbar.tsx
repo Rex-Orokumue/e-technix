@@ -129,6 +129,21 @@ export default function Navbar() {
             Register Now
           </Link>
         </li>
+
+        {/* Admin link — low-key, for internal use */}
+        <li>
+          <Link href="/admin/login" style={{
+            color: 'var(--muted)', textDecoration: 'none',
+            fontSize: '0.78rem', fontWeight: 500,
+            opacity: 0.45, transition: 'opacity 0.2s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '0.45')}
+          title="Admin login"
+          >
+            ⚙
+          </Link>
+        </li>
       </ul>
 
       {/* Mobile right side */}
@@ -185,6 +200,12 @@ export default function Navbar() {
             fontSize: '0.95rem', textDecoration: 'none', textAlign: 'center',
           }}>
             Register Now
+          </Link>
+          <Link href="/admin/login" onClick={() => setOpen(false)} style={{
+            color: 'var(--muted)', textDecoration: 'none',
+            fontSize: '0.82rem', fontWeight: 500, opacity: 0.5,
+          }}>
+            ⚙ Admin Login
           </Link>
         </div>
       )}

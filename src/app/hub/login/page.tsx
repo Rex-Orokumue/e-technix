@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
 export default function HubLoginPage() {
@@ -66,6 +67,15 @@ export default function HubLoginPage() {
             {loading ? 'Signing in…' : 'Sign In'}
           </button>
         </form>
+
+        <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+          <Link href="/admin/login" style={{ fontSize: '0.76rem', color: 'var(--muted)', textDecoration: 'none', opacity: 0.55 }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '0.55')}
+          >
+            ⚙ Admin login
+          </Link>
+        </div>
       </div>
     </div>
   );

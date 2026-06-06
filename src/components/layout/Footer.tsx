@@ -67,9 +67,23 @@ export default function Footer() {
         ))}
       </ul>
 
-      <p style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>
-        &copy; {new Date().getFullYear()} E-Technix. All rights reserved.
-      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+        <p style={{ color: 'var(--muted)', fontSize: '0.82rem', margin: 0 }}>
+          &copy; {new Date().getFullYear()} E-Technix. All rights reserved.
+        </p>
+        <Link href="/admin/login" style={{
+          color: 'var(--muted)',
+          textDecoration: 'none',
+          fontSize: '0.75rem',
+          opacity: 0.5,
+          transition: 'opacity 0.2s',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+        onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}
+        >
+          Admin
+        </Link>
+      </div>
     </footer>
   );
 }
