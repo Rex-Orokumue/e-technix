@@ -29,13 +29,13 @@ function formatTime(t: string): string {
   return `${h12}:${String(m).padStart(2, '0')} ${period} GMT+1`;
 }
 
-function getStatus(session: Session, todayGMT1: string, currentMinsGMT1: number) {
-  if (session.youtube_url) return 'past';
-  if (session.date < todayGMT1) return 'missed';
+function getStatus(session: Session, todayGMT1: string, currentMinsGMT1: number, attended: boolean) {
+  if (session.youtube_url) return attended ? 'attended' : 'past';
+  if (session.date < todayGMT1) return attended ? 'attended' : 'missed';
   if (session.date === todayGMT1) {
     const startMins = parseTimeMins(session.start_time ?? '19:00');
     const endMins = startMins + 120;
-    if (currentMinsGMT1 >= endMins) return 'missed';
+    if (currentMinsGMT1 >= endMins) return attended ? 'attended' : 'missed';
     if (currentMinsGMT1 >= startMins) return 'live';
     return 'today';
   }
@@ -44,6 +44,7 @@ function getStatus(session: Session, todayGMT1: string, currentMinsGMT1: number)
 
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string; border: string }> = {
   past:     { label: 'Recorded',  color: '#7A8FAD', bg: 'rgba(122,143,173,0.1)',  border: 'rgba(122,143,173,0.2)' },
+  attended: { label: 'Attended',  color: '#34D366', bg: 'rgba(52,211,102,0.1)',   border: 'rgba(52,211,102,0.25)' },
   missed:   { label: 'Missed',    color: '#FF5555', bg: 'rgba(255,51,51,0.08)',   border: 'rgba(255,51,51,0.2)' },
   live:     { label: 'In Session',color: '#34D366', bg: 'rgba(52,211,102,0.12)', border: 'rgba(52,211,102,0.3)' },
   today:    { label: 'Today',     color: '#00C8FF', bg: 'rgba(0,200,255,0.08)',   border: 'rgba(0,200,255,0.25)' },
@@ -54,10 +55,12 @@ export default function ScheduleTab({
   sessions,
   todayGMT1,
   currentMinsGMT1,
+  attendedSessionIds = new Set(),
 }: {
   sessions: Session[];
   todayGMT1: string;
   currentMinsGMT1: number;
+  attendedSessionIds?: Set<string>;
 }) {
   const sorted = useMemo(
     () => [...sessions].sort((a, b) => a.date.localeCompare(b.date) || a.session_number - b.session_number),
@@ -90,9 +93,9 @@ export default function ScheduleTab({
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {items.map(session => {
-              const status = getStatus(session, todayGMT1, currentMinsGMT1);
+              const status = getStatus(session, todayGMT1, currentMinsGMT1, attendedSessionIds.has(session.id));
               const ss = STATUS_STYLE[status];
-              const isPast = status === 'past' || status === 'missed';
+              const isPast = status === 'past' || status === 'missed'; // attended stays full opacity
               const dateObj = new Date(session.date + 'T12:00:00Z');
               const dayLabel = dateObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 

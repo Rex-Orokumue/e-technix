@@ -55,7 +55,8 @@ export default function HubPage() {
   const [attendanceCodes, setAttendanceCodes] = useState<Record<string, string>>({});
   const [attendanceMarked, setAttendanceMarked] = useState<Record<string, boolean>>({});
   const [attendanceErrors, setAttendanceErrors] = useState<Record<string, string>>({});
-  const [myAttendanceCount, setMyAttendanceCount] = useState(0);;
+  const [myAttendanceCount, setMyAttendanceCount] = useState(0);
+  const [attendedSessionIds, setAttendedSessionIds] = useState<Set<string>>(new Set());
 
   // Assignment submit
   const [aForm, setAForm] = useState({ assignment_id: '', drive_link: '', note: '' });
@@ -132,7 +133,9 @@ export default function HubPage() {
     setResources(Array.isArray(r) ? r : []);
     setAssignments(Array.isArray(a) ? a : []);
     setSubmissions(Array.isArray(sub) ? sub : []);
-    setMyAttendanceCount((attResult as any).count ?? 0);
+    const attRows: { session_id: string }[] = (attResult as any).data ?? [];
+    setMyAttendanceCount(attRows.length);
+    setAttendedSessionIds(new Set(attRows.map(r => r.session_id)));
     setAnnouncement(ann && ann.message ? ann : null);
     setLoading(false);
   }, [supabase]);
@@ -920,7 +923,7 @@ export default function HubPage() {
                 <div>
                   <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.5rem', marginBottom: '0.4rem' }}>Schedule</h2>
                   <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>All sessions for your track, in chronological order.</p>
-                  <ScheduleTab sessions={sessions} todayGMT1={todayGMT1} currentMinsGMT1={currentMinsGMT1} />
+                  <ScheduleTab sessions={sessions} todayGMT1={todayGMT1} currentMinsGMT1={currentMinsGMT1} attendedSessionIds={attendedSessionIds} />
                 </div>
               )}
 
