@@ -140,7 +140,7 @@ export default function ScheduleTab({
 
                   {/* Action */}
                   <div style={{ flexShrink: 0, marginLeft: 'auto' }}>
-                    {status === 'past' && session.youtube_url && (
+                    {(status === 'past' || status === 'attended') && session.youtube_url && (
                       <a href={session.youtube_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: '#FF0000', color: '#fff', padding: '0.4rem 0.8rem', borderRadius: '6px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.75rem', textDecoration: 'none' }}>▶ Watch</a>
                     )}
                     {(status === 'live' || status === 'today') && session.meet_link && (
