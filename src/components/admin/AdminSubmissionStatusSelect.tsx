@@ -54,7 +54,7 @@ export default function AdminSubmissionStatusSelect({
 
   const save = async (overrideFeedback?: string, overrideStatus?: string) => {
     setSaving(true);
-    await fetch(`/api/submissions/${id}`, {
+    await fetch(`/api/admin/submissions/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -70,7 +70,7 @@ export default function AdminSubmissionStatusSelect({
   const handleStatusChange = (newStatus: string) => {
     setStatus(newStatus);
     setSaving(true);
-    fetch(`/api/submissions/${id}`, {
+    fetch(`/api/admin/submissions/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus, admin_feedback: feedback || null }),

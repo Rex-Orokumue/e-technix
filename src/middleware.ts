@@ -5,7 +5,15 @@ import { verifyAdminToken, COOKIE_NAME } from '@/lib/admin-auth';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ── Admin routes ──────────────────────────────────────────────────
+  // ── Admin API routes — require admin cookie, return 401 (not redirect) ────
+  if (pathname.startsWith('/api/admin')) {
+    const token = request.cookies.get(COOKIE_NAME)?.value;
+    if (!token || !await verifyAdminToken(token))
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.next();
+  }
+
+  // ── Admin page routes ─────────────────────────────────────────────
   if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
     const token = request.cookies.get(COOKIE_NAME)?.value;
     if (!token || !await verifyAdminToken(token)) {
@@ -48,5 +56,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/hub/:path*'],
+  matcher: ['/api/admin/:path*', '/admin/:path*', '/hub/:path*'],
 };

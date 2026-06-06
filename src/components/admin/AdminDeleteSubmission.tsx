@@ -10,7 +10,7 @@ export default function AdminDeleteSubmission({ id }: { id: string }) {
 
   const handleDelete = async () => {
     setDeleting(true);
-    await fetch(`/api/submissions/${id}`, { method: 'DELETE' });
+    await fetch(`/api/admin/submissions/${id}`, { method: 'DELETE' });
     setDeleting(false);
     router.refresh();
   };

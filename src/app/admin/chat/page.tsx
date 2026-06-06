@@ -47,13 +47,13 @@ export default function AdminChatPage() {
   const supabase = createClient();
 
   const loadChannels = () =>
-    fetch('/api/chat/channels').then(r => r.json()).then(d => {
+    fetch('/api/admin/chat/channels').then(r => r.json()).then(d => {
       if (Array.isArray(d)) setChannels(d);
     });
 
   useEffect(() => {
     loadChannels().then(() => {
-      fetch('/api/chat/channels').then(r => r.json()).then(d => {
+      fetch('/api/admin/chat/channels').then(r => r.json()).then(d => {
         if (Array.isArray(d) && d.length) setActive(prev => prev ?? d[0]);
       });
     });
@@ -61,7 +61,7 @@ export default function AdminChatPage() {
 
   const fetchMessages = useCallback(async (channelId: string, before?: string) => {
     if (before) setLoadingMore(true);
-    const url = `/api/chat/messages?channel_id=${channelId}${before ? `&before=${encodeURIComponent(before)}` : ''}`;
+    const url = `/api/admin/chat/messages?channel_id=${channelId}${before ? `&before=${encodeURIComponent(before)}` : ''}`;
     const data = await fetch(url).then(r => r.json());
     const msgs: Message[] = Array.isArray(data) ? data : [];
     if (before) { setMessages(prev => [...msgs, ...prev]); setLoadingMore(false); }
@@ -78,7 +78,7 @@ export default function AdminChatPage() {
   useEffect(() => {
     if (!active) return;
     const id = setInterval(async () => {
-      const data = await fetch(`/api/chat/messages?channel_id=${active.id}`).then(r => r.json());
+      const data = await fetch(`/api/admin/chat/messages?channel_id=${active.id}`).then(r => r.json());
       if (!Array.isArray(data)) return;
       setMessages(prev => {
         const prevMap = new Map(prev.map(m => [m.id, m]));
@@ -111,7 +111,7 @@ export default function AdminChatPage() {
     if (!text || sending || !active) return;
     setSending(true);
     setInput('');
-    const res = await fetch('/api/chat/messages', {
+    const res = await fetch('/api/admin/chat/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -128,24 +128,24 @@ export default function AdminChatPage() {
   };
 
   const deleteMsg = async (id: string) => {
-    await fetch(`/api/chat/messages/${id}`, { method: 'DELETE' });
+    await fetch(`/api/admin/chat/messages/${id}`, { method: 'DELETE' });
     setMessages(prev => prev.filter(m => m.id !== id));
   };
 
   const togglePin = async (msg: Message) => {
-    await fetch(`/api/chat/messages/${msg.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_pinned: !msg.is_pinned }) });
+    await fetch(`/api/admin/chat/messages/${msg.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_pinned: !msg.is_pinned }) });
     setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_pinned: !m.is_pinned } : m));
   };
 
   const renameGroup = async (id: string, name: string) => {
     if (!name.trim()) return;
-    await fetch(`/api/chat/channels/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name.trim() }) });
+    await fetch(`/api/admin/chat/channels/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name.trim() }) });
     setEditingChannel(null);
     loadChannels();
   };
 
   const deleteGroup = async (id: string) => {
-    await fetch(`/api/chat/channels/${id}`, { method: 'DELETE' });
+    await fetch(`/api/admin/chat/channels/${id}`, { method: 'DELETE' });
     setDeletingChannel(null);
     if (active?.id === id) { setActive(null); setMessages([]); }
     loadChannels();
@@ -162,7 +162,7 @@ export default function AdminChatPage() {
   const createGroup = async () => {
     if (!groupName.trim()) return;
     setCreatingGroup(true);
-    const res = await fetch('/api/chat/channels', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: groupName.trim(), member_ids: selectedMembers }) });
+    const res = await fetch('/api/admin/chat/channels', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: groupName.trim(), member_ids: selectedMembers }) });
     setCreatingGroup(false);
     if (res.ok) {
       const newCh = await res.json();
