@@ -177,9 +177,10 @@ export default function HubPage() {
   const nowGMT1 = new Date(now + 60 * 60 * 1000);
   const todayGMT1 = nowGMT1.toISOString().slice(0, 10);
   const currentMinsGMT1 = nowGMT1.getUTCHours() * 60 + nowGMT1.getUTCMinutes();
-  const SESSION_START_MINS = 19 * 60;        // 7:00 PM GMT+1
-  const SESSION_END_MINS = 21 * 60;          // 9:00 PM GMT+1
-  const SESSION_JOIN_MINS = 19 * 60 - 15;   // 6:45 PM GMT+1 — 15 mins before
+  const _startTimeParts = (upcomingSession?.start_time ?? '19:00').split(':').map(Number);
+  const SESSION_START_MINS = _startTimeParts[0] * 60 + (_startTimeParts[1] || 0);
+  const SESSION_END_MINS = SESSION_START_MINS + 120;
+  const SESSION_JOIN_MINS = SESSION_START_MINS - 15;
   const isSessionToday = upcomingSession ? upcomingSession.date === todayGMT1 : false;
   const isCompleted = isSessionToday && currentMinsGMT1 >= SESSION_END_MINS;
   const isInSession = isSessionToday && currentMinsGMT1 >= SESSION_START_MINS && !isCompleted;
@@ -189,8 +190,11 @@ export default function HubPage() {
   // Countdown to session start (or end if in session)
   const sessionCountdown = (() => {
     if (!upcomingSession?.date) return null;
-    const sessionDateGMT1 = new Date(`${upcomingSession.date}T18:00:00Z`); // 7PM GMT+1 = 18:00 UTC
-    const sessionEndGMT1  = new Date(`${upcomingSession.date}T20:00:00Z`); // 9PM GMT+1 = 20:00 UTC
+    const [startH, startM] = (upcomingSession.start_time ?? '19:00').split(':').map(Number);
+    const startUTCH = startH - 1; // GMT+1 → UTC
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const sessionDateGMT1 = new Date(`${upcomingSession.date}T${pad(startUTCH)}:${pad(startM || 0)}:00Z`);
+    const sessionEndGMT1  = new Date(sessionDateGMT1.getTime() + 2 * 60 * 60 * 1000);
     const target = isInSession ? sessionEndGMT1 : isCompleted ? null : sessionDateGMT1;
     if (!target) return null;
     const diffMs = target.getTime() - now;
@@ -437,7 +441,7 @@ export default function HubPage() {
                     </div>
                     <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>{upcomingSession.title}</div>
                     <div style={{ fontSize: '0.83rem', color: 'var(--muted)' }}>
-                      {upcomingSession.date}{upcomingSession.description && ` · ${upcomingSession.description}`}
+                      {upcomingSession.date} · {(() => { const [h,m] = (upcomingSession.start_time ?? '19:00').split(':').map(Number); const p = h>=12?'PM':'AM'; return `${h%12||12}:${String(m).padStart(2,'0')} ${p} GMT+1`; })()}{upcomingSession.description && ` · ${upcomingSession.description}`}
                       {sessionCountdown && (
                         <span style={{ marginLeft: '0.75rem', fontFamily: 'var(--font-head)', fontWeight: 700, color: isInSession ? '#34D366' : 'var(--cyan)', fontSize: '0.8rem' }}>
                           {isInSession ? `Ends in ${sessionCountdown}` : `Starts in ${sessionCountdown}`}

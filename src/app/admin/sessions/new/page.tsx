@@ -12,7 +12,7 @@ export default function NewSessionPage() {
   const [tracks, setTracks] = useState<string[] | null>(null);
   const [form, setForm] = useState({
     phase: '1', week: '1', session_number: '1',
-    title: '', date: '', duration: '', youtube_url: '', meet_link: '', description: '',
+    title: '', date: '', start_time: '19:00', duration: '', youtube_url: '', meet_link: '', description: '',
   });
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
@@ -72,9 +72,13 @@ export default function NewSessionPage() {
             onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
             onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
           <div><label style={labelStyle}>Date *</label>
             <input type="date" style={inputStyle} value={form.date} onChange={e => set('date', e.target.value)} required
+              onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
+              onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
+          <div><label style={labelStyle}>Start Time (GMT+1)</label>
+            <input type="time" style={inputStyle} value={form.start_time} onChange={e => set('start_time', e.target.value)}
               onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
               onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
           <div><label style={labelStyle}>Duration</label>

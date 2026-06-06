@@ -35,6 +35,18 @@ export default async function AdminSessionsPage() {
         </Link>
       </div>
 
+      {/* Floating sticky button */}
+      <Link href="/admin/sessions/new" style={{
+        position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 50,
+        display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+        padding: '0.75rem 1.4rem', background: 'var(--cyan)', color: '#070D1A',
+        borderRadius: '999px', fontFamily: 'var(--font-head)', fontWeight: 700,
+        fontSize: '0.85rem', textDecoration: 'none',
+        boxShadow: '0 4px 24px rgba(0,200,255,0.35)',
+      }}>
+        + Add Session
+      </Link>
+
       {Object.keys(grouped).length === 0 ? (
         <div style={{
           textAlign: 'center', padding: '4rem 2rem',

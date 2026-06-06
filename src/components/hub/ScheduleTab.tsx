@@ -9,6 +9,7 @@ interface Session {
   session_number: number;
   title: string;
   date: string;
+  start_time?: string;
   duration?: string;
   description?: string;
   topics?: string[];
@@ -16,12 +17,26 @@ interface Session {
   meet_link?: string | null;
 }
 
+function parseTimeMins(t: string): number {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + (m || 0);
+}
+
+function formatTime(t: string): string {
+  const [h, m] = t.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${period} GMT+1`;
+}
+
 function getStatus(session: Session, todayGMT1: string, currentMinsGMT1: number) {
   if (session.youtube_url) return 'past';
-  if (session.date < todayGMT1) return 'missed'; // no recording, date passed
+  if (session.date < todayGMT1) return 'missed';
   if (session.date === todayGMT1) {
-    if (currentMinsGMT1 >= 21 * 60) return 'missed';
-    if (currentMinsGMT1 >= 19 * 60) return 'live';
+    const startMins = parseTimeMins(session.start_time ?? '19:00');
+    const endMins = startMins + 120;
+    if (currentMinsGMT1 >= endMins) return 'missed';
+    if (currentMinsGMT1 >= startMins) return 'live';
     return 'today';
   }
   return 'upcoming';
@@ -109,7 +124,7 @@ export default function ScheduleTab({
                       <span style={{ fontSize: '0.65rem', fontWeight: 700, color: ss.color, background: ss.bg, border: `1px solid ${ss.border}`, borderRadius: '999px', padding: '0.15rem 0.55rem', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>{ss.label}</span>
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: session.topics?.length ? '0.4rem' : 0 }}>
-                      Phase {session.phase} · Week {session.week} · Session {session.session_number} · 7:00 PM GMT+1{session.duration ? ` · ${session.duration}` : ''}
+                      Phase {session.phase} · Week {session.week} · Session {session.session_number} · {formatTime(session.start_time ?? '19:00')}{session.duration ? ` · ${session.duration}` : ''}
                     </div>
                     {session.topics && session.topics.length > 0 && (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
