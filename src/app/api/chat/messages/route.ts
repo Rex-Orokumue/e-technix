@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
+import { sendPushToAll, sendPushToTrack, sendPushToStudents } from '@/lib/push';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -79,16 +80,22 @@ export async function POST(req: NextRequest) {
         .insert({ channel_id, content: content.trim(), sender_id: user.id, sender_name: student.full_name, sender_type: 'student', ...replyFields })
         .select().single();
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      // Notify other channel members
+      notifyChannelMembers(adminClient, channel_id, channel, `💬 ${student.full_name}`, content.trim(), user.id).catch(console.error);
       return NextResponse.json(data, { status: 201 });
     }
 
     // No student session — check admin
     if (await isAdminAuthenticated()) {
+      const { data: channel } = await adminClient
+        .from('chat_channels').select('type, track, name').eq('id', channel_id).single();
       const { data, error } = await adminClient
         .from('chat_messages')
         .insert({ channel_id, content: content.trim(), sender_id: null, sender_name: 'Admin', sender_type: 'admin', ...replyFields })
         .select().single();
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      // Admin messages always notify relevant students
+      if (channel) notifyChannelMembers(adminClient, channel_id, channel, '💬 Admin', content.trim(), null).catch(console.error);
       return NextResponse.json(data, { status: 201 });
     }
 
@@ -96,5 +103,28 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error('[POST /api/chat/messages]', err);
     return NextResponse.json({ error: err?.message ?? 'Internal server error' }, { status: 500 });
+  }
+}
+
+async function notifyChannelMembers(
+  adminClient: ReturnType<typeof import('@/lib/supabase/admin').createAdminClient>,
+  channelId: string,
+  channel: { type: string; track?: string | null; name?: string },
+  senderLabel: string,
+  content: string,
+  excludeStudentId: string | null
+) {
+  const preview = content.length > 60 ? content.slice(0, 57) + '…' : content;
+  const payload = { title: senderLabel, body: preview, url: '/hub' };
+
+  if (channel.type === 'general') {
+    await sendPushToAll(payload, excludeStudentId ?? undefined);
+  } else if (channel.type === 'track' && channel.track) {
+    await sendPushToTrack(channel.track, payload, excludeStudentId ?? undefined);
+  } else if (channel.type === 'group') {
+    const { data: members } = await adminClient
+      .from('chat_channel_members').select('student_id').eq('channel_id', channelId);
+    const ids = (members ?? []).map((m: any) => m.student_id);
+    await sendPushToStudents(ids, payload, excludeStudentId ?? undefined);
   }
 }

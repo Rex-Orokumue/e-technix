@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
+import { sendPushToAll, sendPushToTrack } from '@/lib/push';
 
 export async function GET(req: NextRequest) {
   const track = new URL(req.url).searchParams.get('track');
@@ -22,5 +23,19 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient();
   const { data, error } = await supabase.from('resources').insert(body).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (data) {
+    const payload = {
+      title: '📚 New Resource Added',
+      body: data.title,
+      url: '/hub',
+    };
+    // If resource is track-specific, only notify that track; otherwise notify all
+    const tracks: string[] | null = data.tracks;
+    if (tracks && tracks.length === 1) {
+      sendPushToTrack(tracks[0], payload).catch(console.error);
+    } else {
+      sendPushToAll(payload).catch(console.error);
+    }
+  }
   return NextResponse.json(data, { status: 201 });
 }

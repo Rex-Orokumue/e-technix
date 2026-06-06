@@ -10,6 +10,7 @@ export default function NewSessionPage() {
   const [error, setError] = useState('');
   const [topicsInput, setTopicsInput] = useState('');
   const [tracks, setTracks] = useState<string[] | null>(null);
+  const [notify, setNotify] = useState(false);
   const [form, setForm] = useState({
     phase: '1', week: '1', session_number: '1',
     title: '', date: '', start_time: '19:00', duration: '', youtube_url: '', meet_link: '', description: '',
@@ -31,6 +32,7 @@ export default function NewSessionPage() {
         session_number: parseInt(form.session_number),
         topics,
         tracks: tracks && tracks.length > 0 ? tracks : null,
+        notify,
       }),
     });
     setSaving(false);
@@ -117,6 +119,14 @@ export default function NewSessionPage() {
           <label style={labelStyle}>Visible to</label>
           <TrackPicker value={tracks} onChange={setTracks} />
         </div>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', userSelect: 'none' }}>
+          <input type="checkbox" checked={notify} onChange={e => setNotify(e.target.checked)}
+            style={{ width: '16px', height: '16px', accentColor: 'var(--cyan)', cursor: 'pointer' }} />
+          <span style={{ fontSize: '0.82rem', color: notify ? 'var(--text)' : 'var(--muted)' }}>
+            🔔 Notify students about this session
+          </span>
+        </label>
 
         {error && <div style={{ padding: '0.6rem 1rem', background: 'rgba(255,51,51,0.08)', border: '1px solid rgba(255,51,51,0.25)', borderRadius: '7px', fontSize: '0.82rem', color: '#FF5555' }}>{error}</div>}
 

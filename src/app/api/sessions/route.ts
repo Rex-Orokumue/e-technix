@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
+import { sendPushToAll } from '@/lib/push';
 
 export async function GET(req: NextRequest) {
   const track = new URL(req.url).searchParams.get('track');
@@ -18,8 +19,16 @@ export async function POST(req: NextRequest) {
   if (!(await isAdminAuthenticated()))
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await req.json();
+  const { notify, ...sessionData } = body;
   const supabase = createAdminClient();
-  const { data, error } = await supabase.from('sessions').insert(body).select().single();
+  const { data, error } = await supabase.from('sessions').insert(sessionData).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (notify && data) {
+    sendPushToAll({
+      title: '📅 New Session Scheduled',
+      body: data.title,
+      url: '/hub',
+    }).catch(console.error);
+  }
   return NextResponse.json(data, { status: 201 });
 }

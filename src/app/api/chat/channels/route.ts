@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
+import { sendPushToStudents } from '@/lib/push';
 
 export async function GET() {
   const adminClient = createAdminClient();
@@ -74,6 +75,11 @@ export async function POST(req: NextRequest) {
     await adminClient.from('chat_channel_members').insert(
       member_ids.map((sid: string) => ({ channel_id: channel.id, student_id: sid }))
     );
+    sendPushToStudents(member_ids, {
+      title: '👥 You were added to a group',
+      body: `You've been added to "${channel.name}" in chat.`,
+      url: '/hub',
+    }).catch(console.error);
   }
 
   return NextResponse.json(channel, { status: 201 });
