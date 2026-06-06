@@ -80,8 +80,13 @@ export async function POST(req: NextRequest) {
         .insert({ channel_id, content: content.trim(), sender_id: user.id, sender_name: student.full_name, sender_type: 'student', ...replyFields })
         .select().single();
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      // Notify other channel members
-      notifyChannelMembers(adminClient, channel_id, channel, `💬 ${student.full_name}`, content.trim(), user.id).catch(console.error);
+      // Notify other channel members (or admin for DMs)
+      if (channel.type === 'direct') {
+        // DM to admin — push all devices (admin's phone if subscribed)
+        sendPushToAll({ title: `📩 ${student.full_name}`, body: content.trim(), url: '/admin/chat' }, user.id).catch(console.error);
+      } else {
+        notifyChannelMembers(adminClient, channel_id, channel, `💬 ${student.full_name}`, content.trim(), user.id).catch(console.error);
+      }
       return NextResponse.json(data, { status: 201 });
     }
 

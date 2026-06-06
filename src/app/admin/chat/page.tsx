@@ -11,7 +11,7 @@ interface Message {
 }
 interface Student { id: string; full_name: string; track: string; }
 
-const CHANNEL_ICONS: Record<string, string> = { general: '🌐', track: '📌', group: '👥' };
+const CHANNEL_ICONS: Record<string, string> = { general: '🌐', track: '📌', group: '👥', direct: '📩' };
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
@@ -178,10 +178,10 @@ export default function AdminChatPage() {
   const SidebarContent = ({ onSelect }: { onSelect?: () => void }) => (
     <>
       <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem' }}>
-        {(['general', 'track', 'group'] as const).map(type => {
+        {(['general', 'track', 'group', 'direct'] as const).map(type => {
           const group = channels.filter(c => c.type === type);
           if (!group.length) return null;
-          const labels: Record<string, string> = { general: 'General', track: 'Tracks', group: 'Groups' };
+          const labels: Record<string, string> = { general: 'General', track: 'Tracks', group: 'Groups', direct: 'Direct Messages' };
           return (
             <div key={type} style={{ marginBottom: '0.75rem' }}>
               <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '0.2rem 0.5rem', marginBottom: '0.2rem' }}>{labels[type]}</div>
@@ -339,7 +339,10 @@ export default function AdminChatPage() {
                 <>
                   <span>{CHANNEL_ICONS[active.type]}</span>
                   <span style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.9rem' }}>{active.name}</span>
-                  <span style={{ fontSize: '0.65rem', color: '#F59E0B', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: '3px', padding: '0.05rem 0.4rem', textTransform: 'uppercase', fontWeight: 700 }}>Admin</span>
+                  {active.type === 'direct'
+                    ? <span style={{ fontSize: '0.65rem', color: '#A78BFA', background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.25)', borderRadius: '3px', padding: '0.05rem 0.4rem', textTransform: 'uppercase', fontWeight: 700 }}>DM</span>
+                    : <span style={{ fontSize: '0.65rem', color: '#F59E0B', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: '3px', padding: '0.05rem 0.4rem', textTransform: 'uppercase', fontWeight: 700 }}>Admin</span>
+                  }
                 </>
               ) : <span style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>Select a channel</span>}
             </div>

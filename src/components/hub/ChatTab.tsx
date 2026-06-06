@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 interface Channel {
   id: string;
   name: string;
-  type: 'general' | 'track' | 'group';
+  type: 'general' | 'track' | 'group' | 'direct';
   track?: string | null;
 }
 
@@ -24,7 +24,7 @@ interface Message {
   reply_to_sender_name?: string | null;
 }
 
-const CHANNEL_ICONS: Record<string, string> = { general: '🌐', track: '📌', group: '👥' };
+const CHANNEL_ICONS: Record<string, string> = { general: '🌐', track: '📌', group: '👥', direct: '📩' };
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -48,6 +48,7 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
   const [replyingTo, setReplyingTo] = useState<{ id: string; content: string; sender_name: string } | null>(null);
   const [pinnedIndex, setPinnedIndex] = useState(0);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [openingDm, setOpeningDm] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastTimestampRef = useRef<string | null>(null);
@@ -172,6 +173,22 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   };
 
+  const openDm = async (closeSidebar?: () => void) => {
+    setOpeningDm(true);
+    try {
+      const res = await fetch('/api/chat/dm', { method: 'POST' });
+      const ch = await res.json();
+      if (res.ok && ch.id) {
+        // Add to channels list if not already there
+        setChannels(prev => prev.some(c => c.id === ch.id) ? prev : [...prev, ch]);
+        setActiveChannel(ch);
+        closeSidebar?.();
+      }
+    } finally {
+      setOpeningDm(false);
+    }
+  };
+
   const pinnedMessages = messages.filter(m => m.is_pinned);
 
   const inputStyle: React.CSSProperties = {
@@ -183,10 +200,10 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
 
   const ChannelList = ({ onSelect }: { onSelect?: () => void }) => (
     <>
-      {(['general', 'track', 'group'] as const).map(type => {
+      {(['general', 'track', 'group', 'direct'] as const).map(type => {
         const group = channels.filter(c => c.type === type);
         if (!group.length) return null;
-        const labels: Record<string, string> = { general: 'General', track: 'My Track', group: 'Groups' };
+        const labels: Record<string, string> = { general: 'General', track: 'My Track', group: 'Groups', direct: 'Admin' };
         return (
           <div key={type} style={{ marginBottom: '0.75rem' }}>
             <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '0.2rem 0.5rem', marginBottom: '0.2rem' }}>{labels[type]}</div>
@@ -194,13 +211,13 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
               <button key={ch.id} onClick={() => { setActiveChannel(ch); onSelect?.(); }} style={{
                 display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%',
                 padding: '0.6rem 0.75rem', borderRadius: '7px', border: 'none', cursor: 'pointer',
-                background: activeChannel?.id === ch.id ? 'rgba(0,200,255,0.1)' : 'transparent',
-                color: activeChannel?.id === ch.id ? 'var(--cyan)' : 'var(--text)',
+                background: activeChannel?.id === ch.id ? 'rgba(167,139,250,0.12)' : 'transparent',
+                color: activeChannel?.id === ch.id ? '#A78BFA' : 'var(--text)',
                 fontFamily: 'var(--font-body)', fontSize: '0.85rem', textAlign: 'left',
                 transition: 'background 0.15s',
               }}>
                 <span style={{ flexShrink: 0 }}>{CHANNEL_ICONS[ch.type]}</span>
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch.name}</span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Admin</span>
               </button>
             ))}
           </div>
@@ -208,6 +225,19 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
       })}
       {channels.length === 0 && (
         <div style={{ padding: '1rem 0.5rem', fontSize: '0.78rem', color: 'var(--muted)' }}>No channels available.</div>
+      )}
+      {/* Message Admin button — only shown if no DM channel yet */}
+      {!channels.some(c => c.type === 'direct') && (
+        <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border)' }}>
+          <button
+            onClick={() => openDm(onSelect)}
+            disabled={openingDm}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.6rem 0.75rem', borderRadius: '7px', border: '1px dashed rgba(167,139,250,0.35)', cursor: openingDm ? 'wait' : 'pointer', background: 'transparent', color: '#A78BFA', fontFamily: 'var(--font-body)', fontSize: '0.82rem', textAlign: 'left', transition: 'background 0.15s' }}
+          >
+            <span>📩</span>
+            <span>{openingDm ? 'Opening…' : 'Message Admin'}</span>
+          </button>
+        </div>
       )}
     </>
   );

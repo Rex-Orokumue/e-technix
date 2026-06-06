@@ -37,7 +37,7 @@ export async function GET() {
       const { data: groups } = await adminClient
         .from('chat_channels')
         .select('*, chat_channel_members(student_id)')
-        .in('id', groupIds).eq('type', 'group').order('name');
+        .in('id', groupIds).in('type', ['group', 'direct']).order('name');
       groupChannels = groups ?? [];
     }
 
