@@ -38,7 +38,12 @@ export async function GET() {
         .from('chat_channels')
         .select('*, chat_channel_members(student_id)')
         .in('id', groupIds).in('type', ['group', 'direct']).order('name');
-      groupChannels = groups ?? [];
+      // Normalise DM channels (stored as group with __dm__ prefix) to type 'direct'
+      groupChannels = (groups ?? []).map((c: any) =>
+        (c.type === 'direct' || c.name?.startsWith('__dm__'))
+          ? { ...c, type: 'direct', name: c.name.replace('__dm__', '') }
+          : c
+      );
     }
 
     return NextResponse.json([...filtered, ...groupChannels]);
@@ -53,7 +58,13 @@ export async function GET() {
     .select('*, chat_channel_members(student_id)')
     .order('type').order('name');
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data ?? []);
+  // Normalise DM channels for admin too
+  const normalised = (data ?? []).map((c: any) =>
+    (c.type === 'direct' || c.name?.startsWith('__dm__'))
+      ? { ...c, type: 'direct', name: c.name.replace('__dm__', '') }
+      : c
+  );
+  return NextResponse.json(normalised);
 }
 
 // Group creation — admin only

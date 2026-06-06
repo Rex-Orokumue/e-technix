@@ -49,6 +49,7 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
   const [pinnedIndex, setPinnedIndex] = useState(0);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [openingDm, setOpeningDm] = useState(false);
+  const [dmError, setDmError] = useState('');
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastTimestampRef = useRef<string | null>(null);
@@ -175,15 +176,19 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
 
   const openDm = async (closeSidebar?: () => void) => {
     setOpeningDm(true);
+    setDmError('');
     try {
       const res = await fetch('/api/chat/dm', { method: 'POST' });
       const ch = await res.json();
       if (res.ok && ch.id) {
-        // Add to channels list if not already there
         setChannels(prev => prev.some(c => c.id === ch.id) ? prev : [...prev, ch]);
         setActiveChannel(ch);
         closeSidebar?.();
+      } else {
+        setDmError(ch.error ?? `Error ${res.status}`);
       }
+    } catch (e: any) {
+      setDmError(e?.message ?? 'Network error');
     } finally {
       setOpeningDm(false);
     }
@@ -243,6 +248,11 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
             <span>📩</span>
             <span>{openingDm ? 'Opening…' : 'Message Admin'}</span>
           </button>
+          {dmError && (
+            <div style={{ fontSize: '0.72rem', color: '#FF5555', marginTop: '0.3rem', padding: '0 0.25rem' }}>
+              {dmError}
+            </div>
+          )}
         </div>
       )}
     </>
