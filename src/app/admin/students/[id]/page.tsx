@@ -4,6 +4,24 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { TRACKS } from '@/lib/tracks';
 
+function generatePassword(length = 12) {
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lower = 'abcdefghjkmnpqrstuvwxyz';
+  const digits = '23456789';
+  const symbols = '@#!$%';
+  const all = upper + lower + digits + symbols;
+  const mandatory = [
+    upper[Math.floor(Math.random() * upper.length)],
+    lower[Math.floor(Math.random() * lower.length)],
+    digits[Math.floor(Math.random() * digits.length)],
+    symbols[Math.floor(Math.random() * symbols.length)],
+  ];
+  const rest = Array.from({ length: length - mandatory.length }, () =>
+    all[Math.floor(Math.random() * all.length)]
+  );
+  return [...mandatory, ...rest].sort(() => Math.random() - 0.5).join('');
+}
+
 interface Student {
   id: string;
   full_name: string;
@@ -25,7 +43,8 @@ export default function StudentDetailPage() {
   const [student, setStudent] = useState<Student | null>(null);
   const [stats, setStats] = useState<{ attendance: number; sessions: number; submitted: number; total: number } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState(() => generatePassword());
+  const [resetCopied, setResetCopied] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [resetMsg, setResetMsg] = useState('');
   const [resetError, setResetError] = useState('');
@@ -89,8 +108,21 @@ export default function StudentDetailPage() {
       body: JSON.stringify({ password }),
     });
     setResetting(false);
-    if (res.ok) { setResetMsg('Password updated successfully.'); setPassword(''); }
-    else { const d = await res.json(); setResetError(d.error || 'Failed to reset password'); }
+    if (res.ok) {
+      setResetMsg(`Password updated. New password: ${password}`);
+      setPassword(generatePassword());
+      setResetCopied(false);
+    } else {
+      const d = await res.json();
+      setResetError(d.error || 'Failed to reset password');
+    }
+  };
+
+  const copyResetPassword = () => {
+    navigator.clipboard.writeText(password).then(() => {
+      setResetCopied(true);
+      setTimeout(() => setResetCopied(false), 2000);
+    });
   };
 
   const inputStyle = { width: '100%', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '0.9rem', outline: 'none' };
@@ -212,18 +244,25 @@ export default function StudentDetailPage() {
         <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '1rem', marginBottom: '1rem' }}>Reset Password</h2>
         <form onSubmit={handleReset} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
-            <label style={labelStyle}>New Password</label>
-            <input
-              type="password"
-              style={inputStyle}
-              placeholder="Min. 6 characters"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              minLength={6}
-              required
-              onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-              onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-            />
+            <label style={labelStyle}>New Password (auto-generated)</label>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <input
+                style={{ ...inputStyle, flex: 1, fontFamily: 'monospace', fontSize: '0.9rem', letterSpacing: '0.05em' }}
+                value={password}
+                onChange={e => { setPassword(e.target.value); setResetCopied(false); }}
+                minLength={6}
+                required
+                onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
+                onBlur={e => (e.target.style.borderColor = 'var(--border)')}
+              />
+              <button type="button" onClick={copyResetPassword} style={{ padding: '0.75rem 0.9rem', background: resetCopied ? 'rgba(52,211,102,0.15)' : 'rgba(255,255,255,0.05)', border: `1px solid ${resetCopied ? 'rgba(52,211,102,0.4)' : 'var(--border)'}`, borderRadius: '8px', color: resetCopied ? '#34D366' : 'var(--muted)', fontSize: '0.8rem', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                {resetCopied ? '✓ Copied' : '📋 Copy'}
+              </button>
+              <button type="button" onClick={() => { setPassword(generatePassword()); setResetCopied(false); }} title="Generate new password" style={{ padding: '0.75rem 0.9rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--muted)', fontSize: '0.85rem', cursor: 'pointer', flexShrink: 0 }}>
+                🔄
+              </button>
+            </div>
+            <p style={{ fontSize: '0.72rem', color: 'var(--muted)', margin: '0.4rem 0 0' }}>Copy before resetting — share the new password with the student.</p>
           </div>
           {resetMsg && <div style={{ padding: '0.5rem 1rem', background: 'rgba(52,211,102,0.08)', border: '1px solid rgba(52,211,102,0.25)', borderRadius: '7px', fontSize: '0.82rem', color: '#34D366' }}>{resetMsg}</div>}
           {resetError && <div style={{ padding: '0.5rem 1rem', background: 'rgba(255,51,51,0.08)', border: '1px solid rgba(255,51,51,0.25)', borderRadius: '7px', fontSize: '0.82rem', color: '#FF5555' }}>{resetError}</div>}

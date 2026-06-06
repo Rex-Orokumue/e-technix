@@ -5,17 +5,22 @@ import { useState, useEffect, useCallback } from 'react';
 export function usePushNotifications(studentId: string | null) {
   const [needsPrompt, setNeedsPrompt] = useState(false);
 
+  const [permission, setPermission] = useState<NotificationPermission>('default');
+
   useEffect(() => {
     if (!studentId || typeof window === 'undefined') return;
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    const perm = Notification.permission;
+    setPermission(perm);
     // Show banner whenever permission hasn't been decided yet
-    if (Notification.permission === 'default') {
+    if (perm === 'default') {
       setNeedsPrompt(true);
     }
   }, [studentId]);
 
   const subscribe = useCallback(async () => {
     setNeedsPrompt(false);
+    setPermission(Notification.permission);
     try {
       const reg = await navigator.serviceWorker.register('/sw.js');
       await navigator.serviceWorker.ready;
@@ -34,6 +39,7 @@ export function usePushNotifications(studentId: string | null) {
       }
 
       const permission = await Notification.requestPermission();
+      setPermission(permission);
       if (permission !== 'granted') return;
 
       const sub = await reg.pushManager.subscribe({
@@ -51,7 +57,7 @@ export function usePushNotifications(studentId: string | null) {
     }
   }, []);
 
-  return { needsPrompt, subscribe };
+  return { needsPrompt, subscribe, permission };
 }
 
 function urlBase64ToUint8Array(base64String: string) {

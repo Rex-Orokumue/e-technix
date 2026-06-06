@@ -6,7 +6,8 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // ── Admin API routes — require admin cookie, return 401 (not redirect) ────
-  if (pathname.startsWith('/api/admin')) {
+  // Exclude login/logout — those endpoints don't need a cookie to function
+  if (pathname.startsWith('/api/admin') && pathname !== '/api/admin/login' && pathname !== '/api/admin/logout') {
     const token = request.cookies.get(COOKIE_NAME)?.value;
     if (!token || !await verifyAdminToken(token))
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
