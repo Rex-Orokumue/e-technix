@@ -552,7 +552,7 @@ export function UrgencyBar() {
         display: 'inline-flex', alignItems: 'center', gap: '4px',
         fontSize: '0.85rem', color: 'var(--text)', fontWeight: 500,
       }}>
-        🔥 <strong style={{ color: '#34D366' }}>3 tracks now FREE</strong> — Web Dev, Mobile Apps & Data Analytics
+        🔥 <strong style={{ color: 'var(--cyan)' }}>All tracks at 50% off</strong> — limited time offer
       </span>
       <span style={{
         width: '1px', height: '16px',
@@ -562,11 +562,11 @@ export function UrgencyBar() {
       <CountdownTimer variant="banner" />
       <a href="/register" style={{
         display: 'inline-flex', alignItems: 'center', gap: '4px',
-        color: '#34D366', fontWeight: 700, fontSize: '0.82rem',
+        color: 'var(--cyan)', fontWeight: 700, fontSize: '0.82rem',
         textDecoration: 'none', fontFamily: 'var(--font-head)',
-        borderBottom: '1px solid #34D366',
+        borderBottom: '1px solid var(--cyan-border)',
       }}>
-        Register for free →
+        Register at 50% off →
       </a>
     </div>
   );
@@ -736,7 +736,7 @@ export function GuaranteeStrip() {
         gap: '3rem', flexWrap: 'wrap', textAlign: 'center',
       }}>
         {[
-          { icon: '🔥', text: '3 Tracks Now FREE' },
+          { icon: '🔥', text: '50% Off — Limited Time' },
           { icon: '💬', text: 'Easy WhatsApp Registration' },
           { icon: '🇬🇧', text: 'UK-Nigeria Backed Programme' },
           { icon: '🎓', text: 'Certificate on Completion' },

@@ -94,7 +94,7 @@ export default function Hero() {
             animation: 'promoBadgePulse 2.5s ease-in-out infinite',
           }}
         >
-          🔥 3 Tracks Now FREE — Web Dev, Mobile & Data Analytics
+          🔥 All Tracks at 50% Off — Limited Time Only
         </motion.div>
 
         <style>{`

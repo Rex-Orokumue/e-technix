@@ -406,7 +406,7 @@ export default function HubPage() {
 
             {/* Student progress bars */}
             {student && !loading && (() => {
-              const completedSessions = sessions.filter(s => s.youtube_url);
+              const completedSessions = sessions.filter(s => s.date <= todayGMT1);
               const totalSessions = completedSessions.length;
               const attPct = totalSessions > 0 ? Math.round((myAttendanceCount / totalSessions) * 100) : 0;
               const totalAssignments = assignments.length;
