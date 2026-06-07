@@ -14,7 +14,14 @@ export async function GET(req: NextRequest) {
 
   if (studentId) {
     // Full grade detail for one student (for grading panel)
-    const [attRows, sessRows, subRows, partRows, capRow, allSessions] = await Promise.all([
+    // First get student's track so we can fetch their assignments
+    const { data: studentRow } = await supabase.from('students').select('track').eq('id', studentId).single();
+    const track = studentRow?.track ?? null;
+
+    let assignmentQuery = supabase.from('assignments').select('id, title, assignment_code, phase, week').order('phase').order('week');
+    if (track) assignmentQuery = (assignmentQuery as any).or(`tracks.is.null,tracks.cs.{"${track}"}`);
+
+    const [attRows, sessRows, subRows, partRows, capRow, allSessions, assignRows] = await Promise.all([
       supabase.from('attendance').select('session_id').eq('student_id', studentId),
       supabase.from('sessions').select('id, phase').lte('date', todayStr).eq('phase', 1),
       supabase
@@ -24,6 +31,7 @@ export async function GET(req: NextRequest) {
       supabase.from('participation_scores').select('*').eq('student_id', studentId),
       supabase.from('capstone_grades').select('*').eq('student_id', studentId).eq('phase', 1).maybeSingle(),
       supabase.from('sessions').select('id, title, date, session_number, phase, week').lte('date', todayStr).eq('phase', 1).order('date'),
+      assignmentQuery,
     ]);
 
     const phase1Sessions     = (sessRows.data ?? []).filter(s => s.phase === 1);
@@ -55,6 +63,7 @@ export async function GET(req: NextRequest) {
       submissions:           subRows.data ?? [],
       participation_scores:  partRows.data ?? [],
       capstone:              capRow.data ?? null,
+      assignments:           assignRows.data ?? [],
     });
   }
 

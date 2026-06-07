@@ -151,6 +151,23 @@ export default function AdminGradesPage() {
     loadDetail(selectedId);
   };
 
+  const markNotSubmitted = async (assignmentId: string) => {
+    const res = await fetch('/api/admin/grades/not-submitted', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ student_id: selectedId, assignment_id: assignmentId }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      showToast(`❌ ${err.error ?? 'Failed'}`);
+      return;
+    }
+    const d = await res.json();
+    showToast(d.removed ? 'N/A removed' : 'Marked as not submitted (score: 0)');
+    loadStudents();
+    loadDetail(selectedId);
+  };
+
   const saveCapstone = async () => {
     setSavingCapstone(true);
     await fetch('/api/admin/grades/capstone', {
@@ -169,6 +186,9 @@ export default function AdminGradesPage() {
   const participationMap = Object.fromEntries((detail?.participation_scores ?? []).map((p: any) => [p.session_id, p.score]));
   const sessionsWithPart = detail?.sessions ?? [];
   const allSubmissions   = (detail?.submissions ?? []);
+  const allAssignments   = (detail?.assignments ?? []);
+  // Map assignment_id → submission (for fast lookup)
+  const subByAssignment  = Object.fromEntries(allSubmissions.map((s: any) => [s.assignment_id, s]));
   const capstonePreview  = (capstoneForm.content_score && capstoneForm.presentation_score && capstoneForm.delivery_score && capstoneForm.qa_score)
     ? Math.round(calcCapstoneScore(capstoneForm as any))
     : null;
@@ -351,26 +371,64 @@ export default function AdminGradesPage() {
                   {sectionTitle('📝', 'Assignments', (
                     <span style={{ fontSize: '0.7rem', color: 'var(--muted)' }}>Score 0–100 + contribution</span>
                   ))}
-                  {allSubmissions.length === 0 ? (
-                    <p style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>No submissions yet.</p>
+                  {allAssignments.length === 0 ? (
+                    <p style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>No assignments for this student's track.</p>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {allSubmissions.map((sub: any) => {
-                        const edit   = assignEdits[sub.id] ?? { score: '', contribution: 'full' };
-                        const saving = savingAssign[sub.id];
-                        const graded = sub.score !== null;
-                        const penaltyActive = sub.penalty_status === 'auto' || sub.penalty_status === 'penalty_enforced';
-                        const penaltyLifted = sub.penalty_status === 'lifted';
-                        const penF = penaltyForm[sub.id];
+                      {allAssignments.map((assignment: any) => {
+                        const sub    = subByAssignment[assignment.id] ?? null;
+                        const notSubmitted = sub?.status === 'not_submitted';
+                        const edit   = sub ? (assignEdits[sub.id] ?? { score: '', contribution: 'full' }) : null;
+                        const saving = sub ? savingAssign[sub.id] : false;
+                        const graded = sub && sub.score !== null;
+                        const penaltyActive = sub && (sub.penalty_status === 'auto' || sub.penalty_status === 'enforced');
+                        const penaltyLifted = sub?.penalty_status === 'lifted';
+                        const penF = sub ? penaltyForm[sub.id] : null;
+
+                        // Not submitted yet — show N/A button
+                        if (!sub) return (
+                          <div key={assignment.id} style={{ padding: '0.85rem', background: 'rgba(255,255,255,0.015)', border: '1px solid var(--border)', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', opacity: 0.7 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--muted)', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: '4px', padding: '0.1rem 0.4rem' }}>{assignment.assignment_code}</span>
+                              <span style={{ fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.82rem', color: 'var(--muted)' }}>{assignment.title}</span>
+                              <span style={{ fontSize: '0.62rem', color: 'var(--muted)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '4px', padding: '0.1rem 0.4rem' }}>Not submitted</span>
+                            </div>
+                            <button
+                              onClick={() => markNotSubmitted(assignment.id)}
+                              style={{ padding: '0.3rem 0.8rem', background: 'rgba(122,143,173,0.12)', border: '1px solid rgba(122,143,173,0.3)', color: '#7A8FAD', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.75rem', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }}
+                            >
+                              N/A (score: 0)
+                            </button>
+                          </div>
+                        );
+
+                        // Marked as not submitted — show badge + undo
+                        if (notSubmitted) return (
+                          <div key={assignment.id} style={{ padding: '0.85rem', background: 'rgba(122,143,173,0.05)', border: '1px solid rgba(122,143,173,0.2)', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--muted)', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: '4px', padding: '0.1rem 0.4rem' }}>{assignment.assignment_code}</span>
+                              <span style={{ fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.82rem' }}>{assignment.title}</span>
+                              <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#7A8FAD', background: 'rgba(122,143,173,0.1)', border: '1px solid rgba(122,143,173,0.25)', borderRadius: '4px', padding: '0.1rem 0.4rem', textTransform: 'uppercase' }}>N/A · Score: 0</span>
+                            </div>
+                            <button
+                              onClick={() => markNotSubmitted(assignment.id)}
+                              style={{ padding: '0.3rem 0.7rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.72rem', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }}
+                            >
+                              Undo
+                            </button>
+                          </div>
+                        );
+
+                        // Real submission — show full grading UI
 
                         return (
                           <div key={sub.id} style={{ padding: '0.85rem', background: 'rgba(255,255,255,0.025)', border: `1px solid ${sub.is_late && !penaltyLifted ? 'rgba(255,107,43,0.25)' : graded ? 'rgba(52,211,102,0.2)' : 'var(--border)'}`, borderRadius: '9px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                                 <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--cyan)', background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', borderRadius: '4px', padding: '0.1rem 0.4rem' }}>
-                                  {sub.assignments?.assignment_code}
+                                  {assignment.assignment_code}
                                 </span>
-                                <span style={{ fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.82rem' }}>{sub.assignments?.title}</span>
+                                <span style={{ fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.82rem' }}>{assignment.title}</span>
                                 {sub.is_late && (
                                   <span style={{ fontSize: '0.62rem', fontWeight: 700, color: penaltyLifted ? '#34D366' : '#FF6B2B', background: penaltyLifted ? 'rgba(52,211,102,0.1)' : 'rgba(255,107,43,0.12)', border: `1px solid ${penaltyLifted ? 'rgba(52,211,102,0.25)' : 'rgba(255,107,43,0.3)'}`, borderRadius: '4px', padding: '0.1rem 0.4rem', textTransform: 'uppercase' }}>
                                     {penaltyLifted ? '✓ Lifted' : sub.penalty_status === 'enforced' ? '⚠ Enforced' : '⚠ Late −20%'}
@@ -391,6 +449,7 @@ export default function AdminGradesPage() {
                             )}
 
                             {/* Grade inputs */}
+                            {edit && (
                             <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: sub.is_late ? '0.6rem' : 0 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                                 <label style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Score</label>
@@ -413,7 +472,7 @@ export default function AdminGradesPage() {
                               </select>
                               <button
                                 onClick={() => saveAssignment(sub.id)}
-                                disabled={saving || edit.score === ''}
+                                disabled={!!saving || edit.score === ''}
                                 style={{ padding: '0.35rem 0.85rem', background: saving || edit.score === '' ? 'rgba(0,200,255,0.1)' : 'var(--cyan)', color: saving || edit.score === '' ? 'var(--muted)' : '#070D1A', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.78rem', border: 'none', borderRadius: '6px', cursor: saving || edit.score === '' ? 'not-allowed' : 'pointer' }}
                               >
                                 {saving ? 'Saving…' : graded ? 'Update' : 'Save'}
@@ -422,6 +481,7 @@ export default function AdminGradesPage() {
                                 <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#34D366' }}>✓ Graded ({sub.score})</span>
                               )}
                             </div>
+                            )}
 
                             {/* Penalty override (only for late submissions) */}
                             {sub.is_late && (
