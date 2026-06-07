@@ -788,16 +788,18 @@ export default function HubPage() {
                                           {(weekItems as any[]).map((a: any) => {
                                             const sub = submissions.find(s => s.assignment_id === a.id && s.student_id === student?.id);
                                             const statusMeta = sub ? STATUS_META[sub.status] : null;
+                                            const isClosed = a.status === 'closed';
                                             return (
-                                              <div key={a.id} style={{ background: 'var(--surface)', border: `1px solid ${a.status === 'active' ? 'var(--cyan-border)' : 'var(--border)'}`, borderRadius: '12px', padding: '1.25rem' }}>
+                                              <div key={a.id} style={{ background: 'var(--surface)', border: `1px solid ${isClosed ? 'rgba(255,255,255,0.08)' : 'var(--cyan-border)'}`, borderRadius: '12px', padding: '1.25rem', opacity: isClosed ? 0.85 : 1 }}>
                                                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
                                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                                    <span style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '0.7rem', color: 'var(--cyan)', background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', borderRadius: '4px', padding: '0.15rem 0.5rem' }}>{a.assignment_code}</span>
+                                                    <span style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '0.7rem', color: isClosed ? 'var(--muted)' : 'var(--cyan)', background: isClosed ? 'rgba(255,255,255,0.06)' : 'var(--cyan-dim)', border: `1px solid ${isClosed ? 'var(--border)' : 'var(--cyan-border)'}`, borderRadius: '4px', padding: '0.15rem 0.5rem' }}>{a.assignment_code}</span>
                                                     <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>{a.title}</h3>
                                                   </div>
                                                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                                    {isClosed && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#7A8FAD', background: 'rgba(122,143,173,0.1)', border: '1px solid rgba(122,143,173,0.25)', borderRadius: '999px', padding: '0.2rem 0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>🔒 Closed</span>}
                                                     {statusMeta && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: statusMeta.color, background: statusMeta.bg, border: `1px solid ${statusMeta.color}40`, borderRadius: '999px', padding: '0.2rem 0.7rem', textTransform: 'uppercase' }}>{statusMeta.label}</span>}
-                                                    {a.due_date && (() => {
+                                                    {!isClosed && a.due_date && (() => {
                                                       const dl = deadlineLabel(a.due_date);
                                                       return dl
                                                         ? <span style={{ fontSize: '0.7rem', fontWeight: 700, color: dl.color, background: dl.bg, border: `1px solid ${dl.color}40`, borderRadius: '999px', padding: '0.2rem 0.6rem' }}>{dl.text}</span>

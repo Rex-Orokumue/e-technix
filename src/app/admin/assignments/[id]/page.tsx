@@ -12,7 +12,7 @@ export default function EditAssignmentPage() {
   const [error, setError] = useState('');
   const [guidelinesInput, setGuidelinesInput] = useState('');
   const [tracks, setTracks] = useState<string[] | null>(null);
-  const [form, setForm] = useState({ phase: '1', week: '1', assignment_code: '', title: '', description: '', due_date: '' });
+  const [form, setForm] = useState({ phase: '1', week: '1', assignment_code: '', title: '', description: '', due_date: '', status: 'active' });
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
   useEffect(() => {
@@ -28,6 +28,7 @@ export default function EditAssignmentPage() {
           title: a.title ?? '',
           description: a.description ?? '',
           due_date: a.due_date ?? '',
+          status: a.status ?? 'active',
         });
         setGuidelinesInput(Array.isArray(a.guidelines) ? a.guidelines.join('\n') : '');
         setTracks(a.tracks ?? null);
@@ -93,6 +94,25 @@ export default function EditAssignmentPage() {
         <div>
           <label style={labelStyle}>Visible to</label>
           <TrackPicker value={tracks} onChange={setTracks} />
+        </div>
+
+        {/* Open / Closed toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: form.status === 'closed' ? 'rgba(122,143,173,0.08)' : 'rgba(52,211,102,0.06)', border: `1px solid ${form.status === 'closed' ? 'rgba(122,143,173,0.25)' : 'rgba(52,211,102,0.2)'}`, borderRadius: '10px', gap: '1rem', flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.85rem', color: form.status === 'closed' ? '#7A8FAD' : '#34D366', marginBottom: '2px' }}>
+              {form.status === 'closed' ? '🔒 Closed — no new submissions' : '✅ Open — accepting submissions'}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>
+              {form.status === 'closed' ? 'Students cannot submit or edit this assignment.' : 'Students can submit until the due date (or end of that day).'}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => set('status', form.status === 'closed' ? 'active' : 'closed')}
+            style={{ padding: '0.5rem 1.1rem', background: form.status === 'closed' ? 'rgba(52,211,102,0.12)' : 'rgba(122,143,173,0.12)', border: `1px solid ${form.status === 'closed' ? 'rgba(52,211,102,0.3)' : 'rgba(122,143,173,0.3)'}`, color: form.status === 'closed' ? '#34D366' : '#7A8FAD', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.8rem', borderRadius: '7px', cursor: 'pointer', flexShrink: 0 }}
+          >
+            {form.status === 'closed' ? 'Reopen' : 'Close Assignment'}
+          </button>
         </div>
 
         {error && <div style={{ padding: '0.6rem 1rem', background: 'rgba(255,51,51,0.08)', border: '1px solid rgba(255,51,51,0.25)', borderRadius: '7px', fontSize: '0.82rem', color: '#FF5555' }}>{error}</div>}

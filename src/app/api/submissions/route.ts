@@ -43,19 +43,25 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
 
-  // Auto-detect late submission
+  // Guard against closed assignments + auto-detect late submission
   const adminSupabase = createAdminClient();
   let isLate = false;
   let penaltyStatus = 'none';
   if (body.assignment_id) {
     const { data: assignment } = await adminSupabase
       .from('assignments')
-      .select('due_date')
+      .select('due_date, status')
       .eq('id', body.assignment_id)
       .single();
+
+    if (assignment?.status === 'closed')
+      return NextResponse.json({ error: 'This assignment is closed and no longer accepting submissions.' }, { status: 403 });
+
     if (assignment?.due_date) {
       const nowGMT1 = new Date(Date.now() + 60 * 60 * 1000);
-      isLate = nowGMT1 > new Date(assignment.due_date);
+      // Late = submitted after 23:59:59 on the due date in GMT+1
+      const endOfDueDay = new Date(`${assignment.due_date}T23:59:59+01:00`);
+      isLate = nowGMT1 > endOfDueDay;
       if (isLate) penaltyStatus = 'auto';
     }
   }
