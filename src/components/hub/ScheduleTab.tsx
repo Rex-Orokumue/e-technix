@@ -30,7 +30,7 @@ function formatTime(t: string): string {
 }
 
 function getStatus(session: Session, todayGMT1: string, currentMinsGMT1: number, attended: boolean) {
-  if (session.youtube_url) return attended ? 'attended' : 'past';
+  if (session.youtube_url) return attended ? 'attended' : 'missed';
   if (session.date < todayGMT1) return attended ? 'attended' : 'missed';
   if (session.date === todayGMT1) {
     const startMins = parseTimeMins(session.start_time ?? '19:00');
