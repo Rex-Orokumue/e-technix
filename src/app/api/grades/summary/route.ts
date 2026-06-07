@@ -27,13 +27,14 @@ export async function GET() {
   const phase1Sessions     = (sessRows.data ?? []).filter(s => s.phase === 1);
   const attendedSessionIds = new Set((attRows.data ?? []).map(a => a.session_id));
   const gradedSubs         = (subRows.data ?? []).map((s: any) => ({
-    id:            s.id,
-    assignment_id: s.assignment_id,
-    score:         s.score,
-    contribution:  s.contribution ?? 'full',
-    title:         s.assignments?.title,
-    code:          s.assignments?.assignment_code,
-    phase:         s.assignments?.phase ?? 1,
+    id:             s.id,
+    assignment_id:  s.assignment_id,
+    score:          s.score,
+    contribution:   s.contribution ?? 'full',
+    penalty_status: s.penalty_status ?? 'none',
+    title:          s.assignments?.title,
+    code:           s.assignments?.assignment_code,
+    phase:          s.assignments?.phase ?? 1,
   }));
 
   const summary = calcGradeSummary({

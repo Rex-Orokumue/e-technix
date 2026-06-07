@@ -50,6 +50,7 @@ export default function HubPage() {
   const [student, setStudent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [announcement, setAnnouncement] = useState<{ message: string } | null>(null);
+  const [gradeSummary, setGradeSummary] = useState<{ overall: number; passed: boolean; pending: string[] } | null>(null);
   const [pushDismissed, setPushDismissed] = useState(false);
 
   // Attendance state
@@ -120,7 +121,7 @@ export default function HubPage() {
     }
     const track = studentData?.track ? `?track=${encodeURIComponent(studentData.track)}` : '';
     const userId = studentData?.id ?? null;
-    const [s, r, a, sub, ann, attResult] = await Promise.all([
+    const [s, r, a, sub, ann, attResult, gradeRes] = await Promise.all([
       fetch(`/api/sessions${track}`).then(r => r.json()),
       fetch(`/api/resources${track}`).then(r => r.json()),
       fetch(`/api/assignments${track}`).then(r => r.json()),
@@ -129,6 +130,7 @@ export default function HubPage() {
       userId
         ? supabase.from('attendance').select('session_id', { count: 'exact', head: false }).eq('student_id', userId)
         : Promise.resolve({ count: 0 }),
+      userId ? fetch('/api/grades/summary').then(r => r.json()).catch(() => null) : Promise.resolve(null),
     ]);
     setSessions(Array.isArray(s) ? s : []);
     setResources(Array.isArray(r) ? r : []);
@@ -138,6 +140,7 @@ export default function HubPage() {
     setMyAttendanceCount(attRows.length);
     setAttendedSessionIds(new Set(attRows.map(r => r.session_id)));
     setAnnouncement(ann && ann.message ? ann : null);
+    if (gradeRes && typeof gradeRes.overall === 'number') setGradeSummary(gradeRes);
     setLoading(false);
   }, [supabase]);
 
@@ -413,31 +416,63 @@ export default function HubPage() {
               const totalAssignments = assignments.length;
               const submitted = submissions.filter(s => s.student_id === student.id).length;
               const assignPct = totalAssignments > 0 ? Math.round((submitted / totalAssignments) * 100) : 0;
-              if (totalSessions === 0 && totalAssignments === 0) return null;
+              if (totalSessions === 0 && totalAssignments === 0 && !gradeSummary) return null;
+              const overallPct   = gradeSummary?.overall ?? null;
+              const overallColor = overallPct === null ? 'var(--muted)' : overallPct >= 60 ? '#34D366' : overallPct >= 40 ? '#F59E0B' : '#FF5555';
               return (
-                <div className="hub-progress-grid" style={{ marginTop: '1.5rem', display: 'grid', gridTemplateColumns: totalSessions > 0 && totalAssignments > 0 ? '1fr 1fr' : '1fr', gap: '1.25rem' }}>
-                  {totalSessions > 0 && (
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Attendance</span>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: attPct >= 80 ? '#34D366' : attPct >= 50 ? '#F59E0B' : '#FF5555' }}>{attPct}% · {myAttendanceCount}/{totalSessions}</span>
+                <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {/* Phase 1 Score — always first if available */}
+                  {overallPct !== null && (
+                    <div style={{ padding: '0.85rem 1rem', background: overallPct >= 60 ? 'rgba(52,211,102,0.06)' : overallPct >= 40 ? 'rgba(245,158,11,0.06)' : 'rgba(255,51,51,0.06)', border: `1px solid ${overallPct >= 60 ? 'rgba(52,211,102,0.2)' : overallPct >= 40 ? 'rgba(245,158,11,0.2)' : 'rgba(255,51,51,0.2)'}`, borderRadius: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem', flexWrap: 'wrap', gap: '0.4rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Phase 1 Score</span>
+                          {gradeSummary?.pending && gradeSummary.pending.length > 0 && (
+                            <span style={{ fontSize: '0.6rem', color: 'var(--muted)', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: '4px', padding: '0.05rem 0.35rem' }}>
+                              {gradeSummary.pending.length} pending
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: overallColor, fontFamily: 'var(--font-head)' }}>{overallPct}% {overallPct >= 60 ? '✅' : overallPct >= 40 ? '⚠️' : '❌'}</span>
+                          <button onClick={() => changeTab('progress')} style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--cyan)', background: 'transparent', border: '1px solid var(--cyan-border)', borderRadius: '4px', padding: '0.15rem 0.5rem', cursor: 'pointer' }}>Details →</button>
+                        </div>
                       </div>
                       <div style={{ height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '999px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${attPct}%`, background: attPct >= 80 ? '#34D366' : attPct >= 50 ? '#F59E0B' : '#FF5555', borderRadius: '999px', transition: 'width 0.4s ease' }} />
+                        <div style={{ height: '100%', width: `${overallPct}%`, background: overallColor, borderRadius: '999px', transition: 'width 0.4s ease' }} />
+                      </div>
+                      {/* Gate marker at 60% */}
+                      <div style={{ position: 'relative', height: '0', marginTop: '-3px' }}>
+                        <div style={{ position: 'absolute', left: '60%', top: '-8px', width: '2px', height: '10px', background: 'rgba(255,255,255,0.3)', borderRadius: '1px' }} />
+                        <span style={{ position: 'absolute', left: 'calc(60% + 4px)', top: '-9px', fontSize: '0.55rem', color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>60%</span>
                       </div>
                     </div>
                   )}
-                  {totalAssignments > 0 && (
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assignments</span>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--cyan)' }}>{submitted}/{totalAssignments}</span>
+
+                  <div className="hub-progress-grid" style={{ display: 'grid', gridTemplateColumns: totalSessions > 0 && totalAssignments > 0 ? '1fr 1fr' : '1fr', gap: '1rem' }}>
+                    {totalSessions > 0 && (
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Attendance</span>
+                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: attPct >= 80 ? '#34D366' : attPct >= 50 ? '#F59E0B' : '#FF5555' }}>{attPct}% · {myAttendanceCount}/{totalSessions}</span>
+                        </div>
+                        <div style={{ height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '999px', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${attPct}%`, background: attPct >= 80 ? '#34D366' : attPct >= 50 ? '#F59E0B' : '#FF5555', borderRadius: '999px', transition: 'width 0.4s ease' }} />
+                        </div>
                       </div>
-                      <div style={{ height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '999px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${assignPct}%`, background: 'var(--cyan)', borderRadius: '999px', transition: 'width 0.4s ease' }} />
+                    )}
+                    {totalAssignments > 0 && (
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assignments</span>
+                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--cyan)' }}>{submitted}/{totalAssignments}</span>
+                        </div>
+                        <div style={{ height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '999px', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${assignPct}%`, background: 'var(--cyan)', borderRadius: '999px', transition: 'width 0.4s ease' }} />
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               );
             })()}
@@ -785,7 +820,15 @@ export default function HubPage() {
 
                                                 {/* Submission view + edit */}
                                                 {sub && (
-                                                  <div style={{ marginTop: '0.75rem', padding: '0.85rem', background: 'rgba(0,200,255,0.04)', border: '1px solid var(--cyan-border)', borderRadius: '10px' }}>
+                                                  <div style={{ marginTop: '0.75rem', padding: '0.85rem', background: 'rgba(0,200,255,0.04)', border: `1px solid ${sub.is_late && sub.penalty_status !== 'lifted' ? 'rgba(255,107,43,0.3)' : 'var(--cyan-border)'}`, borderRadius: '10px' }}>
+                                                    {/* Late / penalty indicator */}
+                                                    {sub.is_late && (
+                                                      <div style={{ marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                        <span style={{ fontSize: '0.68rem', fontWeight: 700, color: sub.penalty_status === 'lifted' ? '#34D366' : '#FF6B2B', background: sub.penalty_status === 'lifted' ? 'rgba(52,211,102,0.1)' : 'rgba(255,107,43,0.1)', border: `1px solid ${sub.penalty_status === 'lifted' ? 'rgba(52,211,102,0.25)' : 'rgba(255,107,43,0.3)'}`, borderRadius: '4px', padding: '0.2rem 0.55rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                                          {sub.penalty_status === 'lifted' ? '✓ Late — penalty lifted' : '⚠ Late submission — 20% penalty applied'}
+                                                        </span>
+                                                      </div>
+                                                    )}
                                                     {editingSubId === sub.id ? (
                                                       <form onSubmit={handleEditSubmission} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                                         <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Edit Submission {sub.edit_count >= 2 ? '(last edit)' : `(edit ${sub.edit_count + 1}/2)`}</div>

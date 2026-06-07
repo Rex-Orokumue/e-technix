@@ -42,9 +42,27 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
+
+  // Auto-detect late submission
+  const adminSupabase = createAdminClient();
+  let isLate = false;
+  let penaltyStatus = 'none';
+  if (body.assignment_id) {
+    const { data: assignment } = await adminSupabase
+      .from('assignments')
+      .select('due_date')
+      .eq('id', body.assignment_id)
+      .single();
+    if (assignment?.due_date) {
+      const nowGMT1 = new Date(Date.now() + 60 * 60 * 1000);
+      isLate = nowGMT1 > new Date(assignment.due_date);
+      if (isLate) penaltyStatus = 'auto';
+    }
+  }
+
   const { data, error } = await supabase
     .from('assignment_submissions')
-    .insert({ ...body, student_id: user.id })
+    .insert({ ...body, student_id: user.id, is_late: isLate, penalty_status: penaltyStatus })
     .select()
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

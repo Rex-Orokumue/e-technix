@@ -13,11 +13,14 @@ const CONTRIBUTION_MULTIPLIERS: Record<string, number> = {
   minimal: 0.50,
 };
 
+export const LATE_PENALTY_MULTIPLIER = 0.80; // 20% deduction for late submissions
+
 export interface GradedSubmission {
   id: string;
   assignment_id: string;
   score: number;
   contribution: string;
+  penalty_status?: string | null;
   title?: string;
   code?: string;
   phase?: number;
@@ -71,7 +74,12 @@ export function calcGradeSummary(params: {
 
   const phase1Subs = gradedSubmissions.filter(s => (s.phase ?? 1) === 1);
   const assignmentScore = phase1Subs.length > 0
-    ? phase1Subs.reduce((sum, s) => sum + s.score * (CONTRIBUTION_MULTIPLIERS[s.contribution] ?? 1), 0) / phase1Subs.length
+    ? phase1Subs.reduce((sum, s) => {
+        const penaltyActive = s.penalty_status === 'auto' || s.penalty_status === 'enforced';
+        return sum + s.score
+          * (CONTRIBUTION_MULTIPLIERS[s.contribution] ?? 1)
+          * (penaltyActive ? LATE_PENALTY_MULTIPLIER : 1);
+      }, 0) / phase1Subs.length
     : null;
 
   const participationScore = participationScores.length > 0

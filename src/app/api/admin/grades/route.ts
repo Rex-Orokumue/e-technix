@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       supabase.from('sessions').select('id, phase').lte('date', todayStr).eq('phase', 1),
       supabase
         .from('assignment_submissions')
-        .select('id, assignment_id, score, contribution, status, drive_link, submitted_at, assignments(title, assignment_code, phase, week)')
+        .select('id, assignment_id, score, contribution, penalty_status, penalty_note, penalty_changed_by, penalty_changed_at, is_late, status, drive_link, submitted_at, assignments(title, assignment_code, phase, week)')
         .eq('student_id', studentId),
       supabase.from('participation_scores').select('*').eq('student_id', studentId),
       supabase.from('capstone_grades').select('*').eq('student_id', studentId).eq('phase', 1).maybeSingle(),
@@ -31,13 +31,14 @@ export async function GET(req: NextRequest) {
     const gradedSubs         = (subRows.data ?? [])
       .filter((s: any) => s.score !== null)
       .map((s: any) => ({
-        id:            s.id,
-        assignment_id: s.assignment_id,
-        score:         s.score,
-        contribution:  s.contribution ?? 'full',
-        phase:         s.assignments?.phase ?? 1,
-        title:         s.assignments?.title,
-        code:          s.assignments?.assignment_code,
+        id:             s.id,
+        assignment_id:  s.assignment_id,
+        score:          s.score,
+        contribution:   s.contribution ?? 'full',
+        penalty_status: s.penalty_status ?? 'none',
+        phase:          s.assignments?.phase ?? 1,
+        title:          s.assignments?.title,
+        code:           s.assignments?.assignment_code,
       }));
 
     const summary = calcGradeSummary({
@@ -71,7 +72,7 @@ export async function GET(req: NextRequest) {
   const [allAtt, allSess, allSubs, allPart, allCap] = await Promise.all([
     supabase.from('attendance').select('student_id, session_id'),
     supabase.from('sessions').select('id, phase').lte('date', today).eq('phase', 1),
-    supabase.from('assignment_submissions').select('student_id, assignment_id, score, contribution, assignments(phase)').not('score', 'is', null),
+    supabase.from('assignment_submissions').select('student_id, assignment_id, score, contribution, penalty_status, assignments(phase)').not('score', 'is', null),
     supabase.from('participation_scores').select('student_id, score'),
     supabase.from('capstone_grades').select('student_id, content_score, presentation_score, delivery_score, qa_score').eq('phase', 1),
   ]);
@@ -81,7 +82,7 @@ export async function GET(req: NextRequest) {
   const result = students.map(student => {
     const attended     = new Set((allAtt.data ?? []).filter(a => a.student_id === student.id).map(a => a.session_id));
     const subs         = (allSubs.data ?? []).filter((s: any) => s.student_id === student.id && s.assignments?.phase === 1 && s.score !== null)
-      .map((s: any) => ({ id: '', assignment_id: s.assignment_id, score: s.score, contribution: s.contribution ?? 'full', phase: 1 }));
+      .map((s: any) => ({ id: '', assignment_id: s.assignment_id, score: s.score, contribution: s.contribution ?? 'full', penalty_status: s.penalty_status ?? 'none', phase: 1 }));
     const parts        = (allPart.data ?? []).filter(p => p.student_id === student.id).map(p => ({ session_id: '', score: p.score }));
     const cap          = (allCap.data ?? []).find(c => c.student_id === student.id) ?? null;
 

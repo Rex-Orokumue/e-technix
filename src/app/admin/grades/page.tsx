@@ -49,6 +49,7 @@ export default function AdminGradesPage() {
   const [savingPart,      setSavingPart]      = useState<Record<string, boolean>>({});
   const [savingAssign,    setSavingAssign]    = useState<Record<string, boolean>>({});
   const [savingCapstone,  setSavingCapstone]  = useState(false);
+  const [penaltyForm,     setPenaltyForm]     = useState<Record<string, { action: 'enforce' | 'lift'; reason: string; saving: boolean }>>({});
   const [assignEdits,     setAssignEdits]     = useState<Record<string, { score: string; contribution: string }>>({});
   const [capstoneForm,    setCapstoneForm]    = useState({ content_score: 0, presentation_score: 0, delivery_score: 0, qa_score: 0, notes: '' });
   const [capstoneEdit,    setCapstoneEdit]    = useState(false);
@@ -126,6 +127,21 @@ export default function AdminGradesPage() {
     });
     setSavingAssign(s => ({ ...s, [subId]: false }));
     showToast('Assignment grade saved');
+    loadStudents();
+    loadDetail(selectedId);
+  };
+
+  const savePenalty = async (subId: string) => {
+    const form = penaltyForm[subId];
+    if (!form || !form.reason.trim()) return;
+    setPenaltyForm(p => ({ ...p, [subId]: { ...form, saving: true } }));
+    await fetch(`/api/admin/grades/submission/${subId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ penalty_action: form.action, penalty_note: form.reason }),
+    });
+    setPenaltyForm(p => { const n = { ...p }; delete n[subId]; return n; });
+    showToast(form.action === 'lift' ? 'Penalty lifted' : 'Penalty enforced');
     loadStudents();
     loadDetail(selectedId);
   };
@@ -324,18 +340,39 @@ export default function AdminGradesPage() {
                         const edit   = assignEdits[sub.id] ?? { score: '', contribution: 'full' };
                         const saving = savingAssign[sub.id];
                         const graded = sub.score !== null;
+                        const penaltyActive = sub.penalty_status === 'auto' || sub.penalty_status === 'penalty_enforced';
+                        const penaltyLifted = sub.penalty_status === 'lifted';
+                        const penF = penaltyForm[sub.id];
+
                         return (
-                          <div key={sub.id} style={{ padding: '0.85rem', background: 'rgba(255,255,255,0.025)', border: `1px solid ${graded ? 'rgba(52,211,102,0.2)' : 'var(--border)'}`, borderRadius: '9px' }}>
+                          <div key={sub.id} style={{ padding: '0.85rem', background: 'rgba(255,255,255,0.025)', border: `1px solid ${sub.is_late && !penaltyLifted ? 'rgba(255,107,43,0.25)' : graded ? 'rgba(52,211,102,0.2)' : 'var(--border)'}`, borderRadius: '9px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
-                              <div>
-                                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--cyan)', background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', borderRadius: '4px', padding: '0.1rem 0.4rem', marginRight: '0.4rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--cyan)', background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', borderRadius: '4px', padding: '0.1rem 0.4rem' }}>
                                   {sub.assignments?.assignment_code}
                                 </span>
                                 <span style={{ fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.82rem' }}>{sub.assignments?.title}</span>
+                                {sub.is_late && (
+                                  <span style={{ fontSize: '0.62rem', fontWeight: 700, color: penaltyLifted ? '#34D366' : '#FF6B2B', background: penaltyLifted ? 'rgba(52,211,102,0.1)' : 'rgba(255,107,43,0.12)', border: `1px solid ${penaltyLifted ? 'rgba(52,211,102,0.25)' : 'rgba(255,107,43,0.3)'}`, borderRadius: '4px', padding: '0.1rem 0.4rem', textTransform: 'uppercase' }}>
+                                    {penaltyLifted ? '✓ Lifted' : sub.penalty_status === 'enforced' ? '⚠ Enforced' : '⚠ Late −20%'}
+                                  </span>
+                                )}
                               </div>
-                              <a href={sub.drive_link} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.72rem', color: 'var(--cyan)', textDecoration: 'none' }}>↗ View</a>
+                              <a href={sub.drive_link} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.72rem', color: 'var(--cyan)', textDecoration: 'none', flexShrink: 0 }}>↗ View</a>
                             </div>
-                            <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+
+                            {/* Penalty audit trail */}
+                            {sub.penalty_note && (
+                              <div style={{ marginBottom: '0.6rem', padding: '0.5rem 0.65rem', background: penaltyLifted ? 'rgba(52,211,102,0.06)' : 'rgba(255,107,43,0.06)', border: `1px solid ${penaltyLifted ? 'rgba(52,211,102,0.2)' : 'rgba(255,107,43,0.2)'}`, borderRadius: '7px' }}>
+                                <div style={{ fontSize: '0.6rem', fontWeight: 700, color: penaltyLifted ? '#34D366' : '#FF6B2B', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '2px' }}>
+                                  {penaltyLifted ? 'Penalty lifted' : 'Penalty enforced'} by {sub.penalty_changed_by ?? 'Admin'} · {sub.penalty_changed_at ? new Date(sub.penalty_changed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''}
+                                </div>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text)', margin: 0, lineHeight: 1.5 }}>{sub.penalty_note}</p>
+                              </div>
+                            )}
+
+                            {/* Grade inputs */}
+                            <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: sub.is_late ? '0.6rem' : 0 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                                 <label style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Score</label>
                                 <input
@@ -366,6 +403,61 @@ export default function AdminGradesPage() {
                                 <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#34D366' }}>✓ Graded ({sub.score})</span>
                               )}
                             </div>
+
+                            {/* Penalty override (only for late submissions) */}
+                            {sub.is_late && (
+                              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.6rem', marginTop: '0.2rem' }}>
+                                {penF ? (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                    <div style={{ fontSize: '0.68rem', fontWeight: 700, color: penF.action === 'lift' ? '#34D366' : '#FF6B2B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                      {penF.action === 'lift' ? 'Lift penalty — reason required' : 'Enforce penalty — reason required'}
+                                    </div>
+                                    <textarea
+                                      placeholder="Explain why you are changing this penalty (required)…"
+                                      value={penF.reason}
+                                      onChange={e => setPenaltyForm(p => ({ ...p, [sub.id]: { ...penF, reason: e.target.value } }))}
+                                      rows={2}
+                                      style={{ width: '100%', padding: '0.5rem 0.65rem', background: 'rgba(255,255,255,0.04)', border: `1px solid ${penF.action === 'lift' ? 'rgba(52,211,102,0.3)' : 'rgba(255,107,43,0.3)'}`, borderRadius: '7px', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '0.78rem', outline: 'none', resize: 'vertical', lineHeight: 1.5, boxSizing: 'border-box' }}
+                                    />
+                                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                      <button
+                                        onClick={() => savePenalty(sub.id)}
+                                        disabled={penF.saving || !penF.reason.trim()}
+                                        style={{ padding: '0.35rem 0.85rem', background: penF.action === 'lift' ? '#34D366' : '#FF6B2B', color: '#fff', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.75rem', border: 'none', borderRadius: '6px', cursor: penF.saving || !penF.reason.trim() ? 'not-allowed' : 'pointer', opacity: penF.saving || !penF.reason.trim() ? 0.5 : 1 }}
+                                      >
+                                        {penF.saving ? 'Saving…' : 'Confirm'}
+                                      </button>
+                                      <button
+                                        onClick={() => setPenaltyForm(p => { const n = { ...p }; delete n[sub.id]; return n; })}
+                                        style={{ padding: '0.35rem 0.7rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.75rem', borderRadius: '6px', cursor: 'pointer' }}
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                    <span style={{ fontSize: '0.68rem', color: 'var(--muted)' }}>Penalty override:</span>
+                                    {!penaltyLifted && (
+                                      <button
+                                        onClick={() => setPenaltyForm(p => ({ ...p, [sub.id]: { action: 'lift', reason: '', saving: false } }))}
+                                        style={{ padding: '0.25rem 0.65rem', background: 'rgba(52,211,102,0.1)', border: '1px solid rgba(52,211,102,0.25)', color: '#34D366', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.7rem', borderRadius: '5px', cursor: 'pointer' }}
+                                      >
+                                        Lift penalty
+                                      </button>
+                                    )}
+                                    {penaltyLifted && (
+                                      <button
+                                        onClick={() => setPenaltyForm(p => ({ ...p, [sub.id]: { action: 'enforce', reason: '', saving: false } }))}
+                                        style={{ padding: '0.25rem 0.65rem', background: 'rgba(255,107,43,0.1)', border: '1px solid rgba(255,107,43,0.25)', color: '#FF6B2B', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.7rem', borderRadius: '5px', cursor: 'pointer' }}
+                                      >
+                                        Re-enforce penalty
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
