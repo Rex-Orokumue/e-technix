@@ -56,23 +56,30 @@ export default function StudentDetailPage() {
   const [trackError, setTrackError] = useState('');
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/students').then(r => r.json()),
-      fetch('/api/admin/attendance-report').then(r => r.json()),
-      fetch('/api/submissions').then(r => r.json()),
-      fetch('/api/assignments').then(r => r.json()),
-    ]).then(([students, report, submissions, assignments]) => {
-      const s = (students as Student[]).find(s => s.id === id);
-      setStudent(s ?? null);
+    const load = async () => {
+      // Step 1: student + attendance + submissions in parallel
+      const [students, report, submissions] = await Promise.all([
+        fetch('/api/students').then(r => r.json()),
+        fetch('/api/admin/attendance-report').then(r => r.json()),
+        fetch('/api/submissions').then(r => r.json()),
+      ]);
 
-      const attended = (report.attendance ?? []).filter((a: any) => a.student_id === id).length;
-      const totalSessions = (report.sessions ?? []).length;
-      const submitted = (submissions as any[]).filter(s => s.student_id === id).length;
-      const totalAssignments = (assignments as any[]).length;
+      const s = (students as Student[]).find(s => s.id === id) ?? null;
+      setStudent(s);
+
+      // Step 2: assignments filtered by this student's track
+      const trackParam = s?.track ? `?track=${encodeURIComponent(s.track)}` : '';
+      const assignments = await fetch(`/api/assignments${trackParam}`).then(r => r.json());
+
+      const attended        = (report.attendance ?? []).filter((a: any) => a.student_id === id).length;
+      const totalSessions   = (report.sessions ?? []).length;
+      const submitted       = (submissions as any[]).filter((sub: any) => sub.student_id === id).length;
+      const totalAssignments = Array.isArray(assignments) ? assignments.length : 0;
 
       setStats({ attendance: attended, sessions: totalSessions, submitted, total: totalAssignments });
       setLoading(false);
-    });
+    };
+    load();
   }, [id]);
 
   const handleTrackSave = async () => {
