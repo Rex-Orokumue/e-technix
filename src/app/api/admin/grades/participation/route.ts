@@ -13,14 +13,25 @@ export async function POST(req: NextRequest) {
   if (!student_id || !session_id || typeof score !== 'number' || score < 1 || score > 5)
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
 
-  const { data, error } = await supabase
-    .from('participation_scores')
-    .upsert({ student_id, session_id, score, notes: notes ?? null }, { onConflict: 'student_id,session_id' })
-    .select()
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('participation_scores')
+      .upsert(
+        { student_id, session_id, score, notes: notes ?? null },
+        { onConflict: 'student_id,session_id', ignoreDuplicates: false }
+      )
+      .select()
+      .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+    if (error) {
+      console.error('[participation POST]', error.message, error.details);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json(data);
+  } catch (err: any) {
+    console.error('[participation POST] unexpected error:', err);
+    return NextResponse.json({ error: err?.message ?? 'Unknown error' }, { status: 500 });
+  }
 }
 
 export async function DELETE(req: NextRequest) {

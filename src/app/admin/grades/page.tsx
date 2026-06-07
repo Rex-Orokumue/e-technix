@@ -98,12 +98,17 @@ export default function AdminGradesPage() {
 
   const saveParticipation = async (sessionId: string, score: number) => {
     setSavingPart(p => ({ ...p, [sessionId]: true }));
-    await fetch('/api/admin/grades/participation', {
+    const res = await fetch('/api/admin/grades/participation', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ student_id: selectedId, session_id: sessionId, score }),
     });
     setSavingPart(p => ({ ...p, [sessionId]: false }));
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      showToast(`❌ Save failed: ${err.error ?? res.status}`);
+      return;
+    }
     // Optimistic update in detail
     setDetail((d: any) => ({
       ...d,
@@ -197,7 +202,7 @@ export default function AdminGradesPage() {
 
       {/* Toast */}
       {toast && (
-        <div style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 999, background: '#34D366', color: '#070D1A', padding: '0.65rem 1.25rem', borderRadius: '10px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.85rem', boxShadow: '0 8px 30px rgba(52,211,102,0.3)' }}>
+        <div style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 999, background: toast.startsWith('❌') ? '#FF5555' : '#34D366', color: '#070D1A', padding: '0.65rem 1.25rem', borderRadius: '10px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.85rem', boxShadow: toast.startsWith('❌') ? '0 8px 30px rgba(255,85,85,0.3)' : '0 8px 30px rgba(52,211,102,0.3)' }}>
           ✓ {toast}
         </div>
       )}

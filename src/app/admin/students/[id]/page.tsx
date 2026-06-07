@@ -57,11 +57,11 @@ export default function StudentDetailPage() {
 
   useEffect(() => {
     const load = async () => {
-      // Step 1: student + attendance + submissions in parallel
-      const [students, report, submissions] = await Promise.all([
+      // Step 1: student + attendance in parallel, plus grades detail (admin-client, bypass student-session ambiguity)
+      const [students, report, gradeDetail] = await Promise.all([
         fetch('/api/students').then(r => r.json()),
         fetch('/api/admin/attendance-report').then(r => r.json()),
-        fetch('/api/submissions').then(r => r.json()),
+        fetch(`/api/admin/grades?student_id=${id}`).then(r => r.json()).catch(() => null),
       ]);
 
       const s = (students as Student[]).find(s => s.id === id) ?? null;
@@ -71,9 +71,10 @@ export default function StudentDetailPage() {
       const trackParam = s?.track ? `?track=${encodeURIComponent(s.track)}` : '';
       const assignments = await fetch(`/api/assignments${trackParam}`).then(r => r.json());
 
-      const attended        = (report.attendance ?? []).filter((a: any) => a.student_id === id).length;
-      const totalSessions   = (report.sessions ?? []).length;
-      const submitted       = (submissions as any[]).filter((sub: any) => sub.student_id === id).length;
+      const attended         = (report.attendance ?? []).filter((a: any) => a.student_id === id).length;
+      const totalSessions    = (report.sessions ?? []).length;
+      // Use admin grades API for submissions — avoids student-session ambiguity in /api/submissions
+      const submitted        = Array.isArray(gradeDetail?.submissions) ? gradeDetail.submissions.length : 0;
       const totalAssignments = Array.isArray(assignments) ? assignments.length : 0;
 
       setStats({ attendance: attended, sessions: totalSessions, submitted, total: totalAssignments });
