@@ -6,9 +6,10 @@ import HubShell from '@/components/hub/HubShell';
 import ScheduleTab from '@/components/hub/ScheduleTab';
 import ChatTab from '@/components/hub/ChatTab';
 import ProfileTab from '@/components/hub/ProfileTab';
+import ProgressTab from '@/components/hub/ProgressTab';
 import { usePushNotifications } from '@/components/hub/usePushNotifications';
 
-type Tab = 'sessions' | 'resources' | 'assignments' | 'reviews' | 'schedule' | 'chat' | 'profile';
+type Tab = 'sessions' | 'resources' | 'assignments' | 'reviews' | 'schedule' | 'chat' | 'profile' | 'progress';
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
   submitted:         { label: 'Submitted',         color: '#7A8FAD', bg: 'rgba(122,143,173,0.1)' },
@@ -28,7 +29,7 @@ const STAR_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
 const WHATSAPP_NUMBER = '2348120288390';
 
 export default function HubPage() {
-  const VALID_TABS: Tab[] = ['sessions', 'resources', 'assignments', 'reviews', 'schedule', 'chat', 'profile'];
+  const VALID_TABS: Tab[] = ['sessions', 'resources', 'assignments', 'reviews', 'schedule', 'chat', 'profile', 'progress'];
   const [tab, setTab] = useState<Tab>('sessions');
   useEffect(() => {
     // URL param takes priority (used by push notification deep links e.g. /hub?tab=chat)
@@ -915,6 +916,15 @@ export default function HubPage() {
                       </form>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* PROGRESS */}
+              {tab === 'progress' && (
+                <div>
+                  <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.5rem', marginBottom: '0.4rem' }}>My Progress</h2>
+                  <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Your Phase 1 score. You need 60% to proceed to Phase 2.</p>
+                  <ProgressTab />
                 </div>
               )}
 

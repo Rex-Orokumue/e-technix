@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
-type Tab = 'sessions' | 'schedule' | 'resources' | 'assignments' | 'reviews' | 'chat' | 'profile';
+type Tab = 'sessions' | 'schedule' | 'resources' | 'assignments' | 'reviews' | 'chat' | 'profile' | 'progress';
 
 const navItems: { id: Tab; label: string; icon: string }[] = [
+  { id: 'progress',    label: 'My Progress',    icon: '📊' },
   { id: 'schedule',    label: 'Schedule',       icon: '📅' },
   { id: 'sessions',    label: 'Past Sessions',  icon: '🎬' },
   { id: 'resources',   label: 'Resources',      icon: '📚' },
@@ -22,6 +23,8 @@ interface Props {
   student: { full_name: string; track: string } | null;
   children: React.ReactNode;
 }
+
+export type { Tab };
 
 function NavItems({ tab, setTab, onNavigate }: { tab: Tab; setTab: (t: Tab) => void; onNavigate?: () => void }) {
   return (

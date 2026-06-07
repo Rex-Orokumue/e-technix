@@ -31,6 +31,7 @@ export default async function AdminDashboardPage() {
     { label: 'Active Assignments',      value: stats.assignments, icon: '📝', color: '#A78BFA',       href: '/admin/assignments' },
     { label: 'Pending Submissions',     value: stats.pending,    icon: '📬', color: '#34D399', alert: stats.pending > 0, href: '/admin/submissions', sub: stats.pending > 0 ? 'Needs review — click to open' : undefined },
     { label: 'Session Reviews',         value: stats.reviews,    icon: '⭐', color: '#F59E0B',       href: '/admin/reviews', sub: stats.reviews > 0 ? 'View all feedback' : undefined },
+    { label: 'Phase 1 Grading',         value: stats.students,   icon: '📊', color: '#A78BFA',       href: '/admin/grades',   sub: 'Grade attendance, assignments & capstone' },
   ];
 
   return (
