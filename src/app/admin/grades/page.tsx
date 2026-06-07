@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { calcCapstoneScore, GRADE_WEIGHTS } from '@/lib/grades';
 
-const SCORE_LABELS = ['', 'No engagement', 'Distracted', 'Passive', 'Engaged', 'Active contributor'];
-const SCORE_COLORS = ['', '#FF5555', '#FF6B2B', '#F59E0B', '#34D366', '#00C8FF'];
+const SCORE_LABELS = ['Not Attended', 'No engagement', 'Distracted', 'Passive', 'Engaged', 'Active contributor'];
+const SCORE_COLORS = ['#7A8FAD', '#FF5555', '#FF6B2B', '#F59E0B', '#34D366', '#00C8FF'];
 const CONTRIBUTION_OPTS = [
   { value: 'full',    label: 'Full contribution', mult: '100%' },
   { value: 'partial', label: 'Partial',           mult: '75%' },
@@ -293,7 +293,7 @@ export default function AdminGradesPage() {
               {card(
                 <>
                   {sectionTitle('🎙️', 'Participation', (
-                    <span style={{ fontSize: '0.7rem', color: 'var(--muted)' }}>Rate 1–5 per session</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--muted)' }}>0 = Not attended · 1–5 engagement</span>
                   ))}
                   {sessionsWithPart.length === 0 ? (
                     <p style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>No Phase 1 sessions yet.</p>
@@ -314,7 +314,21 @@ export default function AdminGradesPage() {
                                 )}
                               </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                              {/* 0 = Not Attended */}
+                              <button
+                                onClick={() => saveParticipation(session.id, 0)}
+                                style={{
+                                  padding: '0 0.6rem', height: '36px', borderRadius: '8px',
+                                  border: `2px solid ${current === 0 ? '#7A8FAD' : 'var(--border)'}`,
+                                  background: current === 0 ? 'rgba(122,143,173,0.15)' : 'transparent',
+                                  color: current === 0 ? '#7A8FAD' : 'var(--muted)',
+                                  fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.7rem',
+                                  cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
+                                }}
+                              >
+                                N/A
+                              </button>
                               {[1, 2, 3, 4, 5].map(v => (
                                 <ScoreButton
                                   key={v} value={v} current={current}

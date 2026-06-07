@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { student_id, session_id, score, notes } = body;
 
-  if (!student_id || !session_id || typeof score !== 'number' || score < 1 || score > 5)
+  if (!student_id || !session_id || typeof score !== 'number' || score < 0 || score > 5)
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
 
   try {
