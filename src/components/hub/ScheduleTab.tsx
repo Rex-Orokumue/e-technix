@@ -43,7 +43,6 @@ function getStatus(session: Session, todayGMT1: string, currentMinsGMT1: number,
 }
 
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  past:     { label: 'Recorded',  color: '#7A8FAD', bg: 'rgba(122,143,173,0.1)',  border: 'rgba(122,143,173,0.2)' },
   attended: { label: 'Attended',  color: '#34D366', bg: 'rgba(52,211,102,0.1)',   border: 'rgba(52,211,102,0.25)' },
   missed:   { label: 'Missed',    color: '#FF5555', bg: 'rgba(255,51,51,0.08)',   border: 'rgba(255,51,51,0.2)' },
   live:     { label: 'In Session',color: '#34D366', bg: 'rgba(52,211,102,0.12)', border: 'rgba(52,211,102,0.3)' },
@@ -95,7 +94,7 @@ export default function ScheduleTab({
             {items.map(session => {
               const status = getStatus(session, todayGMT1, currentMinsGMT1, attendedSessionIds.has(session.id));
               const ss = STATUS_STYLE[status];
-              const isPast = status === 'past' || status === 'missed'; // attended stays full opacity
+              const isPast = status === 'missed'; // attended stays full opacity
               const dateObj = new Date(session.date + 'T12:00:00Z');
               const dayLabel = dateObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 
@@ -140,7 +139,7 @@ export default function ScheduleTab({
 
                   {/* Action */}
                   <div style={{ flexShrink: 0, marginLeft: 'auto' }}>
-                    {(status === 'past' || status === 'attended') && session.youtube_url && (
+                    {(status === 'attended' || status === 'missed') && session.youtube_url && (
                       <a href={session.youtube_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: '#FF0000', color: '#fff', padding: '0.4rem 0.8rem', borderRadius: '6px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.75rem', textDecoration: 'none' }}>▶ Watch</a>
                     )}
                     {(status === 'live' || status === 'today') && session.meet_link && (
