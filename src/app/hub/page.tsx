@@ -42,7 +42,15 @@ export default function HubPage() {
       if (saved && VALID_TABS.includes(saved)) setTab(saved);
     }
   }, []);
-  const changeTab = (t: Tab) => { setTab(t); localStorage.setItem('hub-tab', t); };
+  const contentRef = useRef<HTMLDivElement>(null);
+  const changeTab = (t: Tab) => {
+    setTab(t);
+    localStorage.setItem('hub-tab', t);
+    // Scroll so the tab content is at the top of the viewport
+    setTimeout(() => {
+      contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+  };
   const [sessions, setSessions] = useState<any[]>([]);
   const [resources, setResources] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
@@ -539,7 +547,7 @@ export default function HubPage() {
         </div>
 
         {/* Content */}
-        <div className="hub-content-wrap" style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <div ref={contentRef} className="hub-content-wrap" style={{ maxWidth: '900px', margin: '0 auto' }}>
 
           {loading ? (
             <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--muted)' }}>Loading…</div>
