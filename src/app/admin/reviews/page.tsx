@@ -25,6 +25,23 @@ export default async function AdminReviewsPage() {
 
   return (
     <div>
+      <style>{`
+        .rev-session-header {
+          padding: 0.9rem 1.25rem;
+          border-bottom: 1px solid var(--border);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+          flex-wrap: wrap;
+        }
+        .rev-stats { display: flex; gap: 1.25rem; flex-shrink: 0; }
+        .rev-stat { text-align: center; }
+        @media (max-width: 480px) {
+          .rev-session-header { padding: 0.75rem 1rem; }
+          .rev-stats { gap: 1rem; }
+        }
+      `}</style>
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.8rem', letterSpacing: '-0.02em', marginBottom: '0.2rem' }}>Session Reviews</h1>
         <p style={{ color: 'var(--muted)', fontSize: '0.88rem' }}>
@@ -43,21 +60,21 @@ export default async function AdminReviewsPage() {
             const avg = sReviews.reduce((s: number, r: any) => s + r.rating, 0) / sReviews.length;
             return (
               <div key={sReviews[0].session_id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
-                <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-                  <div>
-                    <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.92rem' }}>
+                <div className="rev-session-header">
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.92rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {session ? `S${session.session_number} — ${session.title}` : 'Unknown session'}
                     </div>
                     {session && <div style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '2px' }}>Phase {session.phase} · Week {session.week}</div>}
                   </div>
-                  <div style={{ display: 'flex', gap: '1.25rem' }}>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.4rem', color: avg >= 4 ? '#34D366' : avg >= 3 ? '#F59E0B' : '#FF5555' }}>{avg.toFixed(1)}</div>
-                      <div style={{ fontSize: '0.62rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>avg</div>
+                  <div className="rev-stats">
+                    <div className="rev-stat">
+                      <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.3rem', color: avg >= 4 ? '#34D366' : avg >= 3 ? '#F59E0B' : '#FF5555' }}>{avg.toFixed(1)}</div>
+                      <div style={{ fontSize: '0.6rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>avg</div>
                     </div>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.4rem', color: 'var(--cyan)' }}>{sReviews.length}</div>
-                      <div style={{ fontSize: '0.62rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>total</div>
+                    <div className="rev-stat">
+                      <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.3rem', color: 'var(--cyan)' }}>{sReviews.length}</div>
+                      <div style={{ fontSize: '0.6rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>total</div>
                     </div>
                   </div>
                 </div>
