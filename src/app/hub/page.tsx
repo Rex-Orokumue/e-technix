@@ -135,7 +135,7 @@ export default function HubPage() {
     setSessions(Array.isArray(s) ? s : []);
     setResources(Array.isArray(r) ? r : []);
     setAssignments(Array.isArray(a) ? a : []);
-    setSubmissions(Array.isArray(sub) ? sub : []);
+    setSubmissions(Array.isArray(sub) ? sub.filter((s: any) => s.status !== 'not_submitted') : []);
     const attRows: { session_id: string }[] = (attResult as any).data ?? [];
     setMyAttendanceCount(attRows.length);
     setAttendedSessionIds(new Set(attRows.map(r => r.session_id)));

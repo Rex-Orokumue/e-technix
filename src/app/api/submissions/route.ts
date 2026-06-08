@@ -67,6 +67,15 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // If admin previously marked this as not_submitted (N/A), remove that placeholder
+  // so the student's real submission can be inserted without hitting the unique constraint.
+  await adminSupabase
+    .from('assignment_submissions')
+    .delete()
+    .eq('student_id', user.id)
+    .eq('assignment_id', body.assignment_id)
+    .eq('status', 'not_submitted');
+
   const { data, error } = await supabase
     .from('assignment_submissions')
     .insert({ ...body, student_id: user.id, is_late: isLate, penalty_status: penaltyStatus })
