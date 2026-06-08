@@ -13,10 +13,12 @@ if (process.env.VAPID_PRIVATE_KEY) {
 
 export async function GET() {
   const supabase = createAdminClient();
+  const now = new Date().toISOString();
   const { data, error } = await supabase
     .from('announcements')
     .select('*')
     .eq('is_active', true)
+    .or(`expires_at.is.null,expires_at.gt.${now}`)
     .order('created_at', { ascending: false })
     .limit(1);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

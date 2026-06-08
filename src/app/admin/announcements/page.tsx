@@ -10,6 +10,30 @@ interface Announcement {
   message: string;
   is_active: boolean;
   created_at: string;
+  expires_at: string | null;
+}
+
+// Preset durations in hours (0 = no expiry)
+const EXPIRY_PRESETS = [
+  { label: 'No expiry',  hours: 0 },
+  { label: '1 hour',     hours: 1 },
+  { label: '2 hours',    hours: 2 },
+  { label: '6 hours',    hours: 6 },
+  { label: '12 hours',   hours: 12 },
+  { label: '24 hours',   hours: 24 },
+  { label: '3 days',     hours: 72 },
+  { label: '1 week',     hours: 168 },
+];
+
+function expiryLabel(expires_at: string | null): string | null {
+  if (!expires_at) return null;
+  const diff = new Date(expires_at).getTime() - Date.now();
+  if (diff <= 0) return 'Expired';
+  const h = Math.floor(diff / 3_600_000);
+  const m = Math.floor((diff % 3_600_000) / 60_000);
+  if (h >= 24) return `Expires in ${Math.floor(h / 24)}d ${h % 24}h`;
+  if (h > 0) return `Expires in ${h}h ${m}m`;
+  return `Expires in ${m}m`;
 }
 
 export default function AnnouncementsPage() {
@@ -17,6 +41,7 @@ export default function AnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
+  const [expiryHours, setExpiryHours] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -69,13 +94,16 @@ export default function AnnouncementsPage() {
         body: JSON.stringify({ is_active: false }),
       });
     }
+    const expires_at = expiryHours > 0
+      ? new Date(Date.now() + expiryHours * 3_600_000).toISOString()
+      : null;
     const res = await fetch('/api/announcements', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: message.trim(), is_active: true }),
+      body: JSON.stringify({ message: message.trim(), is_active: true, expires_at }),
     });
     setSaving(false);
-    if (res.ok) { setMessage(''); load(); router.refresh(); }
+    if (res.ok) { setMessage(''); setExpiryHours(0); load(); router.refresh(); }
     else { const d = await res.json(); setError(d.error || 'Failed to post'); }
   };
 
@@ -116,6 +144,31 @@ export default function AnnouncementsPage() {
             onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
             onBlur={e => (e.target.style.borderColor = 'var(--border)')}
           />
+        </div>
+        <div>
+          <label style={labelStyle}>Auto-deactivate after</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+            {EXPIRY_PRESETS.map(p => (
+              <button
+                key={p.hours}
+                type="button"
+                onClick={() => setExpiryHours(p.hours)}
+                style={{
+                  padding: '0.35rem 0.85rem',
+                  borderRadius: '999px',
+                  border: `1px solid ${expiryHours === p.hours ? 'var(--cyan-border)' : 'var(--border)'}`,
+                  background: expiryHours === p.hours ? 'var(--cyan-dim)' : 'transparent',
+                  color: expiryHours === p.hours ? 'var(--cyan)' : 'var(--muted)',
+                  fontFamily: 'var(--font-head)',
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                }}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
         </div>
         {error && <div style={{ padding: '0.5rem 1rem', background: 'rgba(255,51,51,0.08)', border: '1px solid rgba(255,51,51,0.25)', borderRadius: '7px', fontSize: '0.82rem', color: '#FF5555' }}>{error}</div>}
         <button type="submit" disabled={saving || !message.trim()} style={{ alignSelf: 'flex-start', padding: '0.65rem 1.5rem', background: saving ? 'rgba(0,200,255,0.3)' : 'var(--cyan)', color: '#070D1A', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.85rem', border: 'none', borderRadius: '8px', cursor: saving ? 'not-allowed' : 'pointer' }}>
@@ -169,9 +222,21 @@ export default function AnnouncementsPage() {
           {announcements.map(a => (
             <div key={a.id} style={{ background: 'var(--surface)', border: `1px solid ${a.is_active ? 'var(--cyan-border)' : 'var(--border)'}`, borderRadius: '12px', padding: '1rem 1.25rem', display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
               <div style={{ flex: 1 }}>
-                {a.is_active && (
-                  <span style={{ display: 'inline-block', marginBottom: '0.4rem', fontSize: '0.68rem', fontWeight: 700, background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', color: 'var(--cyan)', borderRadius: '4px', padding: '0.1rem 0.45rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Live</span>
-                )}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                  {a.is_active && (
+                    <span style={{ fontSize: '0.68rem', fontWeight: 700, background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', color: 'var(--cyan)', borderRadius: '4px', padding: '0.1rem 0.45rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Live</span>
+                  )}
+                  {(() => {
+                    const lbl = expiryLabel(a.expires_at);
+                    if (!lbl) return null;
+                    const expired = lbl === 'Expired';
+                    return (
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, background: expired ? 'rgba(255,85,85,0.1)' : 'rgba(245,158,11,0.1)', border: `1px solid ${expired ? 'rgba(255,85,85,0.3)' : 'rgba(245,158,11,0.3)'}`, color: expired ? '#FF5555' : '#F59E0B', borderRadius: '4px', padding: '0.1rem 0.45rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                        ⏱ {lbl}
+                      </span>
+                    );
+                  })()}
+                </div>
                 <p style={{ fontSize: '0.88rem', lineHeight: 1.6, marginBottom: '0.3rem' }}>{a.message}</p>
                 <p style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>{new Date(a.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
               </div>
