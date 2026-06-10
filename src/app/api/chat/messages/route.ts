@@ -39,10 +39,12 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { channel_id, content, reply_to_id, reply_to_content, reply_to_sender_name } = body;
-    if (!channel_id || !content?.trim())
-      return NextResponse.json({ error: 'channel_id and content required' }, { status: 400 });
+    const { channel_id, content, reply_to_id, reply_to_content, reply_to_sender_name,
+            attachment_url, attachment_type, attachment_name } = body;
+    if (!channel_id || (!content?.trim() && !attachment_url))
+      return NextResponse.json({ error: 'channel_id and content (or attachment) required' }, { status: 400 });
     const replyFields = reply_to_id ? { reply_to_id, reply_to_content, reply_to_sender_name } : {};
+    const attachFields = attachment_url ? { attachment_url, attachment_type, attachment_name } : {};
 
     const adminClient = createAdminClient();
 
@@ -77,7 +79,7 @@ export async function POST(req: NextRequest) {
 
       const { data, error } = await adminClient
         .from('chat_messages')
-        .insert({ channel_id, content: content.trim(), sender_id: user.id, sender_name: student.full_name, sender_type: 'student', ...replyFields })
+        .insert({ channel_id, content: content?.trim() ?? '', sender_id: user.id, sender_name: student.full_name, sender_type: 'student', ...replyFields, ...attachFields })
         .select().single();
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       // Notify other channel members (or admin for DMs)
@@ -96,7 +98,7 @@ export async function POST(req: NextRequest) {
         .from('chat_channels').select('type, track, name').eq('id', channel_id).single();
       const { data, error } = await adminClient
         .from('chat_messages')
-        .insert({ channel_id, content: content.trim(), sender_id: null, sender_name: 'Admin', sender_type: 'admin', ...replyFields })
+        .insert({ channel_id, content: content?.trim() ?? '', sender_id: null, sender_name: 'Admin', sender_type: 'admin', ...replyFields, ...attachFields })
         .select().single();
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       // Admin messages always notify relevant students

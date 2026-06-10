@@ -37,16 +37,18 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { channel_id, content, reply_to_id, reply_to_content, reply_to_sender_name } = await req.json();
-    if (!channel_id || !content?.trim())
-      return NextResponse.json({ error: 'channel_id and content required' }, { status: 400 });
+    const { channel_id, content, reply_to_id, reply_to_content, reply_to_sender_name,
+            attachment_url, attachment_type, attachment_name } = await req.json();
+    if (!channel_id || (!content?.trim() && !attachment_url))
+      return NextResponse.json({ error: 'channel_id and content (or attachment) required' }, { status: 400 });
 
     const supabase = createAdminClient();
     const replyFields = reply_to_id ? { reply_to_id, reply_to_content, reply_to_sender_name } : {};
+    const attachFields = attachment_url ? { attachment_url, attachment_type, attachment_name } : {};
 
     const { data, error } = await supabase
       .from('chat_messages')
-      .insert({ channel_id, content: content.trim(), sender_id: null, sender_name: 'Admin', sender_type: 'admin', ...replyFields })
+      .insert({ channel_id, content: content?.trim() ?? '', sender_id: null, sender_name: 'Admin', sender_type: 'admin', ...replyFields, ...attachFields })
       .select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

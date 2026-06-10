@@ -3,6 +3,42 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+// Render message text with clickable URLs
+function renderContent(text: string) {
+  if (!text) return null;
+  const urlRe = /https?:\/\/[^\s<>"]+/g;
+  const parts: (string | React.ReactElement)[] = [];
+  let last = 0, m: RegExpExecArray | null;
+  while ((m = urlRe.exec(text)) !== null) {
+    if (m.index > last) parts.push(text.slice(last, m.index));
+    parts.push(
+      <a key={m.index} href={m[0]} target="_blank" rel="noopener noreferrer"
+        style={{ color: 'var(--cyan)', textDecoration: 'underline', wordBreak: 'break-all' }}>
+        {m[0]}
+      </a>
+    );
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
+}
+
+function AttachmentPreview({ url, type, name }: { url: string; type: string; name?: string }) {
+  if (type === 'image') {
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginTop: '0.4rem' }}>
+        <img src={url} alt={name ?? 'image'} style={{ maxWidth: '240px', maxHeight: '200px', borderRadius: '8px', display: 'block', border: '1px solid var(--border)' }} />
+      </a>
+    );
+  }
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer"
+      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.4rem', padding: '0.45rem 0.75rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '7px', fontSize: '0.78rem', color: 'var(--cyan)', textDecoration: 'none' }}>
+      📄 {name ?? 'Download file'}
+    </a>
+  );
+}
+
 interface Channel {
   id: string;
   name: string;
@@ -22,6 +58,9 @@ interface Message {
   reply_to_id?: string | null;
   reply_to_content?: string | null;
   reply_to_sender_name?: string | null;
+  attachment_url?: string | null;
+  attachment_type?: string | null;
+  attachment_name?: string | null;
 }
 
 const CHANNEL_ICONS: Record<string, string> = { general: '🌐', track: '📌', group: '👥', direct: '📩' };
@@ -50,8 +89,12 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [openingDm, setOpeningDm] = useState(false);
   const [dmError, setDmError] = useState('');
+  const [attachment, setAttachment] = useState<{ url: string; type: string; name: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const lastTimestampRef = useRef<string | null>(null);
   // Track the active channel ID in a ref so async fetches can check if they're still relevant
   const activeChannelIdRef = useRef<string | null>(null);
@@ -147,13 +190,38 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
     return () => { supabase.removeChannel(channel); };
   }, [activeChannel?.id]);
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError('');
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      const res = await fetch('/api/chat/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (res.ok) {
+        setAttachment({ url: data.url, type: data.type, name: data.name });
+      } else {
+        setUploadError(data.error ?? 'Upload failed');
+      }
+    } catch {
+      setUploadError('Upload failed');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const send = async () => {
     const text = input.trim();
-    if (!text || sending || !activeChannel) return;
+    if ((!text && !attachment) || sending || !activeChannel) return;
     setSending(true);
     setSendError('');
     const savedInput = text;
+    const savedAttachment = attachment;
     setInput('');
+    setAttachment(null);
     try {
       const res = await fetch('/api/chat/messages', {
         method: 'POST',
@@ -162,6 +230,7 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
           channel_id: activeChannel.id,
           content: text,
           ...(replyingTo ? { reply_to_id: replyingTo.id, reply_to_content: replyingTo.content, reply_to_sender_name: replyingTo.sender_name } : {}),
+          ...(savedAttachment ? { attachment_url: savedAttachment.url, attachment_type: savedAttachment.type, attachment_name: savedAttachment.name } : {}),
         }),
       });
       const body = await res.json();
@@ -171,10 +240,12 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
       } else {
         setSendError(body.error ?? `Error ${res.status}`);
         setInput(savedInput);
+        setAttachment(savedAttachment);
       }
     } catch {
       setSendError('Network error');
       setInput(savedInput);
+      setAttachment(savedAttachment);
     } finally {
       setSending(false);
     }
@@ -447,7 +518,10 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
                       borderRadius: isMe ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
                       fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--text)', wordBreak: 'break-word',
                     }}>
-                      {msg.content}
+                      {msg.content && <span>{renderContent(msg.content)}</span>}
+                      {msg.attachment_url && (
+                        <AttachmentPreview url={msg.attachment_url} type={msg.attachment_type ?? 'file'} name={msg.attachment_name ?? undefined} />
+                      )}
                     </div>
                   </div>
                   <button
@@ -475,7 +549,33 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
               </div>
             )}
             <div style={{ padding: '0.75rem 1rem' }}>
+              {/* Attachment preview */}
+              {(attachment || uploading || uploadError) && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0.65rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '7px' }}>
+                  {uploading && <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>⏳ Uploading…</span>}
+                  {uploadError && <span style={{ fontSize: '0.78rem', color: '#FF5555' }}>⚠ {uploadError}</span>}
+                  {attachment && !uploading && (
+                    <>
+                      <span style={{ fontSize: '0.8rem' }}>{attachment.type === 'image' ? '🖼' : '📄'}</span>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{attachment.name}</span>
+                      <button onClick={() => setAttachment(null)} style={{ background: 'transparent', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '0.85rem', padding: '0 2px', flexShrink: 0 }}>✕</button>
+                    </>
+                  )}
+                </div>
+              )}
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
+                {/* Hidden file input */}
+                <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,.doc,.docx,.xls,.xlsx" style={{ display: 'none' }} onChange={handleFileChange} />
+                {/* Attach button */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={!activeChannel || uploading}
+                  title="Attach image or file"
+                  style={{ padding: '0.6rem 0.65rem', background: 'transparent', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--muted)', cursor: (!activeChannel || uploading) ? 'not-allowed' : 'pointer', fontSize: '1rem', flexShrink: 0, lineHeight: 1 }}
+                >
+                  📎
+                </button>
                 <textarea
                   style={{ ...inputStyle, flex: 1, minHeight: '42px', maxHeight: '120px', resize: 'none', lineHeight: 1.5 }}
                   placeholder={activeChannel ? `Message ${activeChannel.name}…` : 'Select a channel first'}
@@ -486,11 +586,11 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
                   onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
                   onBlur={e => (e.target.style.borderColor = 'var(--border)')}
                 />
-                <button onClick={send} disabled={sending || !input.trim() || !activeChannel} style={{ padding: '0.6rem 1rem', background: (input.trim() && activeChannel) ? 'var(--cyan)' : 'rgba(0,200,255,0.15)', color: (input.trim() && activeChannel) ? '#070D1A' : 'var(--muted)', border: 'none', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.85rem', cursor: (input.trim() && activeChannel) ? 'pointer' : 'not-allowed', transition: 'all 0.15s', flexShrink: 0 }}>
+                <button onClick={send} disabled={sending || (!input.trim() && !attachment) || !activeChannel} style={{ padding: '0.6rem 1rem', background: ((input.trim() || attachment) && activeChannel) ? 'var(--cyan)' : 'rgba(0,200,255,0.15)', color: ((input.trim() || attachment) && activeChannel) ? '#070D1A' : 'var(--muted)', border: 'none', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.85rem', cursor: ((input.trim() || attachment) && activeChannel) ? 'pointer' : 'not-allowed', transition: 'all 0.15s', flexShrink: 0 }}>
                   Send
                 </button>
               </div>
-              <div className="chat-hint" style={{ fontSize: '0.68rem', color: 'var(--muted)', marginTop: '0.35rem' }}>Enter to send · Shift+Enter for new line</div>
+              <div className="chat-hint" style={{ fontSize: '0.68rem', color: 'var(--muted)', marginTop: '0.35rem' }}>Enter to send · Shift+Enter for new line · 📎 attach image or file (max 5 MB)</div>
               {sendError && <div style={{ fontSize: '0.75rem', color: '#FF5555', marginTop: '0.25rem' }}>{sendError}</div>}
             </div>
           </div>

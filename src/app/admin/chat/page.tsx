@@ -8,6 +8,28 @@ interface Message {
   id: string; channel_id: string; sender_id?: string | null; sender_name: string; sender_type: string;
   content: string; is_pinned: boolean; created_at: string;
   reply_to_id?: string | null; reply_to_content?: string | null; reply_to_sender_name?: string | null;
+  attachment_url?: string | null; attachment_type?: string | null; attachment_name?: string | null;
+}
+
+function renderContent(text: string) {
+  if (!text) return null;
+  const urlRe = /https?:\/\/[^\s<>"]+/g;
+  const parts: (string | React.ReactElement)[] = [];
+  let last = 0, m: RegExpExecArray | null;
+  while ((m = urlRe.exec(text)) !== null) {
+    if (m.index > last) parts.push(text.slice(last, m.index));
+    parts.push(<a key={m.index} href={m[0]} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--cyan)', textDecoration: 'underline', wordBreak: 'break-all' }}>{m[0]}</a>);
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
+}
+
+function AttachmentPreview({ url, type, name }: { url: string; type: string; name?: string }) {
+  if (type === 'image') {
+    return <a href={url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginTop: '0.4rem' }}><img src={url} alt={name ?? 'image'} style={{ maxWidth: '240px', maxHeight: '200px', borderRadius: '8px', display: 'block', border: '1px solid var(--border)' }} /></a>;
+  }
+  return <a href={url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.4rem', padding: '0.45rem 0.75rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '7px', fontSize: '0.78rem', color: 'var(--cyan)', textDecoration: 'none' }}>📄 {name ?? 'Download file'}</a>;
 }
 interface Student { id: string; full_name: string; track: string; }
 
@@ -30,6 +52,10 @@ export default function AdminChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [attachment, setAttachment] = useState<{ url: string; type: string; name: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [replyingTo, setReplyingTo] = useState<{ id: string; content: string; sender_name: string } | null>(null);
@@ -106,17 +132,33 @@ export default function AdminChatPage() {
     return () => { supabase.removeChannel(ch); };
   }, [active?.id]);
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true); setUploadError('');
+    const fd = new FormData(); fd.append('file', file);
+    try {
+      const res = await fetch('/api/chat/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (res.ok) setAttachment({ url: data.url, type: data.type, name: data.name });
+      else setUploadError(data.error ?? 'Upload failed');
+    } catch { setUploadError('Upload failed'); }
+    finally { setUploading(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
+  };
+
   const send = async () => {
     const text = input.trim();
-    if (!text || sending || !active) return;
+    if ((!text && !attachment) || sending || !active) return;
     setSending(true);
-    setInput('');
+    const savedAttachment = attachment;
+    setInput(''); setAttachment(null);
     const res = await fetch('/api/admin/chat/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         channel_id: active.id, content: text,
         ...(replyingTo ? { reply_to_id: replyingTo.id, reply_to_content: replyingTo.content, reply_to_sender_name: replyingTo.sender_name } : {}),
+        ...(savedAttachment ? { attachment_url: savedAttachment.url, attachment_type: savedAttachment.type, attachment_name: savedAttachment.name } : {}),
       }),
     });
     setSending(false);
@@ -400,7 +442,8 @@ export default function AdminChatPage() {
                         borderRadius: isAdmin ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
                         fontSize: '0.85rem', lineHeight: 1.5, color: 'var(--text)', wordBreak: 'break-word',
                       }}>
-                        {msg.content}
+                        {msg.content && <span>{renderContent(msg.content)}</span>}
+                        {msg.attachment_url && <AttachmentPreview url={msg.attachment_url} type={msg.attachment_type ?? 'file'} name={msg.attachment_name ?? undefined} />}
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', flexShrink: 0, alignSelf: 'center' }}>
@@ -425,21 +468,41 @@ export default function AdminChatPage() {
                   <button onClick={() => setReplyingTo(null)} style={{ background: 'transparent', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
                 </div>
               )}
-              <div style={{ padding: '0.75rem 1rem', display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
-                <textarea
-                  style={{ ...inputStyle, flex: 1, minHeight: '42px', maxHeight: '100px', resize: 'none', lineHeight: 1.5 }}
-                  placeholder={active ? `Message ${active.name} as Admin…` : 'Select a channel'}
-                  value={input} disabled={!active}
-                  onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-                  onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-                  onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-                />
-                <button onClick={send} disabled={sending || !input.trim() || !active} style={{ padding: '0.6rem 1rem', background: (input.trim() && active) ? 'var(--cyan)' : 'rgba(0,200,255,0.15)', color: (input.trim() && active) ? '#070D1A' : 'var(--muted)', border: 'none', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.85rem', cursor: (input.trim() && active) ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
-                  Send
-                </button>
+              <div style={{ padding: '0.75rem 1rem' }}>
+                {(attachment || uploading || uploadError) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.4rem 0.65rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '7px' }}>
+                    {uploading && <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>⏳ Uploading…</span>}
+                    {uploadError && <span style={{ fontSize: '0.78rem', color: '#FF5555' }}>⚠ {uploadError}</span>}
+                    {attachment && !uploading && (
+                      <>
+                        <span style={{ fontSize: '0.8rem' }}>{attachment.type === 'image' ? '🖼' : '📄'}</span>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{attachment.name}</span>
+                        <button onClick={() => setAttachment(null)} style={{ background: 'transparent', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '0.85rem', padding: '0 2px' }}>✕</button>
+                      </>
+                    )}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
+                  <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,.doc,.docx,.xls,.xlsx" style={{ display: 'none' }} onChange={handleFileChange} />
+                  <button type="button" onClick={() => fileInputRef.current?.click()} disabled={!active || uploading} title="Attach image or file"
+                    style={{ padding: '0.6rem 0.65rem', background: 'transparent', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--muted)', cursor: (!active || uploading) ? 'not-allowed' : 'pointer', fontSize: '1rem', flexShrink: 0, lineHeight: 1 }}>
+                    📎
+                  </button>
+                  <textarea
+                    style={{ ...inputStyle, flex: 1, minHeight: '42px', maxHeight: '100px', resize: 'none', lineHeight: 1.5 }}
+                    placeholder={active ? `Message ${active.name} as Admin…` : 'Select a channel'}
+                    value={input} disabled={!active}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+                    onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
+                    onBlur={e => (e.target.style.borderColor = 'var(--border)')}
+                  />
+                  <button onClick={send} disabled={sending || (!input.trim() && !attachment) || !active} style={{ padding: '0.6rem 1rem', background: ((input.trim() || attachment) && active) ? 'var(--cyan)' : 'rgba(0,200,255,0.15)', color: ((input.trim() || attachment) && active) ? '#070D1A' : 'var(--muted)', border: 'none', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.85rem', cursor: ((input.trim() || attachment) && active) ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
+                    Send
+                  </button>
+                </div>
               </div>
-              <div className="admin-chat-hint" style={{ padding: '0 1rem 0.5rem', fontSize: '0.68rem', color: 'var(--muted)' }}>Enter to send · Shift+Enter for new line</div>
+              <div className="admin-chat-hint" style={{ padding: '0 1rem 0.5rem', fontSize: '0.68rem', color: 'var(--muted)' }}>Enter to send · Shift+Enter for new line · 📎 attach image or file (max 5 MB)</div>
             </div>
           </div>
         </div>
