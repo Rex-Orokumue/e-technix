@@ -504,7 +504,7 @@ export default function AdminChatPage() {
           )}
 
           {/* Messages */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {hasMore && (
               <button onClick={() => active && fetchMessages(active.id, messages[0]?.created_at)} disabled={loadingMore}
                 style={{ alignSelf: 'center', padding: '0.4rem 1rem', background: 'transparent', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--muted)', fontSize: '0.75rem', cursor: 'pointer', marginBottom: '0.5rem' }}>
