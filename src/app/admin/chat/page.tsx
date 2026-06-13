@@ -366,20 +366,24 @@ export default function AdminChatPage() {
     <>
       <style>{`
         /*
-          The admin shell main has padding: 2.5rem on desktop and padding-top: 5rem on mobile.
-          We make the chat page fill that remaining space using a flex column that stretches
-          to the viewport, then let the container take the rest.
+          Use position:fixed to escape the shell's padding/minHeight entirely.
+          The chat sits flush inside the viewport, below the fixed sidebar/topbar.
         */
         .ac-page {
+          position: fixed;
+          top: 0;
+          left: 230px; /* desktop sidebar width */
+          right: 0;
+          bottom: 0;
           display: flex;
           flex-direction: column;
-          /* 100vh minus the 2×2.5rem shell padding = exact fit on desktop */
-          height: calc(100vh - 5rem);
-          min-height: 480px;
+          padding: 1.5rem 2rem 1rem;
+          background: var(--bg);
+          z-index: 10;
         }
         .ac-page-header {
           flex-shrink: 0;
-          margin-bottom: 1rem;
+          margin-bottom: 0.75rem;
         }
         .ac-container {
           flex: 1;
@@ -410,10 +414,11 @@ export default function AdminChatPage() {
         .ac-drawer { display: none; }
         .ac-hint { display: block; }
         .ac-desktop-header { display: flex; }
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
           .ac-page {
-            /* 100svh minus topbar (5rem) and bottom padding (1.25rem) */
-            height: calc(100svh - 6.25rem);
+            left: 0;
+            top: 60px; /* mobile topbar height */
+            padding: 0.75rem 0.75rem 0.5rem;
           }
           .ac-page-header { display: none; }
           .ac-container { border-radius: 12px; }
