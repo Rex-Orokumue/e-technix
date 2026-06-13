@@ -573,9 +573,11 @@ export default function AdminChatPage() {
               </div>
             )}
 
-            {/* @mention dropdown */}
+            {/* Input row — position:relative so the mention popup can anchor to it */}
+            <div style={{ position: 'relative' }}>
+            {/* @mention popup — floats above the input, doesn't affect layout height */}
             {mentionQuery !== null && (mentionStudents.length > 0 || mentionQuery === '') && (
-              <div style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface)', maxHeight: '180px', overflowY: 'auto' }}>
+              <div style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, zIndex: 50, border: '1px solid var(--border)', borderBottom: 'none', background: 'var(--surface)', maxHeight: '200px', overflowY: 'auto', borderRadius: '8px 8px 0 0' }}>
                 {/* @all option */}
                 <button className="ac-mention-item" onClick={() => insertMention('@all')}
                   style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.45rem 1rem', background: 'transparent', border: 'none', color: '#F59E0B', cursor: 'pointer', fontSize: '0.83rem', textAlign: 'left' }}>
@@ -617,6 +619,7 @@ export default function AdminChatPage() {
               </button>
             </div>
             <div className="ac-hint" style={{ padding: '0 1rem 0.45rem', fontSize: '0.67rem', color: 'var(--muted)' }}>Enter to send · Shift+Enter for new line · @ to mention · 📎 attach (max 5 MB)</div>
+            </div>{/* end position:relative wrapper */}
           </div>
         </div>
       </div>

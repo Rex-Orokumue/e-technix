@@ -195,10 +195,15 @@ export default function HubPage() {
     color: 'var(--muted)', textAlign: 'left',
   });
 
-  const upcomingSession = sessions.find(s => !s.youtube_url && s.meet_link);
   // Always evaluate against GMT+1 (WAT) regardless of student's device timezone
   const nowGMT1 = new Date(now + 60 * 60 * 1000);
   const todayGMT1 = nowGMT1.toISOString().slice(0, 10);
+  // Pick the nearest session that hasn't been recorded yet (today or future first).
+  // Falls back to any unrecorded session so old data still shows something.
+  const upcomingSession =
+    sessions.filter(s => !s.youtube_url && s.meet_link && s.date >= todayGMT1)
+      .sort((a, b) => a.date.localeCompare(b.date))[0]
+    ?? sessions.find(s => !s.youtube_url && s.meet_link);
   const currentMinsGMT1 = nowGMT1.getUTCHours() * 60 + nowGMT1.getUTCMinutes();
   const _startTimeParts = (upcomingSession?.start_time ?? '19:00').split(':').map(Number);
   const SESSION_START_MINS = _startTimeParts[0] * 60 + (_startTimeParts[1] || 0);
