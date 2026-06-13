@@ -997,11 +997,7 @@ export default function HubPage() {
 
               {/* CHAT */}
               {tab === 'chat' && student && (
-                <div>
-                  <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.5rem', marginBottom: '0.4rem' }}>Chat</h2>
-                  <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>General cohort, your track channel, and group chats for paired work.</p>
-                  <ChatTab studentId={student.id} studentName={student.full_name} />
-                </div>
+                <ChatTab studentId={student.id} studentName={student.full_name} />
               )}
 
               {/* PROFILE */}

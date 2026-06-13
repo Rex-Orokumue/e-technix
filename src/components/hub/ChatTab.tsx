@@ -342,12 +342,30 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
   return (
     <>
       <style>{`
+        /* position:fixed fills the viewport beside the sidebar — no page scroll */
+        .chat-page {
+          position: fixed;
+          top: 0;
+          left: 230px;
+          right: 0;
+          bottom: 0;
+          display: flex;
+          flex-direction: column;
+          padding: 1.5rem 2rem 1rem;
+          background: var(--bg);
+          z-index: 10;
+        }
+        .chat-page-header {
+          flex-shrink: 0;
+          margin-bottom: 0.75rem;
+        }
         .chat-container {
+          flex: 1;
+          min-height: 0;
           display: flex;
           border: 1px solid var(--border);
           border-radius: 16px;
           overflow: hidden;
-          height: 600px;
         }
         .chat-sidebar {
           width: 200px;
@@ -362,12 +380,14 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
         .chat-mobile-drawer { display: none; }
         .chat-hint { display: block; }
 
-        @media (max-width: 640px) {
-          .chat-container {
-            height: calc(100dvh - 200px);
-            min-height: 400px;
-            border-radius: 12px;
+        @media (max-width: 768px) {
+          .chat-page {
+            left: 0;
+            top: 56px;
+            padding: 0.75rem 0.75rem 0.5rem;
           }
+          .chat-page-header { display: none; }
+          .chat-container { border-radius: 12px; }
           .chat-sidebar { display: none; }
           .chat-mobile-header {
             display: flex;
@@ -403,6 +423,12 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
           .chat-hint { display: none; }
         }
       `}</style>
+
+      <div className="chat-page">
+      <div className="chat-page-header">
+        <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.5rem', marginBottom: '0.2rem' }}>Chat</h2>
+        <p style={{ color: 'var(--muted)', fontSize: '0.85rem', margin: 0 }}>General cohort, your track channel, and group chats for paired work.</p>
+      </div>
 
       {/* Mobile channel drawer */}
       {mobileSidebarOpen && (
@@ -481,7 +507,7 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
           )}
 
           {/* Messages */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {hasMore && (
               <button onClick={() => activeChannel && fetchMessages(activeChannel.id, messages[0]?.created_at)} disabled={loadingMessages} style={{ alignSelf: 'center', padding: '0.4rem 1rem', background: 'transparent', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--muted)', fontSize: '0.75rem', cursor: 'pointer', marginBottom: '0.5rem' }}>
                 {loadingMessages ? 'Loading…' : 'Load older messages'}
@@ -596,6 +622,7 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
           </div>
         </div>
       </div>
+      </div>{/* end chat-page */}
     </>
   );
 }

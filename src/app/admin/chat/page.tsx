@@ -417,7 +417,7 @@ export default function AdminChatPage() {
         @media (max-width: 768px) {
           .ac-page {
             left: 0;
-            top: 60px; /* mobile topbar height */
+            top: 56px;
             padding: 0.75rem 0.75rem 0.5rem;
           }
           .ac-page-header { display: none; }
