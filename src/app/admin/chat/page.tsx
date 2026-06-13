@@ -365,12 +365,29 @@ export default function AdminChatPage() {
   return (
     <>
       <style>{`
+        /*
+          The admin shell main has padding: 2.5rem on desktop and padding-top: 5rem on mobile.
+          We make the chat page fill that remaining space using a flex column that stretches
+          to the viewport, then let the container take the rest.
+        */
+        .ac-page {
+          display: flex;
+          flex-direction: column;
+          /* 100vh minus the 2×2.5rem shell padding = exact fit on desktop */
+          height: calc(100vh - 5rem);
+          min-height: 480px;
+        }
+        .ac-page-header {
+          flex-shrink: 0;
+          margin-bottom: 1rem;
+        }
         .ac-container {
+          flex: 1;
+          min-height: 0;
           display: flex;
           border: 1px solid var(--border);
           border-radius: 16px;
           overflow: hidden;
-          height: 640px;
         }
         .ac-sidebar {
           width: 210px;
@@ -383,9 +400,9 @@ export default function AdminChatPage() {
         }
         .ac-body {
           flex: 1;
+          min-width: 0;
           display: flex;
           flex-direction: column;
-          min-width: 0;
           overflow: hidden;
         }
         .ac-mobile-bar { display: none; }
@@ -394,12 +411,12 @@ export default function AdminChatPage() {
         .ac-hint { display: block; }
         .ac-desktop-header { display: flex; }
         @media (max-width: 640px) {
-          .ac-container {
-            /* svh = small viewport height — doesn't change when keyboard/browser chrome appears */
-            height: calc(100svh - 210px);
-            min-height: 380px;
-            border-radius: 12px;
+          .ac-page {
+            /* 100svh minus topbar (5rem) and bottom padding (1.25rem) */
+            height: calc(100svh - 6.25rem);
           }
+          .ac-page-header { display: none; }
+          .ac-container { border-radius: 12px; }
           .ac-sidebar { display: none; }
           .ac-desktop-header { display: none !important; }
           .ac-mobile-bar {
@@ -435,9 +452,10 @@ export default function AdminChatPage() {
         .ac-mention-item:hover { background: rgba(0,200,255,0.1) !important; color: var(--cyan) !important; }
       `}</style>
 
-      <div style={{ marginBottom: '1.5rem' }}>
+      <div className="ac-page">
+      <div className="ac-page-header">
         <h1 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.8rem', letterSpacing: '-0.02em', marginBottom: '0.2rem' }}>Chat</h1>
-        <p style={{ color: 'var(--muted)', fontSize: '0.88rem' }}>Post messages, pin announcements, and moderate all channels.</p>
+        <p style={{ color: 'var(--muted)', fontSize: '0.88rem', margin: 0 }}>Post messages, pin announcements, and moderate all channels.</p>
       </div>
 
       {/* Mobile drawer */}
@@ -693,6 +711,7 @@ export default function AdminChatPage() {
           </div>
         </div>
       )}
+      </div>{/* end ac-page */}
     </>
   );
 }
