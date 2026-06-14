@@ -55,6 +55,7 @@ export default function HubPage() {
   const [resources, setResources] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
+  const [naAssignmentIds, setNaAssignmentIds] = useState<Set<string>>(new Set());
   const [student, setStudent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [announcement, setAnnouncement] = useState<{ message: string } | null>(null);
@@ -143,7 +144,9 @@ export default function HubPage() {
     setSessions(Array.isArray(s) ? s : []);
     setResources(Array.isArray(r) ? r : []);
     setAssignments(Array.isArray(a) ? a : []);
-    setSubmissions(Array.isArray(sub) ? sub.filter((s: any) => s.status !== 'not_submitted') : []);
+    const allSubs = Array.isArray(sub) ? sub : [];
+    setSubmissions(allSubs.filter((s: any) => s.status !== 'not_submitted'));
+    setNaAssignmentIds(new Set(allSubs.filter((s: any) => s.status === 'not_submitted').map((s: any) => s.assignment_id)));
     const attRows: { session_id: string }[] = (attResult as any).data ?? [];
     setMyAttendanceCount(attRows.length);
     setAttendedSessionIds(new Set(attRows.map(r => r.session_id)));
@@ -798,7 +801,7 @@ export default function HubPage() {
                                       </button>
                                       {weekOpen && (
                                         <div style={{ marginLeft: '1.25rem', marginTop: '0.3rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                          {(weekItems as any[]).map((a: any) => {
+                                          {(weekItems as any[]).filter((a: any) => !naAssignmentIds.has(a.id)).map((a: any) => {
                                             const sub = submissions.find(s => s.assignment_id === a.id && s.student_id === student?.id);
                                             const statusMeta = sub ? STATUS_META[sub.status] : null;
                                             const isClosed = a.status === 'closed';
@@ -908,7 +911,7 @@ export default function HubPage() {
                           <label style={labelStyle}>Assignment *</label>
                           <select style={{ ...inputStyle, cursor: 'pointer', colorScheme: 'dark' }} value={aForm.assignment_id} onChange={e => setAForm(f => ({ ...f, assignment_id: e.target.value }))} required onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')}>
                             <option value="" style={{ background: '#0f1829', color: '#94a3b8' }}>Select assignment</option>
-                            {assignments.filter(a => a.status === 'active').map(a => (
+                            {assignments.filter(a => a.status === 'active' && !naAssignmentIds.has(a.id)).map(a => (
                               <option key={a.id} value={a.id} style={{ background: '#0f1829', color: '#e2e8f0' }}>{a.assignment_code} — {a.title}</option>
                             ))}
                           </select>
