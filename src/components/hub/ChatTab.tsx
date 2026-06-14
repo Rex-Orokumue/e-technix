@@ -96,8 +96,18 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastTimestampRef = useRef<string | null>(null);
-  // Track the active channel ID in a ref so async fetches can check if they're still relevant
   const activeChannelIdRef = useRef<string | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const msgRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+
+  const scrollToMessage = (id: string) => {
+    const el = msgRefs.current.get(id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setHighlightedId(id);
+    setTimeout(() => setHighlightedId(null), 1800);
+  };
   const supabase = createClient();
 
   useEffect(() => {
@@ -488,14 +498,17 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
             </div>
           )}
 
-          {/* Pinned messages */}
+          {/* Pinned messages — click to jump */}
           {pinnedMessages.length > 0 && (
             <div style={{ padding: '0.4rem 1rem', background: 'rgba(245,158,11,0.06)', borderBottom: '1px solid rgba(245,158,11,0.15)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ color: '#F59E0B', fontSize: '0.78rem', flexShrink: 0 }}>📌</span>
-              <span style={{ flex: 1, fontSize: '0.78rem', color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <button
+                onClick={() => scrollToMessage(pinnedMessages[pinnedIndex % pinnedMessages.length].id)}
+                style={{ flex: 1, background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', fontSize: '0.78rem', color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+              >
                 <span style={{ color: '#F59E0B', fontWeight: 700 }}>{pinnedMessages[pinnedIndex % pinnedMessages.length].sender_name}: </span>
                 {pinnedMessages[pinnedIndex % pinnedMessages.length].content}
-              </span>
+              </button>
               {pinnedMessages.length > 1 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexShrink: 0 }}>
                   <button onClick={() => setPinnedIndex(i => (i - 1 + pinnedMessages.length) % pinnedMessages.length)} style={{ background: 'transparent', border: 'none', color: '#F59E0B', cursor: 'pointer', fontSize: '0.75rem', padding: '0 2px' }}>‹</button>
@@ -507,7 +520,7 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
           )}
 
           {/* Messages */}
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div ref={messagesContainerRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {hasMore && (
               <button onClick={() => activeChannel && fetchMessages(activeChannel.id, messages[0]?.created_at)} disabled={loadingMessages} style={{ alignSelf: 'center', padding: '0.4rem 1rem', background: 'transparent', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--muted)', fontSize: '0.75rem', cursor: 'pointer', marginBottom: '0.5rem' }}>
                 {loadingMessages ? 'Loading…' : 'Load older messages'}
@@ -520,8 +533,10 @@ export default function ChatTab({ studentId, studentName }: { studentId: string;
               const isAdmin = msg.sender_type === 'admin';
               const isMe = msg.sender_id === studentId;
               const showName = i === 0 || messages[i - 1].sender_id !== msg.sender_id;
+              const isHighlighted = highlightedId === msg.id;
               return (
-                <div key={msg.id} style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '0.4rem', alignItems: 'flex-end' }}>
+                <div key={msg.id} ref={el => { if (el) msgRefs.current.set(msg.id, el); else msgRefs.current.delete(msg.id); }}
+                  style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '0.4rem', alignItems: 'flex-end', borderRadius: '8px', transition: 'background 0.3s', background: isHighlighted ? 'rgba(245,158,11,0.12)' : 'transparent', margin: '0 -0.5rem', padding: '0 0.5rem' }}>
                   <div style={{ maxWidth: '78%', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                     {showName && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '3px', flexWrap: 'wrap' }}>

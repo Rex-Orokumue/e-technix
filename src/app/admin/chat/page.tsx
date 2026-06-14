@@ -97,7 +97,17 @@ export default function AdminChatPage() {
   const [mentionCursor, setMentionCursor] = useState(0);
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const msgRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const supabase = createClient();
+
+  const scrollToMessage = (id: string) => {
+    const el = msgRefs.current.get(id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setHighlightedId(id);
+    setTimeout(() => setHighlightedId(null), 1800);
+  };
 
   const loadStudents = useCallback(async () => {
     if (allStudents.length) return;
@@ -508,14 +518,17 @@ export default function AdminChatPage() {
             ) : <span style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>Select a channel</span>}
           </div>
 
-          {/* Pinned carousel */}
+          {/* Pinned carousel — click to jump to message */}
           {pinnedMessages.length > 0 && (
             <div style={{ padding: '0.4rem 1rem', background: 'rgba(245,158,11,0.06)', borderBottom: '1px solid rgba(245,158,11,0.15)', display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
               <span style={{ color: '#F59E0B', fontSize: '0.78rem', flexShrink: 0 }}>📌</span>
-              <span style={{ flex: 1, fontSize: '0.78rem', color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <button
+                onClick={() => scrollToMessage(pinnedMessages[pinnedIndex % pinnedMessages.length].id)}
+                style={{ flex: 1, background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', fontSize: '0.78rem', color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+              >
                 <span style={{ color: '#F59E0B', fontWeight: 700 }}>{pinnedMessages[pinnedIndex % pinnedMessages.length].sender_name}: </span>
                 {pinnedMessages[pinnedIndex % pinnedMessages.length].content}
-              </span>
+              </button>
               {pinnedMessages.length > 1 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexShrink: 0 }}>
                   <button onClick={() => setPinnedIndex(i => (i - 1 + pinnedMessages.length) % pinnedMessages.length)} style={{ background: 'transparent', border: 'none', color: '#F59E0B', cursor: 'pointer', fontSize: '0.75rem' }}>‹</button>
@@ -538,8 +551,10 @@ export default function AdminChatPage() {
             {messages.map((msg, i) => {
               const isAdmin = msg.sender_type === 'admin';
               const showName = i === 0 || messages[i - 1].sender_id !== msg.sender_id || messages[i - 1].sender_name !== msg.sender_name;
+              const isHighlighted = highlightedId === msg.id;
               return (
-                <div key={msg.id} style={{ display: 'flex', flexDirection: isAdmin ? 'row-reverse' : 'row', gap: '0.4rem', alignItems: 'flex-end' }}>
+                <div key={msg.id} ref={el => { if (el) msgRefs.current.set(msg.id, el); else msgRefs.current.delete(msg.id); }}
+                  style={{ display: 'flex', flexDirection: isAdmin ? 'row-reverse' : 'row', gap: '0.4rem', alignItems: 'flex-end', borderRadius: '8px', transition: 'background 0.3s', background: isHighlighted ? 'rgba(245,158,11,0.12)' : 'transparent', margin: '0 -0.5rem', padding: '0 0.5rem' }}>
                   <div style={{ maxWidth: '78%', display: 'flex', flexDirection: 'column', alignItems: isAdmin ? 'flex-end' : 'flex-start' }}>
                     {showName && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '3px', flexWrap: 'wrap' }}>
