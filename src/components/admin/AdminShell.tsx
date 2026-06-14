@@ -11,6 +11,7 @@ const navItems = [
   { href: '/admin/resources',     label: 'Resources',     icon: '📚' },
   { href: '/admin/assignments',   label: 'Assignments',   icon: '📝' },
   { href: '/admin/submissions',   label: 'Submissions',   icon: '📬' },
+  { href: '/admin/quizzes',       label: 'Quizzes',       icon: '🧠' },
   { href: '/admin/reviews',       label: 'Reviews',       icon: '⭐' },
   { href: '/admin/students',      label: 'Students',      icon: '👥' },
   { href: '/admin/attendance',    label: 'Attendance',    icon: '✅' },

@@ -7,9 +7,10 @@ import ScheduleTab from '@/components/hub/ScheduleTab';
 import ChatTab from '@/components/hub/ChatTab';
 import ProfileTab from '@/components/hub/ProfileTab';
 import ProgressTab from '@/components/hub/ProgressTab';
+import QuizzesTab from '@/components/hub/QuizzesTab';
 import { usePushNotifications } from '@/components/hub/usePushNotifications';
 
-type Tab = 'sessions' | 'resources' | 'assignments' | 'reviews' | 'schedule' | 'chat' | 'profile' | 'progress';
+type Tab = 'sessions' | 'resources' | 'assignments' | 'quizzes' | 'reviews' | 'schedule' | 'chat' | 'profile' | 'progress';
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
   submitted:         { label: 'Submitted',         color: '#7A8FAD', bg: 'rgba(122,143,173,0.1)' },
@@ -29,7 +30,7 @@ const STAR_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
 const WHATSAPP_NUMBER = '2348120288390';
 
 export default function HubPage() {
-  const VALID_TABS: Tab[] = ['sessions', 'resources', 'assignments', 'reviews', 'schedule', 'chat', 'profile', 'progress'];
+  const VALID_TABS: Tab[] = ['sessions', 'resources', 'assignments', 'quizzes', 'reviews', 'schedule', 'chat', 'profile', 'progress'];
   const [tab, setTab] = useState<Tab>('sessions');
   useEffect(() => {
     // URL param takes priority (used by push notification deep links e.g. /hub?tab=chat)
@@ -932,6 +933,11 @@ export default function HubPage() {
                     )}
                   </div>
                 </div>
+              )}
+
+              {/* QUIZZES */}
+              {tab === 'quizzes' && student && (
+                <QuizzesTab studentId={student.id} track={student.track} />
               )}
 
               {/* REVIEWS */}

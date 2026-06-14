@@ -38,6 +38,14 @@ export default function AdminSessionCard({ session }: { session: Session }) {
   const codeActive = session.attendance_code &&
     (!session.attendance_code_expires_at || new Date(session.attendance_code_expires_at) > new Date());
 
+  // "Live now" = today (GMT+1) and current time within [start, start+120min]
+  const nowG1 = new Date(Date.now() + 60 * 60 * 1000);
+  const todayG1 = nowG1.toISOString().slice(0, 10);
+  const nowMins = nowG1.getUTCHours() * 60 + nowG1.getUTCMinutes();
+  const [sh0, sm0] = (session.start_time ?? '19:00').split(':').map(Number);
+  const startMins = sh0 * 60 + (sm0 || 0);
+  const isLive = session.date === todayG1 && nowMins >= startMins && nowMins < startMins + 120;
+
   const handleReschedule = async () => {
     setSaving(true);
     await fetch(`/api/sessions/${session.id}`, {
@@ -98,8 +106,11 @@ export default function AdminSessionCard({ session }: { session: Session }) {
       </div>
 
       <div style={{ flex: 1, minWidth: '200px' }}>
-        <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.92rem', marginBottom: '3px' }}>
+        <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.92rem', marginBottom: '3px', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
           {session.title}
+          {isLive && (
+            <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#FF5555', background: 'rgba(255,51,51,0.1)', border: '1px solid rgba(255,51,51,0.3)', borderRadius: '4px', padding: '0.1rem 0.45rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>🔴 Live now</span>
+          )}
         </div>
         {rescheduling ? (
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '6px' }}>
@@ -133,6 +144,16 @@ export default function AdminSessionCard({ session }: { session: Session }) {
       </div>
 
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        {session.meet_link && (
+          <a href={session.meet_link} target="_blank" rel="noopener noreferrer" style={{
+            padding: '0.45rem 0.95rem', borderRadius: '6px', cursor: 'pointer',
+            background: 'var(--cyan)', color: '#070D1A', border: 'none',
+            fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.75rem', textDecoration: 'none',
+            display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+          }}>
+            🎥 Join
+          </a>
+        )}
         {codeActive ? (
           <button onClick={expireCode} style={{
             padding: '0.45rem 0.85rem', borderRadius: '6px', cursor: 'pointer',

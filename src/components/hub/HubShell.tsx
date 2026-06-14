@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
-type Tab = 'sessions' | 'schedule' | 'resources' | 'assignments' | 'reviews' | 'chat' | 'profile' | 'progress';
+type Tab = 'sessions' | 'schedule' | 'resources' | 'assignments' | 'quizzes' | 'reviews' | 'chat' | 'profile' | 'progress';
 
 const navItems: { id: Tab; label: string; icon: string }[] = [
   { id: 'progress',    label: 'My Progress',    icon: '📊' },
@@ -12,6 +12,7 @@ const navItems: { id: Tab; label: string; icon: string }[] = [
   { id: 'sessions',    label: 'Past Sessions',  icon: '🎬' },
   { id: 'resources',   label: 'Resources',      icon: '📚' },
   { id: 'assignments', label: 'Assignments',    icon: '📝' },
+  { id: 'quizzes',     label: 'Quizzes',         icon: '🧠' },
   { id: 'reviews',     label: 'Leave a Review', icon: '⭐' },
   { id: 'chat',        label: 'Chat',           icon: '💬' },
   { id: 'profile',     label: 'My Profile',     icon: '👤' },
