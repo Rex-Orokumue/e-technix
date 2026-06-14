@@ -5,7 +5,7 @@ import type { Quiz, QuizQuestion, QuizAttempt } from '@/lib/quiz';
 
 const todayGMT1 = () => new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 10);
 
-type Feedback = Record<string, { correct: boolean | null; earned: number; explanation?: string | null }>;
+type Feedback = Record<string, { correct: boolean | null; earned: number; explanation?: string | null; correctLabel?: string | null }>;
 
 export default function QuizzesTab({ studentId, track }: { studentId: string; track: string }) {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
@@ -66,8 +66,8 @@ export default function QuizzesTab({ studentId, track }: { studentId: string; tr
             return (
               <div key={q.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.98rem', margin: '0 0 0.2rem' }}>{q.title}</h3>
-                  {q.description && <p style={{ fontSize: '0.82rem', color: 'var(--muted)', margin: '0 0 0.35rem', lineHeight: 1.5 }}>{q.description}</p>}
+                  <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.98rem', margin: '0 0 0.2rem', wordBreak: 'break-word' }}>{q.title}</h3>
+                  {q.description && <p style={{ fontSize: '0.82rem', color: 'var(--muted)', margin: '0 0 0.35rem', lineHeight: 1.5, wordBreak: 'break-word' }}>{q.description}</p>}
                   <div style={{ fontSize: '0.76rem', color: 'var(--muted)' }}>
                     {statusLine} · {left > 0 ? `${left} attempt${left !== 1 ? 's' : ''} left` : 'No attempts left'}
                     {q.due_date && ` · due ${q.due_date}`}
@@ -146,10 +146,13 @@ function TakeQuiz({ quiz, questions, onExit }: { quiz: Quiz; questions: QuizQues
             return (
               <div key={q.id} style={{ background: 'var(--surface)', border: `1px solid ${color}40`, borderRadius: '10px', padding: '1rem' }}>
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                  <span style={{ color, fontWeight: 800 }}>{mark}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.25rem' }}>{i + 1}. {q.prompt}</div>
-                    {fb?.explanation && <div style={{ fontSize: '0.8rem', color: 'var(--muted)', lineHeight: 1.5 }}>{fb.explanation}</div>}
+                  <span style={{ color, fontWeight: 800, flexShrink: 0 }}>{mark}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.25rem', wordBreak: 'break-word' }}>{i + 1}. {q.prompt}</div>
+                    {fb?.correct === false && fb?.correctLabel && (
+                      <div style={{ fontSize: '0.8rem', color: 'var(--cyan)', fontWeight: 600, marginBottom: '0.25rem', wordBreak: 'break-word' }}>Correct answer: {fb.correctLabel}</div>
+                    )}
+                    {fb?.explanation && <div style={{ fontSize: '0.8rem', color: 'var(--muted)', lineHeight: 1.5, wordBreak: 'break-word' }}>{fb.explanation}</div>}
                   </div>
                 </div>
               </div>
@@ -177,16 +180,16 @@ function TakeQuiz({ quiz, questions, onExit }: { quiz: Quiz; questions: QuizQues
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {ordered.map((q, i) => (
-          <div key={q.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem' }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.75rem' }}>{i + 1}. {q.prompt} <span style={{ color: 'var(--muted)', fontWeight: 400, fontSize: '0.78rem' }}>({q.points} pt{q.points !== 1 ? 's' : ''})</span></div>
+          <div key={q.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem', maxWidth: '100%' }}>
+            <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.75rem', wordBreak: 'break-word' }}>{i + 1}. {q.prompt} <span style={{ color: 'var(--muted)', fontWeight: 400, fontSize: '0.78rem' }}>({q.points} pt{q.points !== 1 ? 's' : ''})</span></div>
             {q.image_url && <img src={q.image_url} alt="" style={{ maxWidth: '100%', maxHeight: '260px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '0.75rem', display: 'block' }} />}
 
             {q.type === 'mcq' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {(q.options ?? []).map((opt, oi) => (
                   <label key={oi} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 0.85rem', borderRadius: '8px', border: `1px solid ${Number(answers[q.id]) === oi ? 'var(--cyan-border)' : 'var(--border)'}`, background: Number(answers[q.id]) === oi ? 'rgba(0,200,255,0.06)' : 'transparent', cursor: 'pointer', fontSize: '0.85rem' }}>
-                    <input type="radio" name={q.id} checked={Number(answers[q.id]) === oi} onChange={() => setAnswer(q.id, oi)} style={{ accentColor: 'var(--cyan)' }} />
-                    {opt}
+                    <input type="radio" name={q.id} checked={Number(answers[q.id]) === oi} onChange={() => setAnswer(q.id, oi)} style={{ accentColor: 'var(--cyan)', flexShrink: 0 }} />
+                    <span style={{ minWidth: 0, wordBreak: 'break-word' }}>{opt}</span>
                   </label>
                 ))}
               </div>
@@ -205,7 +208,7 @@ function TakeQuiz({ quiz, questions, onExit }: { quiz: Quiz; questions: QuizQues
 
             {q.type === 'short_text' && (
               <textarea value={answers[q.id] ?? ''} onChange={e => setAnswer(q.id, e.target.value)} placeholder="Type your answer…"
-                style={{ width: '100%', minHeight: '80px', padding: '0.7rem 0.9rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '0.88rem', outline: 'none', resize: 'vertical', lineHeight: 1.5 }} />
+                style={{ width: '100%', boxSizing: 'border-box', minHeight: '80px', padding: '0.7rem 0.9rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '0.88rem', outline: 'none', resize: 'vertical', lineHeight: 1.5 }} />
             )}
           </div>
         ))}

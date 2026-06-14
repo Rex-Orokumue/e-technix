@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import TrackPicker from '@/components/admin/TrackPicker';
 import type { Quiz, QuizQuestion, QuestionType } from '@/lib/quiz';
 
-const inputStyle: React.CSSProperties = { width: '100%', padding: '0.7rem 0.9rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '0.88rem', outline: 'none', colorScheme: 'dark' };
+const inputStyle: React.CSSProperties = { width: '100%', boxSizing: 'border-box', padding: '0.7rem 0.9rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '0.88rem', outline: 'none', colorScheme: 'dark' };
 const labelStyle: React.CSSProperties = { fontSize: '0.7rem', fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.35rem', display: 'block' };
 
 export default function QuizBuilder({ quiz, questions: initialQuestions }: { quiz?: Quiz; questions?: QuizQuestion[] }) {
@@ -120,13 +120,13 @@ export default function QuizBuilder({ quiz, questions: initialQuestions }: { qui
         <div><label style={labelStyle}>Description</label>
           <textarea style={{ ...inputStyle, minHeight: '60px', resize: 'vertical', lineHeight: 1.5 }} value={meta.description} onChange={e => set('description', e.target.value)} placeholder="Short intro shown to students" /></div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: '1rem' }}>
           <div><label style={labelStyle}>Phase</label><input type="number" min="1" style={inputStyle} value={meta.phase} onChange={e => set('phase', e.target.value)} /></div>
           <div><label style={labelStyle}>Week</label><input type="number" min="1" style={inputStyle} value={meta.week} onChange={e => set('week', e.target.value)} /></div>
           <div><label style={labelStyle}>Max attempts</label><input type="number" min="1" style={inputStyle} value={meta.max_attempts} onChange={e => set('max_attempts', e.target.value)} /></div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
           <div><label style={labelStyle}>Time limit (mins, optional)</label><input type="number" min="1" style={inputStyle} value={meta.time_limit_mins} onChange={e => set('time_limit_mins', e.target.value)} placeholder="No limit" /></div>
           <div><label style={labelStyle}>Due date (optional)</label><input type="date" style={inputStyle} value={meta.due_date} onChange={e => set('due_date', e.target.value)} /></div>
         </div>
@@ -266,7 +266,7 @@ function QuestionEditor({ q, idx, total, onChange, onSave, onDelete, onMove }: {
         <span style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>Short-text answers are graded manually after submission.</span>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.75rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem' }}>
         <div><label style={labelStyle}>Points</label><input type="number" min="0" style={inputStyle} value={q.points} onChange={e => onChange({ points: parseInt(e.target.value) || 0 })} onBlur={onSave} /></div>
         <div><label style={labelStyle}>Explanation (shown after answering)</label><input style={inputStyle} value={q.explanation ?? ''} onChange={e => onChange({ explanation: e.target.value })} onBlur={onSave} placeholder="Why this is the answer" /></div>
       </div>

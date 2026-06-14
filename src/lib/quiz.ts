@@ -49,7 +49,17 @@ export interface GradeResult {
   maxScore: number;
   hasShortText: boolean;
   // per-question feedback for immediate display
-  feedback: Record<string, { correct: boolean | null; earned: number; explanation?: string | null }>;
+  feedback: Record<string, { correct: boolean | null; earned: number; explanation?: string | null; correctLabel?: string | null }>;
+}
+
+// Human-readable correct answer for a question (option text for mcq, True/False for tf)
+function correctLabelFor(q: QuizQuestion): string | null {
+  if (q.type === 'mcq') {
+    const idx = Number(q.correct_answer);
+    return q.options?.[idx] ?? null;
+  }
+  if (q.type === 'true_false') return q.correct_answer ? 'True' : 'False';
+  return null;
 }
 
 /**
@@ -75,7 +85,7 @@ export function gradeAttempt(questions: QuizQuestion[], answers: Record<string, 
     else if (q.type === 'true_false') correct = Boolean(given) === Boolean(q.correct_answer);
     const earned = correct ? q.points : 0;
     autoScore += earned;
-    feedback[q.id] = { correct, earned, explanation: q.explanation };
+    feedback[q.id] = { correct, earned, explanation: q.explanation, correctLabel: correctLabelFor(q) };
   }
 
   return { autoScore, maxScore, hasShortText, feedback };
