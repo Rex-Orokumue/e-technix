@@ -5,13 +5,15 @@ import AdminSubmissionsView from '@/components/admin/AdminSubmissionsView';
 
 export default async function AdminSubmissionsPage() {
   const supabase = createAdminClient();
-  const { data: submissions } = await supabase
+  const { data: raw } = await supabase
     .from('assignment_submissions')
     .select('*, students(full_name, email, track), assignments(title, assignment_code)')
+    .neq('status', 'not_submitted')
     .order('submitted_at', { ascending: false });
 
-  const pending = submissions?.filter(s => s.status === 'submitted').length ?? 0;
-  const total = submissions?.length ?? 0;
+  const submissions = raw ?? [];
+  const pending = submissions.filter(s => s.status === 'submitted').length;
+  const total = submissions.length;
 
   return (
     <div>

@@ -24,9 +24,9 @@ interface Submission {
 }
 
 export default function AdminSubmissionsView({ submissions }: { submissions: Submission[] }) {
-  // Group by student name
+  // Group by student name — exclude N/A placeholders
   const grouped: Record<string, Submission[]> = {};
-  for (const sub of submissions) {
+  for (const sub of submissions.filter(s => s.status !== 'not_submitted')) {
     const key = sub.students?.full_name ?? 'Unknown';
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push(sub);
