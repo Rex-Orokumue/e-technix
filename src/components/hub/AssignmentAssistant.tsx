@@ -30,6 +30,7 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
   const [fields, setFields] = useState<Record<string, string> | null>(null);
   // ladder step-by-step mode
   const [stepValues, setStepValues] = useState<Record<string, string>>({});
+  const [generated, setGenerated] = useState<Record<string, string>>({}); // the AI's original text per step
   const [stepIndex, setStepIndex] = useState(0); // how many steps generated
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -65,8 +66,10 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
         body: JSON.stringify({ assignment_id: assignment.id, studentInputs: inputs, priorFields: stepValues, targetFieldKey: target.key }),
       });
       const data = await res.json();
+      const text = String(data.field ?? '').trim();
       if (!res.ok) setError(data.error ?? 'Failed to generate');
-      else { setStepValues(v => ({ ...v, [target.key]: String(data.field ?? '') })); setStepIndex(i => i + 1); }
+      else if (!text) setError('The assistant returned an empty step — please try again.');
+      else { setStepValues(v => ({ ...v, [target.key]: text })); setGenerated(g => ({ ...g, [target.key]: text })); setStepIndex(i => i + 1); }
     } catch { setError('Connection error. Please try again.'); }
     finally { setBusy(false); }
   };
@@ -90,8 +93,10 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
         body: JSON.stringify({ assignment_id: assignment.id, studentInputs: inputs, priorFields: prior, targetFieldKey: target.key }),
       });
       const data = await res.json();
+      const text = String(data.field ?? '').trim();
       if (!res.ok) setError(data.error ?? 'Failed to regenerate');
-      else setStepValues(v => ({ ...v, [target.key]: String(data.field ?? '') }));
+      else if (!text) setError('The assistant returned nothing — keep your current text or try again.');
+      else { setStepValues(v => ({ ...v, [target.key]: text })); setGenerated(g => ({ ...g, [target.key]: text })); }
     } catch { setError('Connection error. Please try again.'); }
     finally { setBusy(false); }
   };
@@ -118,9 +123,16 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
 
   if (!tpl?.enabled) return null;
 
+  // The most-recent step must be answered/edited (non-empty AND changed from the
+  // AI's text) before the student can move on or submit — forces engagement.
+  const lastKey = stepIndex > 0 ? orderedFields[stepIndex - 1]?.key : undefined;
+  const lastVal = lastKey ? (stepValues[lastKey] ?? '').trim() : '';
+  const lastEdited = !lastKey || (lastVal.length > 0 && lastVal !== (generated[lastKey] ?? '').trim());
+  const canAdvance = stepIndex === 0 ? canStart : lastEdited;
+
   const ladderDone = isLadder && stepIndex >= orderedFields.length && orderedFields.length > 0;
   const oneShotReady = !isLadder && (prose != null || fields);
-  const canSubmit = ladderDone || oneShotReady;
+  const canSubmit = (ladderDone && lastEdited) || oneShotReady;
 
   return (
     <div style={{ marginTop: '0.75rem', borderTop: '1px dashed var(--border)', paddingTop: '0.75rem' }}>
@@ -156,7 +168,7 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
 
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {stepIndex < orderedFields.length && (
-                  <button onClick={generateStep} disabled={!canStart || busy} style={primaryBtn(canStart && !busy)}>
+                  <button onClick={generateStep} disabled={!canAdvance || busy} style={primaryBtn(canAdvance && !busy)}>
                     {busy ? 'Thinking…' : stepIndex === 0 ? `Start: ${orderedFields[0]?.label}` : `Next step: ${orderedFields[stepIndex]?.label}`}
                   </button>
                 )}
@@ -165,8 +177,11 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
                 )}
                 <button onClick={() => setOpen(false)} style={{ padding: '0.55rem 0.9rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>Close</button>
               </div>
-              {stepIndex > 0 && stepIndex < orderedFields.length && (
-                <p style={{ fontSize: '0.72rem', color: 'var(--muted)', margin: 0 }}>Tip: you can edit any box directly by typing in it. The next step builds on whatever you keep. &ldquo;Regenerate&rdquo; only rewrites the most recent step.</p>
+              {stepIndex > 0 && !lastEdited && (
+                <p style={{ fontSize: '0.74rem', color: '#F59E0B', margin: 0, fontWeight: 600 }}>✏️ Answer this step in your own words (edit the box above) before you continue.</p>
+              )}
+              {stepIndex > 0 && lastEdited && stepIndex < orderedFields.length && (
+                <p style={{ fontSize: '0.72rem', color: 'var(--muted)', margin: 0 }}>Each step builds on what you keep. &ldquo;Regenerate&rdquo; only rewrites the most recent step.</p>
               )}
             </>
           ) : (
