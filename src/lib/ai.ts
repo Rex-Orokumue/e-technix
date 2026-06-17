@@ -1,5 +1,6 @@
 // Server-only Gemini REST client. Never import into client components.
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+// flash-lite has higher free-tier RPM headroom than flash — better for a cohort.
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash-lite';
 
 function endpoint() {
   const key = process.env.GEMINI_API_KEY;
@@ -37,7 +38,7 @@ export async function geminiGenerate({ system, turns, json, maxRetries = 2 }: Ge
         // Free-tier quota hit. Retrying in the same minute just burns more
         // quota and returns 429 again — fail fast with the real reason.
         const detail = await res.text().catch(() => '');
-        throw new Error(`Gemini 429: ${detail.slice(0, 400)}`);
+        throw new Error(`Gemini 429: ${detail.slice(0, 900)}`);
       }
       if (res.status >= 500) {
         const detail = await res.text().catch(() => '');
