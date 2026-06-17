@@ -71,15 +71,29 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
     finally { setBusy(false); }
   };
 
+  // Regenerate the LAST generated step in place (keeps it on screen), built from
+  // the steps before it (using the student's current edits). Does NOT change stepIndex.
   const regenLastStep = async () => {
     if (busy || stepIndex === 0) return;
-    setStepIndex(i => i - 1);
-    // remove last value then regenerate
-    const lastKey = orderedFields[stepIndex - 1]?.key;
-    const pruned = { ...stepValues }; if (lastKey) delete pruned[lastKey];
-    setStepValues(pruned);
-    // generate after state settles
-    setTimeout(generateStep, 0);
+    const idx = stepIndex - 1;
+    const target = orderedFields[idx];
+    if (!target) return;
+    const prior: Record<string, string> = {};
+    for (let j = 0; j < idx; j++) {
+      const k = orderedFields[j].key;
+      prior[k] = stepValues[k] ?? '';
+    }
+    setBusy(true); setError('');
+    try {
+      const res = await fetch('/api/ai/assist', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignment_id: assignment.id, studentInputs: inputs, priorFields: prior, targetFieldKey: target.key }),
+      });
+      const data = await res.json();
+      if (!res.ok) setError(data.error ?? 'Failed to regenerate');
+      else setStepValues(v => ({ ...v, [target.key]: String(data.field ?? '') }));
+    } catch { setError('Connection error. Please try again.'); }
+    finally { setBusy(false); }
   };
 
   const serialize = () => {
@@ -146,13 +160,13 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
                     {busy ? 'Thinking…' : stepIndex === 0 ? `Start: ${orderedFields[0]?.label}` : `Next step: ${orderedFields[stepIndex]?.label}`}
                   </button>
                 )}
-                {stepIndex > 0 && stepIndex <= orderedFields.length && (
-                  <button onClick={regenLastStep} disabled={busy} style={{ padding: '0.55rem 0.9rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.8rem', cursor: busy ? 'not-allowed' : 'pointer' }}>↻ Redo last</button>
+                {stepIndex > 0 && (
+                  <button onClick={regenLastStep} disabled={busy} style={{ padding: '0.55rem 0.9rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.8rem', cursor: busy ? 'not-allowed' : 'pointer' }} title="Have the AI rewrite the most recent step">↻ Regenerate &ldquo;{orderedFields[stepIndex - 1]?.label}&rdquo;</button>
                 )}
                 <button onClick={() => setOpen(false)} style={{ padding: '0.55rem 0.9rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>Close</button>
               </div>
               {stepIndex > 0 && stepIndex < orderedFields.length && (
-                <p style={{ fontSize: '0.72rem', color: 'var(--muted)', margin: 0 }}>Edit the step above before generating the next — each step builds on what you keep.</p>
+                <p style={{ fontSize: '0.72rem', color: 'var(--muted)', margin: 0 }}>Tip: you can edit any box directly by typing in it. The next step builds on whatever you keep. &ldquo;Regenerate&rdquo; only rewrites the most recent step.</p>
               )}
             </>
           ) : (
