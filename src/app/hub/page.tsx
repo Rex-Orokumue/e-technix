@@ -8,6 +8,8 @@ import ChatTab from '@/components/hub/ChatTab';
 import ProfileTab from '@/components/hub/ProfileTab';
 import ProgressTab from '@/components/hub/ProgressTab';
 import QuizzesTab from '@/components/hub/QuizzesTab';
+import AiTutor from '@/components/hub/AiTutor';
+import AssignmentAssistant from '@/components/hub/AssignmentAssistant';
 import { usePushNotifications } from '@/components/hub/usePushNotifications';
 
 type Tab = 'sessions' | 'resources' | 'assignments' | 'quizzes' | 'reviews' | 'schedule' | 'chat' | 'profile' | 'progress';
@@ -830,6 +832,12 @@ export default function HubPage() {
                                                     {a.guidelines.map((g: string) => <li key={g} style={{ fontSize: '0.77rem', color: 'var(--muted)', marginBottom: '3px' }}>{g}</li>)}
                                                   </ul>
                                                 )}
+                                                {a.ai_template?.enabled && !sub && a.status === 'active' && (
+                                                  <AssignmentAssistant
+                                                    assignment={a}
+                                                    onUseDraft={(text) => { setAForm(f => ({ ...f, assignment_id: a.id, note: text })); contentRef.current?.scrollIntoView({ behavior: 'smooth' }); }}
+                                                  />
+                                                )}
                                                 {sub?.admin_feedback && (
                                                   <div style={{ marginTop: '0.6rem', padding: '0.7rem', background: 'rgba(255,107,43,0.06)', border: '1px solid rgba(255,107,43,0.2)', borderRadius: '8px', fontSize: '0.81rem', color: 'var(--text)' }}>
                                                     <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--orange)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '4px' }}>Instructor Feedback</span>
@@ -1015,6 +1023,12 @@ export default function HubPage() {
           )}
         </div>
       </div>
+      {student && sessions.length > 0 && (
+        <AiTutor
+          sessions={sessions.map((s: any) => ({ id: s.id, title: s.title }))}
+          defaultSessionId={(upcomingSession ?? sessions[0])?.id}
+        />
+      )}
     </HubShell>
   );
 }
