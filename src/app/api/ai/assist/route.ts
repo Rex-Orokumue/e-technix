@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const gate = await checkAndRecord(user.id, 'assist');
   if (!gate.ok) return NextResponse.json({ error: gate.reason }, { status: 429 });
 
-  const { assignment_id, studentInputs } = await req.json();
+  const { assignment_id, studentInputs, priorFields, targetFieldKey } = await req.json();
   if (!assignment_id) return NextResponse.json({ error: 'assignment_id required' }, { status: 400 });
 
   const supabase = createAdminClient();
@@ -32,6 +32,29 @@ export async function POST(req: NextRequest) {
 
   const inputsText = Object.entries(studentInputs ?? {})
     .map(([k, v]) => `${k}: ${v}`).join('\n');
+
+  // ── Single-field (step-by-step) mode: generate ONE field that builds on prior ones ──
+  if (targetFieldKey) {
+    const target = (tpl.fields ?? []).find(f => f.key === targetFieldKey);
+    if (!target) return NextResponse.json({ error: 'Unknown field' }, { status: 400 });
+    const priorText = Object.entries(priorFields ?? {})
+      .map(([k, v]) => {
+        const label = (tpl.fields ?? []).find(f => f.key === k)?.label ?? k;
+        return `${label}: ${v}`;
+      }).join('\n');
+    const system = `You are a Socratic coaching assistant for an E-Technix assignment: "${a.title}". ${tpl.coachingPrompt ?? ''}
+You are filling ONE step at a time, in sequence. Generate ONLY the content for the step "${target.label}". It MUST follow logically and directly from the student's most recent prior answer — build on what they actually wrote, do not restart or repeat earlier steps. Keep it to 1-2 sentences. Do not invent facts the student didn't provide; if their prior answer is too thin to go deeper, respond with a short prompt telling them exactly what to reflect on. Return plain text only — no labels, no JSON, no quotes.${brief}`;
+    try {
+      const out = await aiGenerate({
+        system,
+        turns: [{ role: 'user', text: `Student's starting input:\n${inputsText || '(none)'}\n\nSteps completed so far:\n${priorText || '(none yet)'}\n\nNow write: ${target.label}` }],
+      });
+      return NextResponse.json({ field: out.trim() });
+    } catch (e: any) {
+      console.error('[ai/assist:step]', e);
+      return NextResponse.json({ error: 'The assistant is busy right now. Please try again in a moment.', detail: String(e?.message ?? e) }, { status: 502 });
+    }
+  }
 
   const isProse = tpl.layout === 'prose';
   let system: string;

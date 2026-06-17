@@ -13,29 +13,39 @@ interface AiTemplate {
 }
 
 const inputStyle: React.CSSProperties = { width: '100%', boxSizing: 'border-box', padding: '0.55rem 0.75rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '0.84rem', outline: 'none', lineHeight: 1.5 };
+const primaryBtn = (on: boolean): React.CSSProperties => ({ padding: '0.55rem 1rem', background: on ? 'var(--cyan)' : 'rgba(0,200,255,0.15)', color: on ? '#070D1A' : 'var(--muted)', border: 'none', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.8rem', cursor: on ? 'pointer' : 'not-allowed' });
+const errBox: React.CSSProperties = { padding: '0.55rem 0.85rem', background: 'rgba(255,51,51,0.08)', border: '1px solid rgba(255,51,51,0.25)', borderRadius: '7px', fontSize: '0.8rem', color: '#FF5555' };
 
 export default function AssignmentAssistant({ assignment, onSubmitted }: { assignment: any; onSubmitted: () => void }) {
   const tpl: AiTemplate = assignment.ai_template;
+  const isLadder = tpl.layout === 'ladder';
+  const orderedFields = tpl.fields ?? [];
+
   const [open, setOpen] = useState(false);
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // one-shot modes
   const [prose, setProse] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string> | null>(null);
+  // ladder step-by-step mode
+  const [stepValues, setStepValues] = useState<Record<string, string>>({});
+  const [stepIndex, setStepIndex] = useState(0); // how many steps generated
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
   const studentInputs = tpl.studentInputs ?? [];
   const required = studentInputs.filter(i => i.required);
-  const canGenerate = required.every(i => (inputs[i.key] ?? '').trim().length > 0);
+  const canStart = required.every(i => (inputs[i.key] ?? '').trim().length > 0);
 
+  // ── one-shot (prose / grid / table) ──
   const generate = async () => {
-    if (!canGenerate || busy) return;
+    if (!canStart || busy) return;
     setBusy(true); setError(''); setProse(null); setFields(null);
     try {
       const res = await fetch('/api/ai/assist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ assignment_id: assignment.id, studentInputs: inputs }) });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? 'Failed to generate'); }
+      if (!res.ok) setError(data.error ?? 'Failed to generate');
       else if (data.prose != null) setProse(data.prose);
       else if (data.fields) setFields(normalizeFields(tpl, data.fields));
       else if (data.raw != null) setProse(data.raw);
@@ -43,9 +53,39 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
     finally { setBusy(false); }
   };
 
+  // ── ladder: generate ONE next step from prior edited steps ──
+  const generateStep = async () => {
+    if (busy) return;
+    const target = orderedFields[stepIndex];
+    if (!target) return;
+    setBusy(true); setError('');
+    try {
+      const res = await fetch('/api/ai/assist', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignment_id: assignment.id, studentInputs: inputs, priorFields: stepValues, targetFieldKey: target.key }),
+      });
+      const data = await res.json();
+      if (!res.ok) setError(data.error ?? 'Failed to generate');
+      else { setStepValues(v => ({ ...v, [target.key]: String(data.field ?? '') })); setStepIndex(i => i + 1); }
+    } catch { setError('Connection error. Please try again.'); }
+    finally { setBusy(false); }
+  };
+
+  const regenLastStep = async () => {
+    if (busy || stepIndex === 0) return;
+    setStepIndex(i => i - 1);
+    // remove last value then regenerate
+    const lastKey = orderedFields[stepIndex - 1]?.key;
+    const pruned = { ...stepValues }; if (lastKey) delete pruned[lastKey];
+    setStepValues(pruned);
+    // generate after state settles
+    setTimeout(generateStep, 0);
+  };
+
   const serialize = () => {
     if (prose != null) return prose.trim();
-    if (fields) return (tpl.fields ?? []).map(f => `${f.label}:\n${fields[f.key] ?? ''}`).join('\n\n').trim();
+    if (isLadder) return orderedFields.slice(0, stepIndex).map(f => `${f.label}:\n${stepValues[f.key] ?? ''}`).join('\n\n').trim();
+    if (fields) return orderedFields.map(f => `${f.label}:\n${fields[f.key] ?? ''}`).join('\n\n').trim();
     return '';
   };
 
@@ -54,18 +94,19 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
     if (!text || submitting) return;
     setSubmitting(true); setSubmitError('');
     try {
-      const res = await fetch('/api/submissions', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignment_id: assignment.id, drive_link: '', note: text }),
-      });
+      const res = await fetch('/api/submissions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ assignment_id: assignment.id, drive_link: '', note: text }) });
       const data = await res.json();
-      if (res.ok) { onSubmitted(); }
+      if (res.ok) onSubmitted();
       else setSubmitError(data.error || 'Failed to submit');
     } catch { setSubmitError('Connection error. Please try again.'); }
     finally { setSubmitting(false); }
   };
 
   if (!tpl?.enabled) return null;
+
+  const ladderDone = isLadder && stepIndex >= orderedFields.length && orderedFields.length > 0;
+  const oneShotReady = !isLadder && (prose != null || fields);
+  const canSubmit = ladderDone || oneShotReady;
 
   return (
     <div style={{ marginTop: '0.75rem', borderTop: '1px dashed var(--border)', paddingTop: '0.75rem' }}>
@@ -75,35 +116,61 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {tpl.intro && <p style={{ fontSize: '0.8rem', color: 'var(--muted)', margin: 0, wordBreak: 'break-word' }}>{tpl.intro}</p>}
 
-          {/* Student inputs — required before generating */}
+          {/* Student inputs */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {studentInputs.map(inp => (
               <div key={inp.key}>
                 <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '0.25rem' }}>{inp.label}{inp.required ? ' *' : ''}</label>
                 {inp.type === 'textarea'
-                  ? <textarea value={inputs[inp.key] ?? ''} onChange={e => setInputs(s => ({ ...s, [inp.key]: e.target.value }))} style={{ ...inputStyle, minHeight: '60px', resize: 'vertical' }} />
-                  : <input value={inputs[inp.key] ?? ''} onChange={e => setInputs(s => ({ ...s, [inp.key]: e.target.value }))} style={inputStyle} />}
+                  ? <textarea value={inputs[inp.key] ?? ''} onChange={e => setInputs(s => ({ ...s, [inp.key]: e.target.value }))} style={{ ...inputStyle, minHeight: '60px', resize: 'vertical' }} disabled={isLadder && stepIndex > 0} />
+                  : <input value={inputs[inp.key] ?? ''} onChange={e => setInputs(s => ({ ...s, [inp.key]: e.target.value }))} style={inputStyle} disabled={isLadder && stepIndex > 0} />}
               </div>
             ))}
           </div>
+          {!canStart && <p style={{ fontSize: '0.72rem', color: 'var(--muted)', margin: 0 }}>Fill in the required fields above to begin.</p>}
+          {error && <div style={errBox}>{error}</div>}
 
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <button onClick={generate} disabled={!canGenerate || busy} style={{ padding: '0.55rem 1rem', background: (canGenerate && !busy) ? 'var(--cyan)' : 'rgba(0,200,255,0.15)', color: (canGenerate && !busy) ? '#070D1A' : 'var(--muted)', border: 'none', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.8rem', cursor: (canGenerate && !busy) ? 'pointer' : 'not-allowed' }}>{busy ? 'Generating…' : (prose != null || fields) ? 'Regenerate' : 'Generate draft'}</button>
-            <button onClick={() => setOpen(false)} style={{ padding: '0.55rem 0.9rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>Close</button>
-          </div>
-          {!canGenerate && <p style={{ fontSize: '0.72rem', color: 'var(--muted)', margin: 0 }}>Fill in the required fields above to generate a draft.</p>}
-          {error && <div style={{ padding: '0.55rem 0.85rem', background: 'rgba(255,51,51,0.08)', border: '1px solid rgba(255,51,51,0.25)', borderRadius: '7px', fontSize: '0.8rem', color: '#FF5555' }}>{error}</div>}
+          {/* ── LADDER: step-by-step ── */}
+          {isLadder ? (
+            <>
+              {orderedFields.slice(0, stepIndex).map((f, i) => (
+                <div key={f.key} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '10px', padding: '0.75rem' }}>
+                  <div style={{ fontSize: '0.66rem', fontWeight: 700, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem', wordBreak: 'break-word' }}>{i + 1}. {f.label}</div>
+                  <textarea value={stepValues[f.key] ?? ''} onChange={e => setStepValues(v => ({ ...v, [f.key]: e.target.value }))} style={{ ...inputStyle, minHeight: '64px', resize: 'vertical', fontSize: '0.8rem' }} />
+                </div>
+              ))}
 
-          {/* Output */}
-          {prose != null && (
-            <textarea value={prose} onChange={e => setProse(e.target.value)} style={{ ...inputStyle, minHeight: '180px', resize: 'vertical' }} />
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {stepIndex < orderedFields.length && (
+                  <button onClick={generateStep} disabled={!canStart || busy} style={primaryBtn(canStart && !busy)}>
+                    {busy ? 'Thinking…' : stepIndex === 0 ? `Start: ${orderedFields[0]?.label}` : `Next step: ${orderedFields[stepIndex]?.label}`}
+                  </button>
+                )}
+                {stepIndex > 0 && stepIndex <= orderedFields.length && (
+                  <button onClick={regenLastStep} disabled={busy} style={{ padding: '0.55rem 0.9rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.8rem', cursor: busy ? 'not-allowed' : 'pointer' }}>↻ Redo last</button>
+                )}
+                <button onClick={() => setOpen(false)} style={{ padding: '0.55rem 0.9rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>Close</button>
+              </div>
+              {stepIndex > 0 && stepIndex < orderedFields.length && (
+                <p style={{ fontSize: '0.72rem', color: 'var(--muted)', margin: 0 }}>Edit the step above before generating the next — each step builds on what you keep.</p>
+              )}
+            </>
+          ) : (
+            <>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button onClick={generate} disabled={!canStart || busy} style={primaryBtn(canStart && !busy)}>{busy ? 'Generating…' : oneShotReady ? 'Regenerate' : 'Generate draft'}</button>
+                <button onClick={() => setOpen(false)} style={{ padding: '0.55rem 0.9rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>Close</button>
+              </div>
+              {prose != null && <textarea value={prose} onChange={e => setProse(e.target.value)} style={{ ...inputStyle, minHeight: '180px', resize: 'vertical' }} />}
+              {fields && <LayoutView layout={tpl.layout} fields={orderedFields} values={fields} onChange={(k, v) => setFields(f => ({ ...(f ?? {}), [k]: v }))} />}
+            </>
           )}
-          {fields && <LayoutView layout={tpl.layout} fields={tpl.fields ?? []} values={fields} onChange={(k, v) => setFields(f => ({ ...(f ?? {}), [k]: v }))} />}
 
-          {(prose != null || fields) && (
+          {/* Submit */}
+          {canSubmit && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              <p style={{ fontSize: '0.72rem', color: 'var(--muted)', margin: 0 }}>Review and edit every box above — then submit it as your work.</p>
-              {submitError && <div style={{ padding: '0.5rem 0.8rem', background: 'rgba(255,51,51,0.08)', border: '1px solid rgba(255,51,51,0.25)', borderRadius: '7px', fontSize: '0.78rem', color: '#FF5555' }}>{submitError}</div>}
+              <p style={{ fontSize: '0.72rem', color: 'var(--muted)', margin: 0 }}>Review and edit everything above — then submit it as your work.</p>
+              {submitError && <div style={errBox}>{submitError}</div>}
               <button onClick={submit} disabled={submitting} style={{ alignSelf: 'flex-start', padding: '0.6rem 1.2rem', background: submitting ? 'rgba(0,200,255,0.3)' : 'var(--cyan)', color: '#070D1A', border: 'none', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.82rem', cursor: submitting ? 'not-allowed' : 'pointer' }}>{submitting ? 'Submitting…' : '📤 Submit this assignment'}</button>
             </div>
           )}
@@ -113,7 +180,6 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
   );
 }
 
-// Ensure every template field has a string value (AI may omit some)
 function normalizeFields(tpl: AiTemplate, raw: Record<string, any>): Record<string, string> {
   const out: Record<string, string> = {};
   for (const f of tpl.fields ?? []) out[f.key] = raw[f.key] != null ? String(raw[f.key]) : '';
@@ -121,19 +187,12 @@ function normalizeFields(tpl: AiTemplate, raw: Record<string, any>): Record<stri
 }
 
 function LayoutView({ layout, fields, values, onChange }: { layout: string; fields: AiField[]; values: Record<string, string>; onChange: (k: string, v: string) => void }) {
-  const box = (f: AiField, n?: number) => (
+  const box = (f: AiField) => (
     <div key={f.key} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '10px', padding: '0.75rem', minWidth: 0 }}>
-      <div style={{ fontSize: '0.66rem', fontWeight: 700, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem', wordBreak: 'break-word' }}>{n != null ? `${n}. ` : ''}{f.label}</div>
+      <div style={{ fontSize: '0.66rem', fontWeight: 700, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem', wordBreak: 'break-word' }}>{f.label}</div>
       <textarea value={values[f.key] ?? ''} onChange={e => onChange(f.key, e.target.value)} style={{ ...inputStyle, minHeight: '70px', resize: 'vertical', fontSize: '0.8rem' }} />
     </div>
   );
-
-  if (layout === 'grid') {
-    return <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.6rem' }}>{fields.map(f => box(f))}</div>;
-  }
-  if (layout === 'ladder') {
-    return <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>{fields.map((f, i) => box(f, i + 1))}</div>;
-  }
-  // table / default → stacked rows
-  return <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>{fields.map(f => box(f))}</div>;
+  if (layout === 'grid') return <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.6rem' }}>{fields.map(box)}</div>;
+  return <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>{fields.map(box)}</div>;
 }
