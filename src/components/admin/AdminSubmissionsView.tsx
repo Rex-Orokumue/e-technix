@@ -113,10 +113,10 @@ export default function AdminSubmissionsView({ submissions }: { submissions: Sub
                             </span>
                           )}
                         </div>
-                        <a href={sub.drive_link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: 'var(--cyan)', textDecoration: 'none' }}>
-                          ↗ View Submission
-                        </a>
-                        {sub.note && <div style={{ fontSize: '0.74rem', color: 'var(--muted)', marginTop: '4px', fontStyle: 'italic' }}>&ldquo;{sub.note}&rdquo;</div>}
+                        {sub.drive_link
+                          ? <a href={sub.drive_link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: 'var(--cyan)', textDecoration: 'none' }}>↗ View Submission</a>
+                          : <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#A78BFA', background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.25)', borderRadius: '4px', padding: '0.05rem 0.4rem' }}>✨ AI-assisted (text below)</span>}
+                        {sub.note && <div style={{ fontSize: '0.76rem', color: 'var(--text)', marginTop: '6px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.5, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '7px', padding: '0.6rem 0.75rem' }}>{sub.note}</div>}
                         {sub.admin_feedback && (
                           <div style={{ marginTop: '6px', padding: '0.5rem 0.7rem', background: 'rgba(255,107,43,0.05)', border: '1px solid rgba(255,107,43,0.15)', borderRadius: '6px', fontSize: '0.74rem', color: 'var(--muted)' }}>
                             <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--orange)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '2px' }}>Remarks</span>

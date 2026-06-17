@@ -14,7 +14,7 @@ interface AiTemplate {
 
 const inputStyle: React.CSSProperties = { width: '100%', boxSizing: 'border-box', padding: '0.55rem 0.75rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '0.84rem', outline: 'none', lineHeight: 1.5 };
 
-export default function AssignmentAssistant({ assignment, onUseDraft }: { assignment: any; onUseDraft: (text: string) => void }) {
+export default function AssignmentAssistant({ assignment, onSubmitted }: { assignment: any; onSubmitted: () => void }) {
   const tpl: AiTemplate = assignment.ai_template;
   const [open, setOpen] = useState(false);
   const [inputs, setInputs] = useState<Record<string, string>>({});
@@ -22,6 +22,8 @@ export default function AssignmentAssistant({ assignment, onUseDraft }: { assign
   const [error, setError] = useState('');
   const [prose, setProse] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string> | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const studentInputs = tpl.studentInputs ?? [];
   const required = studentInputs.filter(i => i.required);
@@ -41,11 +43,26 @@ export default function AssignmentAssistant({ assignment, onUseDraft }: { assign
     finally { setBusy(false); }
   };
 
-  const useDraft = () => {
-    let text = '';
-    if (prose != null) text = prose;
-    else if (fields) text = (tpl.fields ?? []).map(f => `${f.label}:\n${fields[f.key] ?? ''}`).join('\n\n');
-    onUseDraft(text.trim());
+  const serialize = () => {
+    if (prose != null) return prose.trim();
+    if (fields) return (tpl.fields ?? []).map(f => `${f.label}:\n${fields[f.key] ?? ''}`).join('\n\n').trim();
+    return '';
+  };
+
+  const submit = async () => {
+    const text = serialize();
+    if (!text || submitting) return;
+    setSubmitting(true); setSubmitError('');
+    try {
+      const res = await fetch('/api/submissions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignment_id: assignment.id, drive_link: '', note: text }),
+      });
+      const data = await res.json();
+      if (res.ok) { onSubmitted(); }
+      else setSubmitError(data.error || 'Failed to submit');
+    } catch { setSubmitError('Connection error. Please try again.'); }
+    finally { setSubmitting(false); }
   };
 
   if (!tpl?.enabled) return null;
@@ -84,7 +101,11 @@ export default function AssignmentAssistant({ assignment, onUseDraft }: { assign
           {fields && <LayoutView layout={tpl.layout} fields={tpl.fields ?? []} values={fields} onChange={(k, v) => setFields(f => ({ ...(f ?? {}), [k]: v }))} />}
 
           {(prose != null || fields) && (
-            <button onClick={useDraft} style={{ alignSelf: 'flex-start', padding: '0.55rem 1rem', background: 'var(--cyan)', color: '#070D1A', border: 'none', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>Use this as my submission</button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <p style={{ fontSize: '0.72rem', color: 'var(--muted)', margin: 0 }}>Review and edit every box above — then submit it as your work.</p>
+              {submitError && <div style={{ padding: '0.5rem 0.8rem', background: 'rgba(255,51,51,0.08)', border: '1px solid rgba(255,51,51,0.25)', borderRadius: '7px', fontSize: '0.78rem', color: '#FF5555' }}>{submitError}</div>}
+              <button onClick={submit} disabled={submitting} style={{ alignSelf: 'flex-start', padding: '0.6rem 1.2rem', background: submitting ? 'rgba(0,200,255,0.3)' : 'var(--cyan)', color: '#070D1A', border: 'none', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.82rem', cursor: submitting ? 'not-allowed' : 'pointer' }}>{submitting ? 'Submitting…' : '📤 Submit this assignment'}</button>
+            </div>
           )}
         </div>
       )}

@@ -46,7 +46,6 @@ export default function HubPage() {
     }
   }, []);
   const contentRef = useRef<HTMLDivElement>(null);
-  const submitFormRef = useRef<HTMLDivElement>(null);
   const changeTab = (t: Tab) => {
     setTab(t);
     localStorage.setItem('hub-tab', t);
@@ -836,7 +835,7 @@ export default function HubPage() {
                                                 {a.ai_template?.enabled && !sub && a.status === 'active' && (
                                                   <AssignmentAssistant
                                                     assignment={a}
-                                                    onUseDraft={(text) => { setAForm(f => ({ ...f, assignment_id: a.id, note: text })); setTimeout(() => submitFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }}
+                                                    onSubmitted={load}
                                                   />
                                                 )}
                                                 {sub?.admin_feedback && (
@@ -878,8 +877,10 @@ export default function HubPage() {
                                                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
                                                         <div>
                                                           <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Your Submission</div>
-                                                          <a href={sub.drive_link} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.8rem', color: 'var(--cyan)', textDecoration: 'none' }}>↗ View submitted file</a>
-                                                          {sub.note && <div style={{ fontSize: '0.74rem', color: 'var(--muted)', marginTop: '2px', fontStyle: 'italic' }}>{sub.note}</div>}
+                                                          {sub.drive_link
+                                                            ? <a href={sub.drive_link} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.8rem', color: 'var(--cyan)', textDecoration: 'none' }}>↗ View submitted file</a>
+                                                            : <span style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>Submitted via AI Assistant</span>}
+                                                          {sub.note && <div style={{ fontSize: '0.74rem', color: 'var(--muted)', marginTop: '4px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.5 }}>{sub.note}</div>}
                                                           {sub.edit_count > 0 && <div style={{ fontSize: '0.68rem', color: 'var(--muted)', marginTop: '2px' }}>Edited {sub.edit_count}× · {2 - sub.edit_count} edit{2 - sub.edit_count !== 1 ? 's' : ''} remaining</div>}
                                                         </div>
                                                         {sub.edit_count < 2 && a.status === 'active' && (
@@ -906,7 +907,7 @@ export default function HubPage() {
                   )}
 
                   {/* Submit form */}
-                  <div ref={submitFormRef} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '2rem', marginTop: '1.5rem' }}>
+                  <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '2rem', marginTop: '1.5rem' }}>
                     <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '1rem', marginBottom: '0.4rem' }}>Submit an Assignment</h3>
                     <p style={{ fontSize: '0.82rem', color: 'var(--muted)', marginBottom: '1.5rem' }}>Save your work to Google Drive, set sharing to &ldquo;Anyone with the link&rdquo;, then submit.</p>
                     {aSuccess ? (
