@@ -30,7 +30,7 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
   const [fields, setFields] = useState<Record<string, string> | null>(null);
   // ladder step-by-step mode
   const [stepValues, setStepValues] = useState<Record<string, string>>({});
-  const [generated, setGenerated] = useState<Record<string, string>>({}); // the AI's original text per step
+  const [touched, setTouched] = useState<Record<string, boolean>>({}); // student typed in this step (not AI)
   const [stepIndex, setStepIndex] = useState(0); // how many steps generated
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -69,7 +69,7 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
       const text = String(data.field ?? '').trim();
       if (!res.ok) setError(data.error ?? 'Failed to generate');
       else if (!text) setError('The assistant returned an empty step — please try again.');
-      else { setStepValues(v => ({ ...v, [target.key]: text })); setGenerated(g => ({ ...g, [target.key]: text })); setStepIndex(i => i + 1); }
+      else { setStepValues(v => ({ ...v, [target.key]: text })); setTouched(t => ({ ...t, [target.key]: false })); setStepIndex(i => i + 1); }
     } catch { setError('Connection error. Please try again.'); }
     finally { setBusy(false); }
   };
@@ -96,7 +96,7 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
       const text = String(data.field ?? '').trim();
       if (!res.ok) setError(data.error ?? 'Failed to regenerate');
       else if (!text) setError('The assistant returned nothing — keep your current text or try again.');
-      else { setStepValues(v => ({ ...v, [target.key]: text })); setGenerated(g => ({ ...g, [target.key]: text })); }
+      else { setStepValues(v => ({ ...v, [target.key]: text })); setTouched(t => ({ ...t, [target.key]: false })); }
     } catch { setError('Connection error. Please try again.'); }
     finally { setBusy(false); }
   };
@@ -127,7 +127,7 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
   // AI's text) before the student can move on or submit — forces engagement.
   const lastKey = stepIndex > 0 ? orderedFields[stepIndex - 1]?.key : undefined;
   const lastVal = lastKey ? (stepValues[lastKey] ?? '').trim() : '';
-  const lastEdited = !lastKey || (lastVal.length > 0 && lastVal !== (generated[lastKey] ?? '').trim());
+  const lastEdited = !lastKey || (!!touched[lastKey] && lastVal.length > 0);
   const canAdvance = stepIndex === 0 ? canStart : lastEdited;
 
   const ladderDone = isLadder && stepIndex >= orderedFields.length && orderedFields.length > 0;
@@ -162,7 +162,7 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
               {orderedFields.slice(0, stepIndex).map((f, i) => (
                 <div key={f.key} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '10px', padding: '0.75rem' }}>
                   <div style={{ fontSize: '0.66rem', fontWeight: 700, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem', wordBreak: 'break-word' }}>{i + 1}. {f.label}</div>
-                  <textarea value={stepValues[f.key] ?? ''} onChange={e => setStepValues(v => ({ ...v, [f.key]: e.target.value }))} style={{ ...inputStyle, minHeight: '64px', resize: 'vertical', fontSize: '0.8rem' }} />
+                  <textarea value={stepValues[f.key] ?? ''} onChange={e => { setStepValues(v => ({ ...v, [f.key]: e.target.value })); setTouched(t => ({ ...t, [f.key]: true })); }} style={{ ...inputStyle, minHeight: '64px', resize: 'vertical', fontSize: '0.8rem' }} />
                 </div>
               ))}
 
