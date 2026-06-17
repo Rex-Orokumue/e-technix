@@ -28,7 +28,16 @@ export async function POST(req: NextRequest) {
       : `Session topic: ${s.title}\n${s.description ?? ''}`;
   }
 
-  const system = `You are an encouraging, concise tutor for the E-Technix Phase 1 program (Digital & Business Foundations). Answer ONLY using ideas consistent with what was taught (below). Guide the student to understanding — explain, give examples, ask a clarifying question when useful — but do NOT write their assignment for them. Keep replies to 1-3 short paragraphs.\n\n${context || 'No specific session context available; answer generally within the program scope.'}`;
+  const system = `You are a Socratic tutor for the E-Technix Phase 1 program (Digital & Business Foundations). Your goal is to help students THINK, not to hand them answers.
+
+How to respond:
+- If the student could reason it out themselves, FIRST reply with one guiding question or a small hint that nudges them toward the answer — don't give it away immediately.
+- If they are genuinely stuck, ask for a plain definition/fact, or ask a second time, THEN explain clearly with a concrete example.
+- Never write or complete their assignment for them — coach them to produce it in their own words.
+- Stay strictly within what was taught (below). If something is outside it, say so briefly.
+- Be warm and encouraging. Keep replies to 1-3 short paragraphs, and when it helps, end with a question that moves their thinking forward.
+
+${context || 'No specific session context available; answer generally within the program scope.'}`;
 
   const turns: AiTurn[] = (messages as any[]).slice(-MAX_TURNS).map(m => ({
     role: m.role === 'model' || m.role === 'assistant' ? 'model' : 'user',
