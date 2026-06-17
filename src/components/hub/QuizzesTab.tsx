@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Quiz, QuizQuestion, QuizAttempt } from '@/lib/quiz';
+import QuizPageShell from '@/components/QuizPageShell';
 
 const todayGMT1 = () => new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 10);
 
@@ -28,11 +29,16 @@ export default function QuizzesTab({ studentId, track }: { studentId: string; tr
   };
 
   if (active) {
-    return <TakeQuiz quiz={active.quiz} questions={active.questions}
-      onExit={() => { setActive(null); load(); }} />;
+    return (
+      <QuizPageShell>
+        <TakeQuiz quiz={active.quiz} questions={active.questions}
+          onExit={() => { setActive(null); load(); }} />
+      </QuizPageShell>
+    );
   }
 
   return (
+    <QuizPageShell>
     <div>
       <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.5rem', marginBottom: '0.4rem' }}>Quizzes</h2>
       <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Test your knowledge. Auto-graded questions score instantly.</p>
@@ -84,6 +90,7 @@ export default function QuizzesTab({ studentId, track }: { studentId: string; tr
         </div>
       )}
     </div>
+    </QuizPageShell>
   );
 }
 

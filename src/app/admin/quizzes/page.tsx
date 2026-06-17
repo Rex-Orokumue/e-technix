@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase/admin';
 import QuizCard from '@/components/admin/QuizCard';
+import QuizPageShell from '@/components/QuizPageShell';
 
 export default async function AdminQuizzesPage() {
   const supabase = createAdminClient();
@@ -12,7 +13,7 @@ export default async function AdminQuizzesPage() {
   const enriched = (quizzes ?? []).map(q => ({ ...q, question_count: count(qc, q.id), attempt_count: count(ac, q.id) }));
 
   return (
-    <div>
+    <QuizPageShell>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.8rem', letterSpacing: '-0.02em', marginBottom: '0.2rem' }}>Quizzes</h1>
@@ -30,6 +31,6 @@ export default async function AdminQuizzesPage() {
           {enriched.map(q => <QuizCard key={q.id} quiz={q} />)}
         </div>
       )}
-    </div>
+    </QuizPageShell>
   );
 }

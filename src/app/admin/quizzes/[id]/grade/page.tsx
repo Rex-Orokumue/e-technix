@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase/admin';
 import AttemptGradeRow from '@/components/admin/AttemptGradeRow';
+import QuizPageShell from '@/components/QuizPageShell';
 
 export default async function GradeQuizPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -15,7 +16,7 @@ export default async function GradeQuizPage({ params }: { params: Promise<{ id: 
   const shortText = allQuestions.filter(q => q.type === 'short_text');
 
   return (
-    <div style={{ maxWidth: '100%' }}>
+    <QuizPageShell>
       <Link href="/admin/quizzes" style={{ color: 'var(--muted)', fontSize: '0.82rem', textDecoration: 'none' }}>← Quizzes</Link>
       <h1 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.8rem', margin: '0.75rem 0 0.4rem', wordBreak: 'break-word' }}>{quiz?.title} — Submissions</h1>
       <p style={{ color: 'var(--muted)', fontSize: '0.88rem', marginBottom: '2rem' }}>{attempts?.length ?? 0} attempts{shortText.length > 0 ? ' · short-text questions need manual grading' : ''}</p>
@@ -25,6 +26,6 @@ export default async function GradeQuizPage({ params }: { params: Promise<{ id: 
         ))}
         {(attempts ?? []).length === 0 && <p style={{ color: 'var(--muted)' }}>No attempts yet.</p>}
       </div>
-    </div>
+    </QuizPageShell>
   );
 }
