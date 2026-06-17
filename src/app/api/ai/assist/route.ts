@@ -42,12 +42,12 @@ export async function POST(req: NextRequest) {
         const label = (tpl.fields ?? []).find(f => f.key === k)?.label ?? k;
         return `${label}: ${v}`;
       }).join('\n');
-    const system = `You are a Socratic coaching assistant for an E-Technix assignment: "${a.title}". ${tpl.coachingPrompt ?? ''}
-You are filling ONE step at a time, in sequence. Generate ONLY the content for the step "${target.label}". It MUST follow logically and directly from the student's most recent prior answer — build on what they actually wrote, do not restart or repeat earlier steps. Keep it to 1-2 sentences. Do not invent facts the student didn't provide; if their prior answer is too thin to go deeper, respond with a short prompt telling them exactly what to reflect on. Return plain text only — no labels, no JSON, no quotes.${brief}`;
+    const system = `You are a Socratic coach for an E-Technix assignment: "${a.title}". ${tpl.coachingPrompt ?? ''}
+You guide the student through ONE step at a time. For the step "${target.label}", write a SHORT guiding QUESTION (1-2 sentences) that leads the student to produce this step in THEIR OWN words, building directly on their most recent answer below. Ask the question — do NOT answer it yourself and do NOT write the step for them. If their prior answer is thin, point the question at exactly what they should think about. Return plain text: the question only, no labels or quotes.${brief}`;
     try {
       const out = await aiGenerate({
         system,
-        turns: [{ role: 'user', text: `Student's starting input:\n${inputsText || '(none)'}\n\nSteps completed so far:\n${priorText || '(none yet)'}\n\nNow write: ${target.label}` }],
+        turns: [{ role: 'user', text: `Student's starting input:\n${inputsText || '(none)'}\n\nTheir answers so far:\n${priorText || '(none yet)'}\n\nAsk the guiding question for: ${target.label}` }],
       });
       return NextResponse.json({ field: out.trim() });
     } catch (e: any) {

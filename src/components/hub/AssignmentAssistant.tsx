@@ -33,7 +33,8 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
   const [prose, setProse] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string> | null>(null);
   // ladder step-by-step mode
-  const [stepValues, setStepValues] = useState<Record<string, string>>({});
+  const [stepValues, setStepValues] = useState<Record<string, string>>({}); // the student's answers
+  const [questions, setQuestions] = useState<Record<string, string>>({});   // the AI's guiding question per step
   const [touched, setTouched] = useState<Record<string, boolean>>({}); // student typed in this step (not AI)
   const [stepIndex, setStepIndex] = useState(0); // how many steps generated
   const [submitting, setSubmitting] = useState(false);
@@ -72,8 +73,8 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
       const data = await res.json();
       const text = String(data.field ?? '').trim();
       if (!res.ok) setError(data.error ?? 'Failed to generate');
-      else if (!text) setError('The assistant returned an empty step — please try again.');
-      else { setStepValues(v => ({ ...v, [target.key]: text })); setTouched(t => ({ ...t, [target.key]: false })); setStepIndex(i => i + 1); }
+      else if (!text) setError('The assistant returned an empty question — please try again.');
+      else { setQuestions(q => ({ ...q, [target.key]: text })); setStepIndex(i => i + 1); }
     } catch { setError('Connection error. Please try again.'); }
     finally { setBusy(false); }
   };
@@ -99,15 +100,18 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
       const data = await res.json();
       const text = String(data.field ?? '').trim();
       if (!res.ok) setError(data.error ?? 'Failed to regenerate');
-      else if (!text) setError('The assistant returned nothing — keep your current text or try again.');
-      else { setStepValues(v => ({ ...v, [target.key]: text })); setTouched(t => ({ ...t, [target.key]: false })); }
+      else if (!text) setError('The assistant returned nothing — keep the current question or try again.');
+      else setQuestions(q => ({ ...q, [target.key]: text }));
     } catch { setError('Connection error. Please try again.'); }
     finally { setBusy(false); }
   };
 
   const serialize = () => {
     if (prose != null) return prose.trim();
-    if (isLadder) return orderedFields.slice(0, stepIndex).map(f => `${f.label}:\n${stepValues[f.key] ?? ''}`).join('\n\n').trim();
+    if (isLadder) return orderedFields.slice(0, stepIndex).map(f => {
+      const q = questions[f.key];
+      return `${f.label}\n${q ? `Q: ${q}\n` : ''}${stepValues[f.key] ?? ''}`;
+    }).join('\n\n').trim();
     if (fields) return orderedFields.map(f => `${f.label}:\n${fields[f.key] ?? ''}`).join('\n\n').trim();
     return '';
   };
@@ -165,20 +169,27 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
           {isLadder ? (
             <>
               {orderedFields.slice(0, stepIndex).map((f, i) => (
-                <div key={f.key} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '10px', padding: '0.75rem' }}>
-                  <div style={{ fontSize: '0.66rem', fontWeight: 700, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem', wordBreak: 'break-word' }}>{i + 1}. {f.label}</div>
-                  <textarea value={stepValues[f.key] ?? ''} onChange={e => { setStepValues(v => ({ ...v, [f.key]: e.target.value })); setTouched(t => ({ ...t, [f.key]: true })); }} style={{ ...inputStyle, minHeight: '64px', resize: 'vertical', fontSize: '0.8rem' }} />
+                <div key={f.key} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '10px', padding: '0.85rem' }}>
+                  <div style={{ fontSize: '0.66rem', fontWeight: 700, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem', wordBreak: 'break-word' }}>Step {i + 1} · {f.label}</div>
+                  {questions[f.key] && (
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', background: 'rgba(0,200,255,0.06)', border: '1px solid var(--cyan-border)', borderRadius: '8px', padding: '0.6rem 0.75rem', marginBottom: '0.55rem' }}>
+                      <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#070D1A', background: 'var(--cyan)', borderRadius: '4px', padding: '0.1rem 0.4rem', textTransform: 'uppercase', flexShrink: 0, marginTop: '1px' }}>Q</span>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--text)', lineHeight: 1.5, wordBreak: 'break-word' }}>{questions[f.key]}</span>
+                    </div>
+                  )}
+                  <label style={{ fontSize: '0.66rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '0.3rem' }}>✍️ Your answer</label>
+                  <textarea value={stepValues[f.key] ?? ''} onChange={e => { setStepValues(v => ({ ...v, [f.key]: e.target.value })); setTouched(t => ({ ...t, [f.key]: true })); }} placeholder="Type your answer here in your own words…" style={{ ...inputStyle, minHeight: '120px', resize: 'vertical', fontSize: '0.84rem' }} />
                 </div>
               ))}
 
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {stepIndex < orderedFields.length && (
                   <button onClick={generateStep} disabled={!canAdvance || busy} style={primaryBtn(canAdvance && !busy)}>
-                    {busy ? 'Thinking…' : stepIndex === 0 ? `Start: ${orderedFields[0]?.label}` : `Next step: ${orderedFields[stepIndex]?.label}`}
+                    {busy ? 'Thinking…' : stepIndex === 0 ? 'Get first question' : `Next question: ${orderedFields[stepIndex]?.label}`}
                   </button>
                 )}
                 {stepIndex > 0 && (
-                  <button onClick={regenLastStep} disabled={busy} style={{ padding: '0.55rem 0.9rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.8rem', cursor: busy ? 'not-allowed' : 'pointer' }} title="Have the AI rewrite the most recent step">↻ Regenerate &ldquo;{orderedFields[stepIndex - 1]?.label}&rdquo;</button>
+                  <button onClick={regenLastStep} disabled={busy} style={{ padding: '0.55rem 0.9rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.8rem', cursor: busy ? 'not-allowed' : 'pointer' }} title="Ask a different question for this step">↻ Different question</button>
                 )}
                 <button onClick={() => setOpen(false)} style={{ padding: '0.55rem 0.9rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>Close</button>
               </div>
@@ -186,7 +197,7 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
                 <p style={{ fontSize: '0.74rem', color: '#F59E0B', margin: 0, fontWeight: 600 }}>✏️ Expand this step in your own words before you continue — at least {MIN_WORDS} words ({lastWords}/{MIN_WORDS} so far).</p>
               )}
               {stepIndex > 0 && lastEdited && stepIndex < orderedFields.length && (
-                <p style={{ fontSize: '0.72rem', color: 'var(--muted)', margin: 0 }}>Each step builds on what you keep. &ldquo;Regenerate&rdquo; only rewrites the most recent step.</p>
+                <p style={{ fontSize: '0.72rem', color: 'var(--muted)', margin: 0 }}>Each question builds on your previous answer. &ldquo;Different question&rdquo; rewrites the current one.</p>
               )}
             </>
           ) : (
