@@ -33,7 +33,13 @@ export async function geminiGenerate({ system, turns, json, maxRetries = 2 }: Ge
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      if (res.status === 429 || res.status >= 500) {
+      if (res.status === 429) {
+        // Free-tier quota hit. Retrying in the same minute just burns more
+        // quota and returns 429 again — fail fast with the real reason.
+        const detail = await res.text().catch(() => '');
+        throw new Error(`Gemini 429: ${detail.slice(0, 400)}`);
+      }
+      if (res.status >= 500) {
         const detail = await res.text().catch(() => '');
         lastErr = new Error(`Gemini ${res.status}: ${detail.slice(0, 300)}`);
         await new Promise(r => setTimeout(r, delay));
@@ -45,7 +51,9 @@ export async function geminiGenerate({ system, turns, json, maxRetries = 2 }: Ge
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (typeof text !== 'string') throw new Error('Gemini: empty response');
       return text;
-    } catch (e) {
+    } catch (e: any) {
+      // Don't retry quota errors — it only burns more free-tier quota.
+      if (String(e?.message ?? e).startsWith('Gemini 429')) throw e;
       lastErr = e;
       await new Promise(r => setTimeout(r, delay));
       delay *= 2;
