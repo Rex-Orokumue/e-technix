@@ -17,7 +17,7 @@ interface GenerateOpts {
 }
 
 // Returns the model's text reply. Retries 429/5xx with exponential backoff.
-export async function geminiGenerate({ system, turns, json, maxRetries = 3 }: GenerateOpts): Promise<string> {
+export async function geminiGenerate({ system, turns, json, maxRetries = 2 }: GenerateOpts): Promise<string> {
   const body: any = {
     contents: turns.map(t => ({ role: t.role, parts: [{ text: t.text }] })),
   };
@@ -34,7 +34,8 @@ export async function geminiGenerate({ system, turns, json, maxRetries = 3 }: Ge
         body: JSON.stringify(body),
       });
       if (res.status === 429 || res.status >= 500) {
-        lastErr = new Error(`Gemini ${res.status}`);
+        const detail = await res.text().catch(() => '');
+        lastErr = new Error(`Gemini ${res.status}: ${detail.slice(0, 300)}`);
         await new Promise(r => setTimeout(r, delay));
         delay *= 2;
         continue;
