@@ -46,6 +46,7 @@ export default function HubPage() {
     }
   }, []);
   const contentRef = useRef<HTMLDivElement>(null);
+  const submitFormRef = useRef<HTMLDivElement>(null);
   const changeTab = (t: Tab) => {
     setTab(t);
     localStorage.setItem('hub-tab', t);
@@ -835,7 +836,7 @@ export default function HubPage() {
                                                 {a.ai_template?.enabled && !sub && a.status === 'active' && (
                                                   <AssignmentAssistant
                                                     assignment={a}
-                                                    onUseDraft={(text) => { setAForm(f => ({ ...f, assignment_id: a.id, note: text })); contentRef.current?.scrollIntoView({ behavior: 'smooth' }); }}
+                                                    onUseDraft={(text) => { setAForm(f => ({ ...f, assignment_id: a.id, note: text })); setTimeout(() => submitFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }}
                                                   />
                                                 )}
                                                 {sub?.admin_feedback && (
@@ -905,7 +906,7 @@ export default function HubPage() {
                   )}
 
                   {/* Submit form */}
-                  <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '2rem', marginTop: '1.5rem' }}>
+                  <div ref={submitFormRef} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '2rem', marginTop: '1.5rem' }}>
                     <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '1rem', marginBottom: '0.4rem' }}>Submit an Assignment</h3>
                     <p style={{ fontSize: '0.82rem', color: 'var(--muted)', marginBottom: '1.5rem' }}>Save your work to Google Drive, set sharing to &ldquo;Anyone with the link&rdquo;, then submit.</p>
                     {aSuccess ? (
