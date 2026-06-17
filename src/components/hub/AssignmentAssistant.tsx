@@ -16,6 +16,10 @@ const inputStyle: React.CSSProperties = { width: '100%', boxSizing: 'border-box'
 const primaryBtn = (on: boolean): React.CSSProperties => ({ padding: '0.55rem 1rem', background: on ? 'var(--cyan)' : 'rgba(0,200,255,0.15)', color: on ? '#070D1A' : 'var(--muted)', border: 'none', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.8rem', cursor: on ? 'pointer' : 'not-allowed' });
 const errBox: React.CSSProperties = { padding: '0.55rem 0.85rem', background: 'rgba(255,51,51,0.08)', border: '1px solid rgba(255,51,51,0.25)', borderRadius: '7px', fontSize: '0.8rem', color: '#FF5555' };
 
+// Minimum words a student must write in a step before moving on — forces a real answer.
+const MIN_WORDS = 8;
+const wordCount = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
+
 export default function AssignmentAssistant({ assignment, onSubmitted }: { assignment: any; onSubmitted: () => void }) {
   const tpl: AiTemplate = assignment.ai_template;
   const isLadder = tpl.layout === 'ladder';
@@ -127,7 +131,8 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
   // AI's text) before the student can move on or submit — forces engagement.
   const lastKey = stepIndex > 0 ? orderedFields[stepIndex - 1]?.key : undefined;
   const lastVal = lastKey ? (stepValues[lastKey] ?? '').trim() : '';
-  const lastEdited = !lastKey || (!!touched[lastKey] && lastVal.length > 0);
+  const lastWords = wordCount(lastVal);
+  const lastEdited = !lastKey || (!!touched[lastKey] && lastWords >= MIN_WORDS);
   const canAdvance = stepIndex === 0 ? canStart : lastEdited;
 
   const ladderDone = isLadder && stepIndex >= orderedFields.length && orderedFields.length > 0;
@@ -178,7 +183,7 @@ export default function AssignmentAssistant({ assignment, onSubmitted }: { assig
                 <button onClick={() => setOpen(false)} style={{ padding: '0.55rem 0.9rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>Close</button>
               </div>
               {stepIndex > 0 && !lastEdited && (
-                <p style={{ fontSize: '0.74rem', color: '#F59E0B', margin: 0, fontWeight: 600 }}>✏️ Answer this step in your own words (edit the box above) before you continue.</p>
+                <p style={{ fontSize: '0.74rem', color: '#F59E0B', margin: 0, fontWeight: 600 }}>✏️ Expand this step in your own words before you continue — at least {MIN_WORDS} words ({lastWords}/{MIN_WORDS} so far).</p>
               )}
               {stepIndex > 0 && lastEdited && stepIndex < orderedFields.length && (
                 <p style={{ fontSize: '0.72rem', color: 'var(--muted)', margin: 0 }}>Each step builds on what you keep. &ldquo;Regenerate&rdquo; only rewrites the most recent step.</p>
