@@ -12,6 +12,7 @@ export default function EditSessionPage() {
   const [error, setError] = useState('');
   const [topicsInput, setTopicsInput] = useState('');
   const [tracks, setTracks] = useState<string[] | null>(null);
+  const [teachingScript, setTeachingScript] = useState('');
   const [form, setForm] = useState({
     phase: '1', week: '1', session_number: '1',
     title: '', date: '', start_time: '19:00', duration: '', youtube_url: '', meet_link: '', description: '',
@@ -28,6 +29,7 @@ export default function EditSessionPage() {
         });
         setTopicsInput((s.topics ?? []).join('\n'));
         setTracks(s.tracks ?? null);
+        setTeachingScript(s.teaching_script ?? '');
       }
       setLoading(false);
     });
@@ -50,11 +52,16 @@ export default function EditSessionPage() {
         session_number: parseInt(form.session_number),
         topics,
         tracks: tracks && tracks.length > 0 ? tracks : null,
+        teaching_script: teachingScript.trim() || null,
       }),
     });
-    setSaving(false);
-    if (res.ok) { router.push('/admin/sessions'); router.refresh(); }
-    else { const d = await res.json(); setError(d.error || 'Failed to save'); }
+    if (res.ok) {
+      if (teachingScript.trim()) {
+        try { await fetch('/api/ai/brief', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: id, script: teachingScript.trim() }) }); } catch {}
+      }
+      setSaving(false);
+      router.push('/admin/sessions'); router.refresh();
+    } else { setSaving(false); const d = await res.json(); setError(d.error || 'Failed to save'); }
   };
 
   const inputStyle = {
@@ -116,6 +123,11 @@ export default function EditSessionPage() {
         <div><label style={labelStyle}>Topics (one per line)</label>
           <textarea style={{ ...inputStyle, minHeight: '80px', resize: 'vertical', lineHeight: 1.6 }}
             value={topicsInput} onChange={e => setTopicsInput(e.target.value)}
+            onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
+        <div><label style={labelStyle}>Teaching script (for the AI tutor)</label>
+          <textarea style={{ ...inputStyle, minHeight: '120px', resize: 'vertical', lineHeight: 1.6 }}
+            placeholder="Paste the full session script. We'll condense it into a brief the AI tutor uses to answer student questions about this topic."
+            value={teachingScript} onChange={e => setTeachingScript(e.target.value)}
             onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')} onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
         <div>
           <label style={labelStyle}>Visible to</label>

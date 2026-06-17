@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import TrackPicker from '@/components/admin/TrackPicker';
+import AiTemplateEditor, { emptyTemplate, type AiTemplate } from '@/components/admin/AiTemplateEditor';
 
 export default function NewAssignmentPage() {
   const router = useRouter();
@@ -10,6 +11,7 @@ export default function NewAssignmentPage() {
   const [error, setError] = useState('');
   const [guidelinesInput, setGuidelinesInput] = useState('');
   const [tracks, setTracks] = useState<string[] | null>(null);
+  const [aiTemplate, setAiTemplate] = useState<AiTemplate>(emptyTemplate);
   const [form, setForm] = useState({ phase: '1', week: '1', assignment_code: '', title: '', description: '', due_date: '' });
 
   useEffect(() => {
@@ -40,6 +42,7 @@ export default function NewAssignmentPage() {
         week: parseInt(form.week),
         guidelines,
         tracks: tracks && tracks.length > 0 ? tracks : null,
+        ai_template: aiTemplate.enabled ? aiTemplate : null,
       }),
     });
     setSaving(false);
@@ -82,6 +85,11 @@ export default function NewAssignmentPage() {
         <div>
           <label style={labelStyle}>Visible to</label>
           <TrackPicker value={tracks} onChange={setTracks} />
+        </div>
+
+        <div>
+          <label style={labelStyle}>AI Assistant</label>
+          <AiTemplateEditor value={aiTemplate} onChange={setAiTemplate} />
         </div>
 
         {error && <div style={{ padding: '0.6rem 1rem', background: 'rgba(255,51,51,0.08)', border: '1px solid rgba(255,51,51,0.25)', borderRadius: '7px', fontSize: '0.82rem', color: '#FF5555' }}>{error}</div>}

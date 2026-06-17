@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import TrackPicker from '@/components/admin/TrackPicker';
+import AiTemplateEditor, { emptyTemplate, type AiTemplate } from '@/components/admin/AiTemplateEditor';
 
 export default function EditAssignmentPage() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function EditAssignmentPage() {
   const [error, setError] = useState('');
   const [guidelinesInput, setGuidelinesInput] = useState('');
   const [tracks, setTracks] = useState<string[] | null>(null);
+  const [aiTemplate, setAiTemplate] = useState<AiTemplate>(emptyTemplate);
   const [form, setForm] = useState({ phase: '1', week: '1', assignment_code: '', title: '', description: '', due_date: '', status: 'active' });
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
@@ -32,6 +34,7 @@ export default function EditAssignmentPage() {
         });
         setGuidelinesInput(Array.isArray(a.guidelines) ? a.guidelines.join('\n') : '');
         setTracks(a.tracks ?? null);
+        if (a.ai_template) setAiTemplate({ ...emptyTemplate, ...a.ai_template });
         setLoading(false);
       });
   }, [id]);
@@ -50,6 +53,7 @@ export default function EditAssignmentPage() {
         week: parseInt(form.week),
         guidelines,
         tracks: tracks && tracks.length > 0 ? tracks : null,
+        ai_template: aiTemplate.enabled ? aiTemplate : null,
       }),
     });
     setSaving(false);
@@ -94,6 +98,11 @@ export default function EditAssignmentPage() {
         <div>
           <label style={labelStyle}>Visible to</label>
           <TrackPicker value={tracks} onChange={setTracks} />
+        </div>
+
+        <div>
+          <label style={labelStyle}>AI Assistant</label>
+          <AiTemplateEditor value={aiTemplate} onChange={setAiTemplate} />
         </div>
 
         {/* Open / Closed toggle */}

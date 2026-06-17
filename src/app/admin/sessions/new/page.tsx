@@ -11,6 +11,7 @@ export default function NewSessionPage() {
   const [topicsInput, setTopicsInput] = useState('');
   const [tracks, setTracks] = useState<string[] | null>(null);
   const [notify, setNotify] = useState(false);
+  const [teachingScript, setTeachingScript] = useState('');
   const [form, setForm] = useState({
     phase: '1', week: '1', session_number: '1',
     title: '', date: '', start_time: '19:00', duration: '', youtube_url: '', meet_link: '', description: '',
@@ -32,12 +33,19 @@ export default function NewSessionPage() {
         session_number: parseInt(form.session_number),
         topics,
         tracks: tracks && tracks.length > 0 ? tracks : null,
+        teaching_script: teachingScript.trim() || null,
         notify,
       }),
     });
-    setSaving(false);
-    if (res.ok) { router.push('/admin/sessions'); router.refresh(); }
-    else { const data = await res.json(); setError(data.error || 'Failed to save session'); }
+    if (res.ok) {
+      const created = await res.json();
+      // Generate the AI teaching brief (non-fatal if it fails)
+      if (created?.id && teachingScript.trim()) {
+        try { await fetch('/api/ai/brief', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: created.id, script: teachingScript.trim() }) }); } catch {}
+      }
+      setSaving(false);
+      router.push('/admin/sessions'); router.refresh();
+    } else { setSaving(false); const data = await res.json(); setError(data.error || 'Failed to save session'); }
   };
 
   const inputStyle = { width: '100%', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '0.9rem', outline: 'none', colorScheme: 'dark' as const };
@@ -112,6 +120,13 @@ export default function NewSessionPage() {
           <textarea style={{ ...inputStyle, minHeight: '80px', resize: 'vertical', lineHeight: 1.6 }}
             placeholder={'Programme overview\nTool setup\nDigital literacy intro'}
             value={topicsInput} onChange={e => setTopicsInput(e.target.value)}
+            onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
+            onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
+
+        <div><label style={labelStyle}>Teaching script (for the AI tutor)</label>
+          <textarea style={{ ...inputStyle, minHeight: '120px', resize: 'vertical', lineHeight: 1.6 }}
+            placeholder="Paste the full session script. We'll condense it into a brief the AI tutor uses to answer student questions about this topic."
+            value={teachingScript} onChange={e => setTeachingScript(e.target.value)}
             onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
             onBlur={e => (e.target.style.borderColor = 'var(--border)')} /></div>
 
