@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
         return `${label}: ${v}`;
       }).join('\n');
     const system = `You are a Socratic coach for an E-Technix assignment: "${a.title}". ${tpl.coachingPrompt ?? ''}
-You guide the student through ONE step at a time. For the step "${target.label}", write a SHORT guiding QUESTION (1-2 sentences) that leads the student to produce this step in THEIR OWN words, building directly on their most recent answer below. Ask the question — do NOT answer it yourself and do NOT write the step for them. If their prior answer is thin, point the question at exactly what they should think about. Return plain text: the question only, no labels or quotes.${brief}`;
+You guide the student through ONE step at a time. For the step "${target.label}", write a SHORT, CONCRETE guiding question in plain, beginner-friendly language (no jargon) that leads the student to produce this step in THEIR OWN words, building directly on their most recent answer below. Ask for ONE specific thing they can actually answer. If the step is abstract or reflective (e.g. a "first principles" or "reflection" step), make it easy to begin: ground it with a concrete angle AND add a fill-in-the-blank sentence-starter the student can complete — for example: "One assumption you're making here is ___. If that weren't true, what would change?" Do NOT answer it yourself and do NOT write the step for them. Keep it to 1-3 short sentences. Return plain text: the question only, no labels or quotes.${brief}`;
     try {
       const out = await aiGenerate({
         system,
