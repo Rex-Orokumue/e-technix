@@ -1,64 +1,64 @@
-// Server-only Gemini REST client. Never import into client components.
-// flash-lite has higher free-tier RPM headroom than flash — better for a cohort.
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash-lite';
+// Server-only Groq (OpenAI-compatible) client. Never import into client components.
+// Groq has a genuinely free API tier (no billing required). Get a key at
+// https://console.groq.com and set GROQ_API_KEY in the server env.
+const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-function endpoint() {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) throw new Error('GEMINI_API_KEY is not set');
-  return `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`;
+function apiKey() {
+  const key = process.env.GROQ_API_KEY;
+  if (!key) throw new Error('GROQ_API_KEY is not set');
+  return key;
 }
 
-export interface GeminiTurn { role: 'user' | 'model'; text: string; }
+export interface AiTurn { role: 'user' | 'model'; text: string; }
 
 interface GenerateOpts {
   system?: string;
-  turns: GeminiTurn[];
-  json?: boolean;        // request application/json response
+  turns: AiTurn[];
+  json?: boolean;        // request a JSON object response
   maxRetries?: number;
 }
 
-// Returns the model's text reply. Retries 429/5xx with exponential backoff.
-export async function geminiGenerate({ system, turns, json, maxRetries = 2 }: GenerateOpts): Promise<string> {
-  const body: any = {
-    contents: turns.map(t => ({ role: t.role, parts: [{ text: t.text }] })),
-  };
-  if (system) body.systemInstruction = { parts: [{ text: system }] };
-  if (json) body.generationConfig = { responseMimeType: 'application/json' };
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+// Returns the model's text reply. Retries 5xx with backoff; fails fast on 429.
+export async function aiGenerate({ system, turns, json, maxRetries = 2 }: GenerateOpts): Promise<string> {
+  const messages: { role: string; content: string }[] = [];
+  if (system) messages.push({ role: 'system', content: system });
+  for (const t of turns) messages.push({ role: t.role === 'model' ? 'assistant' : 'user', content: t.text });
+
+  const body: any = { model: MODEL, messages };
+  if (json) body.response_format = { type: 'json_object' };
 
   let delay = 800;
   let lastErr: any;
   for (let i = 0; i < maxRetries; i++) {
     try {
-      const res = await fetch(endpoint(), {
+      const res = await fetch(GROQ_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey()}` },
         body: JSON.stringify(body),
       });
       if (res.status === 429) {
-        // Free-tier quota hit. Retrying in the same minute just burns more
-        // quota and returns 429 again — fail fast with the real reason.
+        // Rate/quota limit — retrying immediately just burns more, so fail fast.
         const detail = await res.text().catch(() => '');
-        throw new Error(`Gemini 429: ${detail.slice(0, 900)}`);
+        throw new Error(`AI 429: ${detail.slice(0, 900)}`);
       }
       if (res.status >= 500) {
         const detail = await res.text().catch(() => '');
-        lastErr = new Error(`Gemini ${res.status}: ${detail.slice(0, 300)}`);
-        await new Promise(r => setTimeout(r, delay));
-        delay *= 2;
-        continue;
+        lastErr = new Error(`AI ${res.status}: ${detail.slice(0, 300)}`);
+        await sleep(delay); delay *= 2; continue;
       }
-      if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`);
+      if (!res.ok) throw new Error(`AI ${res.status}: ${(await res.text()).slice(0, 400)}`);
       const data = await res.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (typeof text !== 'string') throw new Error('Gemini: empty response');
+      const text = data?.choices?.[0]?.message?.content;
+      if (typeof text !== 'string') throw new Error('AI: empty response');
       return text;
     } catch (e: any) {
-      // Don't retry quota errors — it only burns more free-tier quota.
-      if (String(e?.message ?? e).startsWith('Gemini 429')) throw e;
+      if (String(e?.message ?? e).startsWith('AI 429')) throw e;
       lastErr = e;
-      await new Promise(r => setTimeout(r, delay));
-      delay *= 2;
+      await sleep(delay); delay *= 2;
     }
   }
-  throw lastErr ?? new Error('Gemini: failed');
+  throw lastErr ?? new Error('AI: failed');
 }

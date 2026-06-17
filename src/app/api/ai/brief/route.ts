@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
-import { geminiGenerate } from '@/lib/ai';
+import { aiGenerate } from '@/lib/ai';
 
 const SYSTEM = `You condense a teaching session script into a compact study brief for an AI tutor. Output plain text (no markdown headers). Capture: key concepts, definitions, frameworks named, and concrete examples used. Keep it under 400 words. Be faithful to the script — do not add content that was not taught.`;
 
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
   let brief = '';
   try {
-    brief = await geminiGenerate({
+    brief = await aiGenerate({
       system: SYSTEM,
       turns: [{ role: 'user', text: `Condense this session script into a brief:\n\n${text}` }],
     });

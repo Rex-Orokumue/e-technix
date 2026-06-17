@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
-import { geminiGenerate } from '@/lib/ai';
+import { aiGenerate } from '@/lib/ai';
 import { checkAndRecord } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const out = await geminiGenerate({
+    const out = await aiGenerate({
       system,
       turns: [{ role: 'user', text: `Student input:\n${inputsText || '(none provided)'}` }],
       json,
