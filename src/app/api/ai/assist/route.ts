@@ -58,7 +58,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ fields: parsed });
     }
     return NextResponse.json({ prose: out });
-  } catch {
-    return NextResponse.json({ error: 'The assistant is busy right now. Please try again in a moment.' }, { status: 502 });
+  } catch (e: any) {
+    console.error('[ai/assist]', e);
+    return NextResponse.json({ error: 'The assistant is busy right now. Please try again in a moment.', detail: String(e?.message ?? e) }, { status: 502 });
   }
 }

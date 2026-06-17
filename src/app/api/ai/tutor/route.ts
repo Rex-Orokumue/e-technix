@@ -38,7 +38,8 @@ export async function POST(req: NextRequest) {
   try {
     const reply = await geminiGenerate({ system, turns });
     return NextResponse.json({ reply });
-  } catch {
-    return NextResponse.json({ error: 'The tutor is busy right now. Please try again in a moment.' }, { status: 502 });
+  } catch (e: any) {
+    console.error('[ai/tutor]', e);
+    return NextResponse.json({ error: 'The tutor is busy right now. Please try again in a moment.', detail: String(e?.message ?? e) }, { status: 502 });
   }
 }
