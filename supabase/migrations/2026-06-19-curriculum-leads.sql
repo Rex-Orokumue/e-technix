@@ -15,4 +15,7 @@ create table if not exists public.curriculum_leads (
 create index if not exists curriculum_leads_email_idx on public.curriculum_leads (email);
 
 alter table public.curriculum_leads enable row level security;
--- No policies: only the service-role key (server API) may read/write.
+-- No RLS policies: anon/authenticated keys have no access.
+-- Grant table privileges to service_role only, so the server API (service-role
+-- key) can read/write while public keys cannot.
+grant select, insert, update, delete on public.curriculum_leads to service_role;
