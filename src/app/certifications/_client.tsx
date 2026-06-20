@@ -339,12 +339,6 @@ export default function CertificationsPage() {
             borderRadius: '20px', padding: '4rem 3rem',
             textAlign: 'center', position: 'relative', overflow: 'hidden',
           }}>
-            <div style={{
-              position: 'absolute', top: '-80px', left: '50%',
-              transform: 'translateX(-50%)', width: '600px', height: '300px',
-              background: 'radial-gradient(ellipse, rgba(0,200,255,0.07) 0%, transparent 70%)',
-              pointerEvents: 'none',
-            }} />
             <h2 style={{
               fontFamily: 'var(--font-head)',
               fontSize: 'clamp(1.6rem, 3vw, 2.4rem)',

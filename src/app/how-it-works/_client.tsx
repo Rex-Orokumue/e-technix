@@ -154,11 +154,11 @@ export default function HowItWorksPage() {
           borderBottom: '1px solid var(--border)',
         }}>
           <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-            color: 'var(--cyan)', fontSize: '0.78rem', fontWeight: 700,
-            letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1rem',
+            display: 'inline-flex', alignItems: 'center', gap: '0.6rem',
+            fontFamily: 'var(--font-mono)', color: 'var(--muted)', fontSize: '0.72rem', fontWeight: 500,
+            letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: '1rem',
           }}>
-            <span style={{ width: '24px', height: '2px', background: 'var(--cyan)', borderRadius: '1px' }} />
+            <span style={{ width: '20px', height: '1px', background: 'var(--cyan)' }} />
             The Journey
           </div>
           <h1 style={{
@@ -346,12 +346,6 @@ export default function HowItWorksPage() {
             borderRadius: '20px', padding: '4rem 3rem',
             textAlign: 'center', position: 'relative', overflow: 'hidden',
           }}>
-            <div style={{
-              position: 'absolute', top: '-80px', left: '50%',
-              transform: 'translateX(-50%)', width: '600px', height: '300px',
-              background: 'radial-gradient(ellipse, rgba(0,200,255,0.07) 0%, transparent 70%)',
-              pointerEvents: 'none',
-            }} />
             <h2 style={{
               fontFamily: 'var(--font-head)',
               fontSize: 'clamp(1.6rem, 3vw, 2.4rem)',

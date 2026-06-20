@@ -83,8 +83,8 @@ export default function ProgramsPage() {
 
         {/* ── Hero ── */}
         <section style={{ padding: '5rem 2.5rem 3.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--cyan)', fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1rem' }}>
-            <span style={{ width: '24px', height: '2px', background: 'var(--cyan)', borderRadius: '1px' }} />
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', fontFamily: 'var(--font-mono)', color: 'var(--muted)', fontSize: '0.72rem', fontWeight: 500, letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: '1rem' }}>
+            <span style={{ width: '20px', height: '1px', background: 'var(--cyan)' }} />
             The Programme
           </div>
           <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(2.4rem, 5vw, 3.8rem)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.03em', marginBottom: '1.25rem', maxWidth: '760px' }}>
@@ -157,7 +157,6 @@ export default function ProgramsPage() {
         {/* ── CTA ── */}
         <div style={{ margin: '3.5rem 2.5rem 6rem' }}>
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '20px', padding: '4rem 3rem', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: '-80px', left: '50%', transform: 'translateX(-50%)', width: '600px', height: '300px', background: 'radial-gradient(ellipse, rgba(0,200,255,0.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
             <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '1rem', position: 'relative' }}>
               Not Sure Which Track Is Right?
             </h2>
