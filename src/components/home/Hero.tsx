@@ -1,41 +1,32 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import { TRACKS } from '@/lib/data/curriculum';
 
-const SPEC = [
-  ['Tracks', '10'],
-  ['Duration', '6–9 months'],
-  ['Format', 'Online · live'],
-  ['Backed by', 'UK × Nigeria'],
-];
+const ticker = TRACKS.map((t) => `${t.code} · ${t.name}`);
 
 export default function Hero() {
   return (
-    <section
-      style={{
-        position: 'relative',
-        padding: '7.5rem 2.5rem 4.5rem',
-        borderBottom: '1px solid var(--border)',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Faint editorial baseline grid (very subtle, no glow) */}
+    <section style={{ position: 'relative', overflow: 'hidden', borderBottom: '1px solid var(--border)' }}>
+      {/* Faint structural grid for depth (no glow) */}
       <div
         aria-hidden
         style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
-          backgroundImage: 'linear-gradient(90deg, var(--border) 1px, transparent 1px)',
-          backgroundSize: '25% 100%',
-          opacity: 0.5,
-          maskImage: 'linear-gradient(to bottom, black, transparent 85%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, black, transparent 85%)',
+          backgroundImage:
+            'linear-gradient(90deg, var(--border) 1px, transparent 1px), linear-gradient(var(--border) 1px, transparent 1px)',
+          backgroundSize: '12.5% 130px',
+          opacity: 0.45,
+          maskImage: 'radial-gradient(120% 80% at 15% 0%, black, transparent 75%)',
+          WebkitMaskImage: 'radial-gradient(120% 80% at 15% 0%, black, transparent 75%)',
         }}
       />
 
-      <div style={{ position: 'relative', maxWidth: '1180px', margin: '0 auto' }}>
+      <div style={{ position: 'relative', maxWidth: '1180px', margin: '0 auto', padding: '7rem 2.5rem 3rem' }}>
         {/* Eyebrow */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '3rem' }}>
+          <span className="section-num mono" style={{ fontSize: '0.78rem', color: 'var(--orange)' }}>(01)</span>
           <span className="eyebrow">Digital Careers Programme</span>
-          <span style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'var(--border-bright)' }} />
+          <span style={{ flex: 1, maxWidth: '160px', height: '1px', background: 'var(--border-bright)' }} />
           <span className="eyebrow" style={{ color: 'var(--cyan)' }}>UK × Nigeria</span>
         </div>
 
@@ -43,65 +34,82 @@ export default function Hero() {
         <h1
           style={{
             fontFamily: 'var(--font-head)',
-            fontSize: 'clamp(2.9rem, 7vw, 5.6rem)',
+            fontSize: 'clamp(3rem, 8.5vw, 6.6rem)',
             fontWeight: 800,
-            lineHeight: 1.02,
-            letterSpacing: '-0.035em',
+            lineHeight: 0.98,
+            letterSpacing: '-0.04em',
             margin: 0,
-            maxWidth: '14ch',
           }}
         >
-          Build the judgment{' '}
-          <span style={{ color: 'var(--cyan)' }}>AI cannot replace.</span>
+          Build the<br />
+          <span
+            style={{
+              background: 'var(--cyan)',
+              color: '#070D1A',
+              padding: '0 0.12em',
+              borderRadius: '3px',
+              boxDecorationBreak: 'clone',
+              WebkitBoxDecorationBreak: 'clone',
+            }}
+          >
+            judgment
+          </span>{' '}
+          AI<br />
+          cannot replace.
         </h1>
 
-        {/* Subheading */}
-        <p
-          style={{
-            fontSize: '1.15rem',
-            color: 'var(--muted)',
-            maxWidth: '560px',
-            lineHeight: 1.7,
-            margin: '1.75rem 0 2.5rem',
-          }}
-        >
-          A structured 6–9 month digital skills programme. Start with Phase 1, specialise
-          in one of ten tracks, build real products, and leave with the judgment, portfolio,
-          and certificate the market actually hires for.
-        </p>
-
-        {/* CTAs */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
-          <Link href="/register" className="hero-cta-primary">
-            Enrol now <ArrowRight size={17} strokeWidth={2.4} />
-          </Link>
-          <Link href="/curriculum" className="hero-cta-ghost">
-            Explore the curriculum
-          </Link>
-        </div>
-
-        {/* Spec row */}
+        {/* Sub + CTAs */}
         <div
           style={{
-            marginTop: '4rem',
-            borderTop: '1px solid var(--border-bright)',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+            gap: '2.5rem',
+            flexWrap: 'wrap',
+            marginTop: '2.5rem',
           }}
         >
-          {SPEC.map(([label, value], i) => (
-            <div
-              key={label}
-              style={{
-                padding: '1.25rem 1.5rem 1.25rem 0',
-                borderLeft: i === 0 ? 'none' : '1px solid var(--border)',
-                paddingLeft: i === 0 ? 0 : '1.5rem',
-              }}
-            >
-              <div className="eyebrow" style={{ marginBottom: '0.5rem' }}>{label}</div>
-              <div style={{ fontFamily: 'var(--font-head)', fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
-                {value}
-              </div>
+          <p style={{ fontSize: '1.12rem', color: 'var(--muted)', maxWidth: '440px', lineHeight: 1.65, margin: 0 }}>
+            A structured 6–9 month digital skills programme. Specialise in one of ten tracks,
+            build real products, and leave with the judgment, portfolio, and certificate the
+            market actually hires for.
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
+            <Link href="/register" className="hero-cta-primary">
+              Enrol now <ArrowRight size={17} strokeWidth={2.4} />
+            </Link>
+            <Link href="/curriculum" className="hero-cta-ghost">
+              Explore the curriculum
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Ticker band — all tracks, scrolling (departures-board motif) */}
+      <div
+        style={{
+          position: 'relative',
+          borderTop: '1px solid var(--border-bright)',
+          background: 'var(--surface)',
+          overflow: 'hidden',
+          padding: '0.85rem 0',
+          maskImage: 'linear-gradient(90deg, transparent, black 4%, black 96%, transparent)',
+          WebkitMaskImage: 'linear-gradient(90deg, transparent, black 4%, black 96%, transparent)',
+        }}
+      >
+        <div className="hero-ticker" style={{ display: 'inline-flex', whiteSpace: 'nowrap', willChange: 'transform' }}>
+          {[0, 1].map((dup) => (
+            <div key={dup} style={{ display: 'inline-flex' }} aria-hidden={dup === 1}>
+              {ticker.map((label) => (
+                <span
+                  key={dup + label}
+                  className="mono"
+                  style={{ fontSize: '0.78rem', color: 'var(--muted)', padding: '0 1.75rem', display: 'inline-flex', alignItems: 'center', gap: '1.75rem' }}
+                >
+                  {label}
+                  <span style={{ width: '4px', height: '4px', background: 'var(--cyan)', borderRadius: '50%' }} />
+                </span>
+              ))}
             </div>
           ))}
         </div>
@@ -117,14 +125,17 @@ export default function Hero() {
         }
         .hero-cta-primary:hover { transform: translateY(-1px); opacity: 0.9; }
         .hero-cta-ghost {
-          display: inline-flex; align-items: center; gap: 0.5rem;
-          background: transparent; color: var(--text);
+          display: inline-flex; align-items: center;
+          color: var(--text);
           font-family: var(--font-head); font-weight: 600; font-size: 0.95rem;
           padding: 0.85rem 1.6rem; border-radius: 6px; text-decoration: none;
           border: 1px solid var(--border-bright);
           transition: border-color 0.18s ease, color 0.18s ease;
         }
         .hero-cta-ghost:hover { border-color: var(--cyan-border); color: var(--cyan); }
+        .hero-ticker { animation: heroTicker 38s linear infinite; }
+        @keyframes heroTicker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        @media (prefers-reduced-motion: reduce) { .hero-ticker { animation: none; } }
       `}</style>
     </section>
   );
