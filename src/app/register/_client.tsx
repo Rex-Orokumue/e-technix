@@ -62,15 +62,21 @@ const redirectToWhatsApp = (data: FormData, currency: Currency) => {
   window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
 };
 
+// USD/GBP are disabled until the prices in those currencies are reviewed/approved.
+const CURRENCY_ENABLED: Record<Currency, boolean> = { NGN: true, USD: false, GBP: false };
+
 export default function RegisterPage() {
   const [form, setForm] = useState<FormData>({ ...EMPTY });
   const [currency, setCurrency] = useState<Currency>('NGN');
 
   // Auto-detect currency by country
   useEffect(() => {
-    if (form.country === 'United Kingdom') setCurrency('GBP');
-    else if (form.country === 'Nigeria') setCurrency('NGN');
-    else if (['Ghana', 'Kenya', 'South Africa', 'Other'].includes(form.country)) setCurrency('USD');
+    // Auto-detect currency by country, but only switch to a currency that is
+    // currently enabled (USD/GBP are disabled until prices are approved).
+    const target: Currency = form.country === 'United Kingdom' ? 'GBP'
+      : ['Ghana', 'Kenya', 'South Africa', 'Other'].includes(form.country) ? 'USD'
+      : 'NGN';
+    if (CURRENCY_ENABLED[target]) setCurrency(target);
   }, [form.country]);
 
   const set = (field: keyof FormData, value: string) => setForm((f) => ({ ...f, [field]: value }));
@@ -158,20 +164,33 @@ export default function RegisterPage() {
             <span style={{ fontSize: '0.78rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               View prices in:
             </span>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              {(Object.keys(CURRENCY_META) as Currency[]).map((c) => (
-                <button key={c} onClick={() => setCurrency(c)} style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '6px',
-                  padding: '0.4rem 1rem', borderRadius: '7px', cursor: 'pointer',
-                  border: `1px solid ${currency === c ? 'var(--cyan-border)' : 'var(--border)'}`,
-                  background: currency === c ? 'var(--cyan-dim)' : 'transparent',
-                  color: currency === c ? 'var(--cyan)' : 'var(--muted)',
-                  fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.82rem',
-                  transition: 'all 0.2s',
-                }}>
-                  {CURRENCY_META[c].flag} {CURRENCY_META[c].label}
-                </button>
-              ))}
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              {(Object.keys(CURRENCY_META) as Currency[]).map((c) => {
+                const enabled = CURRENCY_ENABLED[c];
+                const active = currency === c;
+                return (
+                  <button
+                    key={c}
+                    onClick={() => enabled && setCurrency(c)}
+                    disabled={!enabled}
+                    title={enabled ? undefined : 'Coming soon — prices under review'}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '6px',
+                      padding: '0.4rem 1rem', borderRadius: '7px',
+                      cursor: enabled ? 'pointer' : 'not-allowed',
+                      border: `1px solid ${active ? 'var(--cyan-border)' : 'var(--border)'}`,
+                      background: active ? 'var(--cyan-dim)' : 'transparent',
+                      color: active ? 'var(--cyan)' : 'var(--muted)',
+                      opacity: enabled ? 1 : 0.4,
+                      fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.82rem',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {CURRENCY_META[c].flag} {CURRENCY_META[c].label}
+                    {!enabled && <span className="mono" style={{ fontSize: '0.6rem', fontWeight: 500, opacity: 0.8 }}>soon</span>}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
