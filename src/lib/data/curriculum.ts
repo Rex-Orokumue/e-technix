@@ -98,7 +98,8 @@ export const PROGRAMME = {
     },
   ],
   howItWorks: {
-    feeNote: 'One fee covers both phases — Phase 1 and your Phase 2 specialisation track.',
+    feeNote:
+      'One fee covers your full programme, end to end — Phase 1, your Phase 2 specialisation, and the Project Labs and Career Launch stages that follow.',
     phases: [
       {
         n: 1,

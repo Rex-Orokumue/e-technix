@@ -43,7 +43,7 @@ describe('curriculum data', () => {
   it('PROGRAMME explains the two phases and the 60% progression gate', () => {
     expect(PROGRAMME.howItWorks.phases.length).toBe(2);
     expect(PROGRAMME.howItWorks.progressionRule).toMatch(/60%/);
-    expect(PROGRAMME.howItWorks.feeNote.toLowerCase()).toContain('both phases');
+    expect(PROGRAMME.howItWorks.feeNote.toLowerCase()).toContain('full programme');
     expect(PROGRAMME.howItWorks.advancedEntry.toLowerCase()).toContain('placement assessment');
   });
 

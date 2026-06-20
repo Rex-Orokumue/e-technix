@@ -238,9 +238,14 @@ export default function CurriculumClient({ programme, tracks, trackChoices, unlo
         {/* ── How the programme works ── */}
         <section style={{ padding: '4rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
           <div style={sectionLabel}>How the programme works</div>
-          <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(1.5rem, 3vw, 2.1rem)', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '2rem', maxWidth: '640px' }}>
-            Two phases. <span style={{ color: 'var(--cyan)' }}>One fee.</span>
+          <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(1.5rem, 3vw, 2.1rem)', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '1rem', maxWidth: '640px' }}>
+            Foundation first. <span style={{ color: 'var(--cyan)' }}>Then you specialise.</span>
           </h2>
+          <p style={{ color: 'var(--muted)', fontSize: '0.95rem', lineHeight: 1.7, maxWidth: '640px', marginTop: 0, marginBottom: '2rem' }}>
+            The taught curriculum runs in two phases. After your specialisation, the programme
+            continues into <Link href="/how-it-works" style={{ color: 'var(--cyan)', textDecoration: 'none', fontWeight: 600 }}>Project Labs and Career Launch</Link> —
+            where you build real products in a team and prepare to enter the market.
+          </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
             {programme.howItWorks.phases.map((p, i) => (
