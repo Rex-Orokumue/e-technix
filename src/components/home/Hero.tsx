@@ -1,19 +1,18 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 
 const WHATSAPP_NUMBER = '2348120288390';
 
-const fadeUp = (delay: number) => ({
-  initial: { opacity: 0, y: 24 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.55, delay, ease: 'easeOut' as const },
+// CSS-based entrance: runs without client JS, and content is visible by default
+// (animation-fill-mode keeps it shown), so the hero can never get stuck invisible.
+const reveal = (delay: number): React.CSSProperties => ({
+  animation: `heroReveal 0.55s cubic-bezier(0.22,1,0.36,1) ${delay}s both`,
 });
 
 export default function Hero() {
   return (
-    <section style={{
+    <section data-hero style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
@@ -48,9 +47,9 @@ export default function Hero() {
       <div style={{ position: 'relative', maxWidth: '860px' }}>
 
         {/* Badge */}
-        <motion.div
-          {...fadeUp(0)}
+        <div
           style={{
+            ...reveal(0),
             display: 'inline-flex',
             alignItems: 'center',
             gap: '8px',
@@ -71,34 +70,13 @@ export default function Hero() {
             background: 'var(--cyan)',
             borderRadius: '50%',
           }} />
-          Now Enrolling — 2026 Cohort
-        </motion.div>
-
-        {/* Enrolling badge */}
-        <motion.div
-          {...fadeUp(0.05)}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: 'var(--cyan-dim)',
-            border: '1px solid var(--cyan-border)',
-            color: 'var(--cyan)',
-            fontSize: '0.82rem',
-            fontWeight: 700,
-            letterSpacing: '0.05em',
-            padding: '0.45rem 1.2rem',
-            borderRadius: '999px',
-            marginBottom: '2rem',
-          }}
-        >
-          ● Now enrolling · UK × Nigeria
-        </motion.div>
+          Now Enrolling — 2026 Cohort · UK × Nigeria
+        </div>
 
         {/* Headline */}
-        <motion.h1
-          {...fadeUp(0.1)}
+        <h1
           style={{
+            ...reveal(0.08),
             fontFamily: 'var(--font-head)',
             fontSize: 'clamp(2.8rem, 6vw, 5rem)',
             fontWeight: 800,
@@ -110,12 +88,12 @@ export default function Hero() {
           Build Your<br />
           <span style={{ color: 'var(--cyan)' }}>Digital Career</span>
           <br />From Scratch
-        </motion.h1>
+        </h1>
 
         {/* Subheading */}
-        <motion.p
-          {...fadeUp(0.2)}
+        <p
           style={{
+            ...reveal(0.16),
             fontSize: '1.15rem',
             color: 'var(--muted)',
             maxWidth: '580px',
@@ -127,12 +105,12 @@ export default function Hero() {
           A structured 6–9 month training programme — from digital foundations to
           specialisation tracks in Data, Web, Mobile, AI, Design, Product, Business,
           and Cybersecurity. Built to teach the judgment AI cannot replace.
-        </motion.p>
+        </p>
 
         {/* CTAs */}
-        <motion.div
-          {...fadeUp(0.3)}
+        <div
           style={{
+            ...reveal(0.24),
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -202,8 +180,18 @@ export default function Hero() {
             </svg>
             Chat on WhatsApp
           </a>
-        </motion.div>
+        </div>
       </div>
+
+      <style>{`
+        @keyframes heroReveal {
+          from { opacity: 0; transform: translateY(22px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          [data-hero] * { animation: none !important; }
+        }
+      `}</style>
     </section>
   );
 }
