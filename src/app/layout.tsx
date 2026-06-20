@@ -96,7 +96,7 @@ const orgSchema = {
   },
   image: `${SITE_URL}/og-image.png`,
   description:
-    'E-Technix is a structured 6–9 month digital skills training programme covering Data Analytics, Web Development, Mobile Apps, AI Systems, Product Design, and Business Development. Nigeria × UK.',
+    'E-Technix is a structured 6–9 month digital skills training programme covering Data Analytics, Web & Mobile Development, AI & Agentic Systems, Product Design, Digital Entrepreneurship, AI Product Management, and Cybersecurity. Nigeria × UK.',
   foundingLocation: {
     '@type': 'Place',
     name: 'Nigeria and United Kingdom',
@@ -107,7 +107,8 @@ const orgSchema = {
   ],
   knowsAbout: [
     'Data Analytics', 'Web Development', 'Mobile App Development',
-    'Artificial Intelligence', 'UI/UX Design', 'Business Development',
+    'Artificial Intelligence', 'Product Design', 'Digital Entrepreneurship',
+    'AI Product Management', 'Cybersecurity', 'Data Engineering', 'Machine Learning',
     'Digital Skills Training', 'Tech Education',
   ],
   sameAs: [
