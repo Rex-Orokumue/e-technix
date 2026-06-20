@@ -554,24 +554,24 @@ export function WhatsIncluded() {
 export function Testimonials() {
   const testimonials = [
     {
-      name: 'Amara O.',
-      role: 'Data Analytics Graduate',
+      name: 'Gift Oluwaferanmi',
+      role: 'Data Analytics Student',
       location: 'Lagos, Nigeria',
-      text: 'Before E-Technix, I had tried three online courses and finished none of them. The structure here is different — you have real deadlines, a mentor checking on you, and actual projects. I built my first Power BI dashboard in week 6 and sent it to a potential employer before I even finished the programme.',
+      text: 'I learnt a lot in these class and I can say for a fact that with all I gained, if I am asked to rewrite my final year project, I’d do way better than I did previously',
       accent: 'cyan',
     },
     {
-      name: 'David K.',
-      role: 'Web Development Graduate',
-      location: 'Abuja, Nigeria',
-      text: 'The project labs phase changed everything for me. Working in a team with a designer and a business student on a real SaaS product taught me more in 8 weeks than 2 years of solo YouTube tutorials. I have two freelance clients now and a portfolio I am genuinely proud of.',
+      name: 'Ezra Chisom Eze',
+      role: 'Mobile & Desktop Apps Student',
+      location: 'Port Harcourt, Nigeria',
+      text: 'The pace was right, I learnt how to build databases using Notion and how to create a dashboard. It was absolutely new to me, and I loved it',
       accent: 'orange',
     },
     {
-      name: 'Chisom N.',
-      role: 'UI/UX Design Graduate',
-      location: 'Port Harcourt, Nigeria',
-      text: 'I was worried the programme would be too technical for me since I had no background. The foundation phase made sure I was ready. By Month 5, I had designed a complete fintech app from user research to prototype. My certificate and portfolio got me my first design role within 6 weeks of graduating.',
+      name: 'Favour Aheybor',
+      role: 'Data Analytics Student',
+      location: 'Benin, Nigeria',
+      text: 'This exercise helped me understand the importance of organization and task management within a digital workspace. Thank you for this opportunity 😇',
       accent: 'cyan',
     },
   ];
@@ -625,7 +625,7 @@ export function Testimonials() {
         ))}
       </div>
       <p style={{ fontSize: '0.78rem', color: 'var(--muted)', marginTop: '1.5rem', fontStyle: 'italic', textAlign: 'center' }}>
-        * Testimonials are representative of expected student outcomes based on programme completion.
+        * Testimonials are from real students in the e-technix programme.
       </p>
     </section>
   );
