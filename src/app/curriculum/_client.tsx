@@ -36,6 +36,8 @@ export interface ClientTrack {
   outcomes: string[];
   careerPaths: string[];
   weeks: ClientWeek[];
+  isAdvanced?: boolean;
+  whatToExpect?: string[];
 }
 
 interface Props {
@@ -211,18 +213,61 @@ export default function CurriculumClient({ programme, tracks, trackChoices, unlo
                   <span style={{ width: '64px', flexShrink: 0, fontSize: '0.74rem', fontWeight: 700, color: 'var(--muted)', fontFamily: 'var(--font-head)' }}>{t.code}</span>
                   <span style={{ flex: 1, fontWeight: 600, fontSize: '0.92rem' }}>{t.name}</span>
                   <span className="atglance-dur" style={{ width: '80px', flexShrink: 0, fontSize: '0.8rem', color: 'var(--muted)' }}>{t.duration}</span>
-                  <span
-                    style={{
-                      flexShrink: 0, fontSize: '0.68rem', fontWeight: 700,
-                      color: sm.color, background: sm.bg, border: `1px solid ${sm.border}`,
-                      padding: '0.25rem 0.65rem', borderRadius: '999px', whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {sm.label}
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
+                    {t.isAdvanced && (
+                      <span style={{ fontSize: '0.66rem', fontWeight: 700, color: 'var(--orange)', background: 'var(--orange-dim)', border: '1px solid rgba(255,107,43,0.25)', padding: '0.25rem 0.55rem', borderRadius: '999px', whiteSpace: 'nowrap' }}>
+                        ▲ Advanced
+                      </span>
+                    )}
+                    <span
+                      style={{
+                        fontSize: '0.68rem', fontWeight: 700,
+                        color: sm.color, background: sm.bg, border: `1px solid ${sm.border}`,
+                        padding: '0.25rem 0.65rem', borderRadius: '999px', whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {sm.label}
+                    </span>
                   </span>
                 </a>
               );
             })}
+          </div>
+        </section>
+
+        {/* ── How the programme works ── */}
+        <section style={{ padding: '4rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
+          <div style={sectionLabel}>How the programme works</div>
+          <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(1.5rem, 3vw, 2.1rem)', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '2rem', maxWidth: '640px' }}>
+            Two phases. <span style={{ color: 'var(--cyan)' }}>One fee.</span>
+          </h2>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
+            {programme.howItWorks.phases.map((p, i) => (
+              <div key={p.n} style={{ position: 'relative', background: 'var(--surface)', border: `1px solid ${i === 0 ? 'var(--cyan-border)' : 'var(--border)'}`, borderRadius: '14px', padding: '1.5rem' }}>
+                <div style={{ fontFamily: 'var(--font-head)', fontSize: '2.5rem', fontWeight: 800, lineHeight: 1, color: i === 0 ? 'var(--cyan-border)' : 'rgba(255,255,255,0.12)', marginBottom: '0.75rem' }}>
+                  0{p.n}
+                </div>
+                <h3 style={{ fontFamily: 'var(--font-head)', fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.5rem' }}>{p.name}</h3>
+                <p style={{ color: 'var(--muted)', fontSize: '0.9rem', lineHeight: 1.65, marginBottom: 0 }}>{p.body}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Progression gate */}
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', borderRadius: '12px', padding: '1.1rem 1.25rem', marginBottom: '0.85rem' }}>
+            <span style={{ fontSize: '1.1rem', flexShrink: 0, marginTop: '1px' }}>🎯</span>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text)', lineHeight: 1.6, marginBottom: 0 }}>
+              <strong>Advancing to Phase 2</strong> requires a cumulative score of at least <strong style={{ color: 'var(--cyan)' }}>60%</strong> in Phase 1 — attendance, assignments, participation, and the capstone project all count.
+            </p>
+          </div>
+
+          {/* Fee note */}
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.1rem 1.25rem' }}>
+            <span style={{ fontSize: '1.1rem', flexShrink: 0, marginTop: '1px' }}>💳</span>
+            <p style={{ fontSize: '0.9rem', color: 'var(--muted)', lineHeight: 1.6, marginBottom: 0 }}>
+              {programme.howItWorks.feeNote}
+            </p>
           </div>
         </section>
 
@@ -276,7 +321,7 @@ export default function CurriculumClient({ programme, tracks, trackChoices, unlo
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             {tracks.map((t) => (
-              <TrackSection key={t.code} track={t} unlocked={unlocked} onUnlock={() => setModal(true)} />
+              <TrackSection key={t.code} track={t} unlocked={unlocked} onUnlock={() => setModal(true)} advancedEntry={programme.howItWorks.advancedEntry} />
             ))}
           </div>
         </section>
@@ -318,7 +363,7 @@ export default function CurriculumClient({ programme, tracks, trackChoices, unlo
   );
 }
 
-function TrackSection({ track, unlocked, onUnlock }: { track: ClientTrack; unlocked: boolean; onUnlock: () => void }) {
+function TrackSection({ track, unlocked, onUnlock, advancedEntry }: { track: ClientTrack; unlocked: boolean; onUnlock: () => void; advancedEntry: string }) {
   const sm = STATUS_META[track.status];
   const ac = accentColor(track.accent);
   return (
@@ -331,6 +376,9 @@ function TrackSection({ track, unlocked, onUnlock }: { track: ClientTrack; unloc
         <div style={{ flex: 1, minWidth: '220px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
             <h3 style={{ fontFamily: 'var(--font-head)', fontSize: '1.3rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>{track.name}</h3>
+            {track.isAdvanced && (
+              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--orange)', background: 'var(--orange-dim)', border: '1px solid rgba(255,107,43,0.25)', padding: '0.2rem 0.65rem', borderRadius: '999px', whiteSpace: 'nowrap' }}>▲ Advanced</span>
+            )}
             <span style={{ fontSize: '0.68rem', fontWeight: 700, color: sm.color, background: sm.bg, border: `1px solid ${sm.border}`, padding: '0.2rem 0.65rem', borderRadius: '999px', whiteSpace: 'nowrap' }}>{sm.label}</span>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -347,6 +395,26 @@ function TrackSection({ track, unlocked, onUnlock }: { track: ClientTrack; unloc
       {/* Body */}
       <div style={{ padding: '1.75rem' }}>
         <p style={{ color: 'var(--muted)', fontSize: '0.95rem', lineHeight: 1.75, marginTop: 0, marginBottom: '1.5rem' }}>{track.summary}</p>
+
+        {/* Advanced entry: what to expect + placement assessment */}
+        {track.isAdvanced && (
+          <div style={{ background: 'var(--orange-dim)', border: '1px solid rgba(255,107,43,0.25)', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.75rem' }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--orange)', marginBottom: '0.75rem' }}>
+              ▲ Advanced track — what to expect
+            </div>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem', margin: '0 0 0.85rem', padding: 0 }}>
+              {(track.whatToExpect ?? []).map((x) => (
+                <li key={x} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.86rem', color: 'var(--text)', lineHeight: 1.5 }}>
+                  <span style={{ color: 'var(--orange)', flexShrink: 0 }}>→</span>
+                  {x}
+                </li>
+              ))}
+            </ul>
+            <p style={{ fontSize: '0.84rem', color: 'var(--muted)', lineHeight: 1.6, margin: 0, paddingTop: '0.75rem', borderTop: '1px solid rgba(255,107,43,0.2)' }}>
+              {advancedEntry}
+            </p>
+          </div>
+        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem', marginBottom: '1.75rem' }}>
           <div>

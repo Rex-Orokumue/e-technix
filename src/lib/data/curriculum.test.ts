@@ -40,6 +40,22 @@ describe('curriculum data', () => {
     expect(PROGRAMME.aiIntegration.length).toBe(3);
   });
 
+  it('PROGRAMME explains the two phases and the 60% progression gate', () => {
+    expect(PROGRAMME.howItWorks.phases.length).toBe(2);
+    expect(PROGRAMME.howItWorks.progressionRule).toMatch(/60%/);
+    expect(PROGRAMME.howItWorks.feeNote.toLowerCase()).toContain('both phases');
+    expect(PROGRAMME.howItWorks.advancedEntry.toLowerCase()).toContain('placement assessment');
+  });
+
+  it('the 2 advanced tracks are enrolling, flagged, and explain what to expect', () => {
+    const advanced = TRACKS.filter((t) => t.isAdvanced);
+    expect(advanced.map((t) => t.code).sort()).toEqual(['DE-301', 'ML-301']);
+    for (const t of advanced) {
+      expect(t.status).toBe('enrolling');
+      expect((t.whatToExpect ?? []).length).toBeGreaterThan(0);
+    }
+  });
+
   it('publicTrack() strips gated session detail', () => {
     const pub = publicTrack(TRACKS.find((t) => t.code === 'DT-101')!);
     for (const w of pub.weeks) {

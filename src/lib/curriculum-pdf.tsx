@@ -77,6 +77,8 @@ const s = StyleSheet.create({
   liText: { flex: 1, color: '#33415C' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 2 },
   chip: { fontSize: 8, color: '#33415C', backgroundColor: '#F1F4F9', borderRadius: 3, paddingVertical: 2, paddingHorizontal: 6, marginRight: 4, marginBottom: 4 },
+  advancedBox: { backgroundColor: '#FFF3EC', borderWidth: 0.5, borderColor: '#FFD2BA', borderRadius: 5, padding: 9, marginTop: 8 },
+  advancedTitle: { fontSize: 7.5, fontFamily: 'Helvetica-Bold', letterSpacing: 1, color: OR, marginBottom: 5 },
 
   // Week timeline
   weekRow: { marginBottom: 7, paddingBottom: 7, borderBottomWidth: 0.5, borderBottomColor: LINE, flexDirection: 'row' },
@@ -164,6 +166,16 @@ export async function renderCurriculumPdf(lead: { name: string; email: string })
           </View>
         ))}
 
+        <Text style={[s.h2, { marginTop: 12 }]}>How the Programme Works</Text>
+        {PROGRAMME.howItWorks.phases.map((p) => (
+          <View key={p.n} style={s.card}>
+            <Text style={s.cardTitle}>{p.name}</Text>
+            <Text style={{ color: '#33415C' }}>{p.body}</Text>
+          </View>
+        ))}
+        <Text style={[s.p, { marginTop: 4 }]}>{PROGRAMME.howItWorks.progressionRule}</Text>
+        <Text style={[s.p, { fontFamily: 'Helvetica-Bold', color: INK }]}>{PROGRAMME.howItWorks.feeNote}</Text>
+
         <Text style={[s.h2, { marginTop: 14 }]}>Tracks at a Glance</Text>
         {TRACKS.map((t) => (
           <View key={t.code} style={s.indexRow} wrap={false}>
@@ -183,11 +195,22 @@ export async function renderCurriculumPdf(lead: { name: string; email: string })
             <Text style={s.trackName}>{t.name}</Text>
             <Text style={s.trackMeta}>
               {t.code} · {t.duration} · {t.hoursPerWeek}/week · {STATUS_LABEL[t.status]}
+              {t.isAdvanced ? ' · ADVANCED' : ''}
             </Text>
             <Text style={s.trackMeta}>Prerequisite: {t.prerequisite}</Text>
           </View>
 
           <Text style={s.p}>{t.summary}</Text>
+
+          {t.isAdvanced && (
+            <View style={s.advancedBox}>
+              <Text style={s.advancedTitle}>▲ ADVANCED TRACK — WHAT TO EXPECT</Text>
+              {(t.whatToExpect ?? []).map((x, i) => (
+                <Bullet key={i}>{x}</Bullet>
+              ))}
+              <Text style={[s.p, { marginTop: 4, marginBottom: 0 }]}>{PROGRAMME.howItWorks.advancedEntry}</Text>
+            </View>
+          )}
 
           <Text style={s.label}>What you will be able to do</Text>
           {t.outcomes.map((o, i) => (

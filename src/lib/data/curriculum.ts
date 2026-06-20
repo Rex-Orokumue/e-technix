@@ -30,6 +30,10 @@ export interface Track {
   outcomes: string[];
   careerPaths: string[];
   weeks: Week[];
+  /** Advanced tracks are open for enrolment but carry prerequisites + a placement option. */
+  isAdvanced?: boolean;
+  /** Advanced only: concrete expectations beyond a standard specialisation. */
+  whatToExpect?: string[];
 }
 
 export interface PublicWeek {
@@ -60,7 +64,7 @@ export function publicTrack(t: Track): PublicTrack {
 export const PROGRAMME = {
   tagline: 'Build the judgment AI cannot replace.',
   subtitle: '10 tracks · Phase 1 + 8 Specialisation Tracks + 2 Advanced Tracks',
-  location: 'United Kingdom × Nigeria · 2025 / 2026',
+  location: 'United Kingdom × Nigeria',
   overview:
     'E-Technix is a structured digital careers programme. Every student begins with Phase 1. After completing Phase 1, you choose one specialisation track. Advanced tracks have additional prerequisites.',
   philosophyQuestion:
@@ -93,6 +97,25 @@ export const PROGRAMME = {
       body: 'Socratic-style assistant that asks questions, never gives answers.',
     },
   ],
+  howItWorks: {
+    feeNote: 'One fee covers both phases — Phase 1 and your Phase 2 specialisation track.',
+    phases: [
+      {
+        n: 1,
+        name: 'Phase 1 — Foundation',
+        body: 'Digital & Business Foundations (8 weeks). Compulsory for everyone in the cohort. You build the digital fluency, problem-solving, and AI literacy the rest of the programme is built on.',
+      },
+      {
+        n: 2,
+        name: 'Phase 2 — Specialisation',
+        body: 'Your chosen specialisation track (12 weeks). You advance to Phase 2 by scoring at least 60% cumulatively across Phase 1 — attendance, assignments, participation, and the capstone project all count.',
+      },
+    ],
+    progressionRule:
+      'Advancing to Phase 2 requires a cumulative score of at least 60% in Phase 1 (attendance + assignments + participation + capstone project).',
+    advancedEntry:
+      'Advanced tracks are open for enrolment now, but you must complete the prerequisite track first. If you already have the experience, you can sit a placement assessment to verify it and enter the advanced track directly — no one skips the prerequisite on an unverified claim.',
+  },
 } as const;
 
 export const TRACKS: Track[] = [
@@ -1505,12 +1528,18 @@ export const TRACKS: Track[] = [
     code: 'DE-301',
     slug: 'data-engineering',
     name: 'Data Engineering',
-    status: 'advanced',
+    status: 'enrolling',
+    isAdvanced: true,
     accent: 'cyan',
     icon: '🛠️',
     duration: '12 weeks',
     prerequisite:
       'Track A (Data Analytics) completion OR existing data analysts with 1+ year experience (portfolio review + 20-minute conversation with instructor required).',
+    whatToExpect: [
+      'A faster pace and a heavier workload than a standard specialisation (12–15 hours/week).',
+      'Strong SQL and Python assumed from day one — you build pipelines, not spreadsheets.',
+      'Entry is by application: either complete Data Analytics, or pass a placement assessment that proves equivalent experience.',
+    ],
     hoursPerWeek: '12–15 hours',
     summary:
       'Data analysts answer questions. Data engineers build the systems that make answering questions possible at scale. This advanced track covers data pipeline architecture, warehousing, transformation, and infrastructure — the foundational layer that every data team depends on.',
@@ -1657,12 +1686,18 @@ export const TRACKS: Track[] = [
     code: 'ML-301',
     slug: 'machine-learning',
     name: 'Machine Learning',
-    status: 'advanced',
+    status: 'enrolling',
+    isAdvanced: true,
     accent: 'orange',
     icon: '🧠',
     duration: '12 weeks',
     prerequisite:
       'Data Engineering track completion OR equivalent demonstrated experience. Strong Python and statistics foundation required.',
+    whatToExpect: [
+      'The most demanding track we run (12–15 hours/week) — production ML, not notebook demos.',
+      'A strong Python and statistics foundation is assumed and will be tested.',
+      'Entry is by application: either complete Data Engineering, or pass a placement assessment that proves equivalent experience.',
+    ],
     hoursPerWeek: '12–15 hours',
     summary:
       'Build machine learning systems that work in production — not just in notebooks. This track covers the full ML lifecycle from problem framing to deployment, with an emphasis on rigorous evaluation and knowing when machine learning is not the right answer.',
