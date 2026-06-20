@@ -41,21 +41,8 @@ export default function Hero() {
             margin: 0,
           }}
         >
-          Build the<br />
-          <span
-            style={{
-              background: 'var(--cyan)',
-              color: '#070D1A',
-              padding: '0 0.12em',
-              borderRadius: '3px',
-              boxDecorationBreak: 'clone',
-              WebkitBoxDecorationBreak: 'clone',
-            }}
-          >
-            judgment
-          </span>{' '}
-          AI<br />
-          cannot replace.
+          Build the <span style={{ color: 'var(--cyan)' }}>judgment</span><br />
+          AI cannot replace.
         </h1>
 
         {/* Sub + CTAs */}
