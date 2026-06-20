@@ -159,7 +159,7 @@ export function TrackGrid() {
         maxWidth: '600px',
         marginBottom: '1rem',
       }}>
-        6 Tracks.{' '}
+        Eight Tracks.{' '}
         <span style={{ color: 'var(--cyan)' }}>One Career</span> Transformation.
       </h2>
       <p style={{
@@ -536,37 +536,29 @@ export function CTASection() {
     </div>
   );
 }
-// ─── Urgency Bar ──────────────────────────────────────────────────────────────
-import CountdownTimer from './CountdownTimer';
-
+// ─── Value Bar ────────────────────────────────────────────────────────────────
 export function UrgencyBar() {
   return (
     <div style={{
-      background: 'linear-gradient(90deg, rgba(52,211,102,0.12) 0%, rgba(0,200,255,0.08) 50%, rgba(255,107,43,0.06) 100%)',
-      borderBottom: '1px solid rgba(52,211,102,0.25)',
+      background: 'linear-gradient(90deg, rgba(0,200,255,0.08) 0%, rgba(0,200,255,0.05) 50%, rgba(255,107,43,0.05) 100%)',
+      borderBottom: '1px solid var(--cyan-border)',
       padding: '0.75rem 2.5rem',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      gap: '1.5rem', flexWrap: 'wrap', textAlign: 'center',
+      gap: '1.25rem', flexWrap: 'wrap', textAlign: 'center',
     }}>
       <span style={{
-        display: 'inline-flex', alignItems: 'center', gap: '4px',
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
         fontSize: '0.85rem', color: 'var(--text)', fontWeight: 500,
       }}>
-        🔥 <strong style={{ color: 'var(--cyan)' }}>All tracks at 50% off</strong> — limited time offer
+        🎯 <strong style={{ color: 'var(--cyan)' }}>Now enrolling</strong> — next cohort · UK-directed, Nigeria-delivered
       </span>
-      <span style={{
-        width: '1px', height: '16px',
-        background: 'rgba(255,255,255,0.15)',
-        flexShrink: 0,
-      }} />
-      <CountdownTimer variant="banner" />
       <a href="/register" style={{
         display: 'inline-flex', alignItems: 'center', gap: '4px',
         color: 'var(--cyan)', fontWeight: 700, fontSize: '0.82rem',
         textDecoration: 'none', fontFamily: 'var(--font-head)',
         borderBottom: '1px solid var(--cyan-border)',
       }}>
-        Register at 50% off →
+        Reserve your spot →
       </a>
     </div>
   );
@@ -736,7 +728,7 @@ export function GuaranteeStrip() {
         gap: '3rem', flexWrap: 'wrap', textAlign: 'center',
       }}>
         {[
-          { icon: '🔥', text: '50% Off — Limited Time' },
+          { icon: '🎯', text: 'Two Phases, One Fee' },
           { icon: '💬', text: 'Easy WhatsApp Registration' },
           { icon: '🇬🇧', text: 'UK-Nigeria Backed Programme' },
           { icon: '🎓', text: 'Certificate on Completion' },

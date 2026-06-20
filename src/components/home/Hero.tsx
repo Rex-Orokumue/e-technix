@@ -2,9 +2,8 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import CountdownTimer from './CountdownTimer';
 
-const WHATSAPP_NUMBER = '2348120288390'; // ← replace with real number
+const WHATSAPP_NUMBER = '2348120288390';
 
 const fadeUp = (delay: number) => ({
   initial: { opacity: 0, y: 24 },
@@ -75,34 +74,26 @@ export default function Hero() {
           Now Enrolling — 2026 Cohort
         </motion.div>
 
-        {/* Free tracks promo badge */}
+        {/* Enrolling badge */}
         <motion.div
           {...fadeUp(0.05)}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: '8px',
-            background: 'linear-gradient(135deg, rgba(52,211,102,0.15), rgba(52,211,102,0.08))',
-            border: '1px solid rgba(52,211,102,0.3)',
-            color: '#34D366',
+            background: 'var(--cyan-dim)',
+            border: '1px solid var(--cyan-border)',
+            color: 'var(--cyan)',
             fontSize: '0.82rem',
             fontWeight: 700,
             letterSpacing: '0.05em',
             padding: '0.45rem 1.2rem',
             borderRadius: '999px',
             marginBottom: '2rem',
-            animation: 'promoBadgePulse 2.5s ease-in-out infinite',
           }}
         >
-          🔥 All Tracks at 50% Off — Limited Time Only
+          ● Now enrolling · UK × Nigeria
         </motion.div>
-
-        <style>{`
-          @keyframes promoBadgePulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,102,0.25); }
-            50% { box-shadow: 0 0 20px 6px rgba(52,211,102,0.1); }
-          }
-        `}</style>
 
         {/* Headline */}
         <motion.h1
@@ -133,9 +124,9 @@ export default function Hero() {
             lineHeight: 1.7,
           }}
         >
-          A structured 6–9 month training programme covering everything from digital
-          foundations to specialised tracks in Data, Web, Mobile, AI, Design, and
-          Business Growth.
+          A structured 6–9 month training programme — from digital foundations to
+          specialisation tracks in Data, Web, Mobile, AI, Design, Product, Business,
+          and Cybersecurity. Built to teach the judgment AI cannot replace.
         </motion.p>
 
         {/* CTAs */}
@@ -212,8 +203,6 @@ export default function Hero() {
             Chat on WhatsApp
           </a>
         </motion.div>
-
-        <CountdownTimer variant="hero" />
       </div>
     </section>
   );

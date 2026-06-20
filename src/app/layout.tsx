@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     template: '%s | E-Technix',
   },
   description:
-    'E-Technix is a structured 6–9 month digital skills training programme covering Data Analytics, Web Development, Mobile Apps, AI Systems, Product Design, and Business Development. Nigeria × UK.',
+    'E-Technix is a structured 6–9 month digital skills training programme covering Data Analytics, Web & Mobile Development, AI & Agentic Systems, Product Design, Digital Entrepreneurship, AI Product Management, and Cybersecurity. Nigeria × UK.',
   keywords: [
     'digital skills training Nigeria',
     'tech training programme Nigeria',
@@ -19,7 +19,9 @@ export const metadata: Metadata = {
     'AI training Nigeria',
     'mobile app development course',
     'UI UX design training',
-    'business development course',
+    'digital entrepreneurship course',
+    'AI product management course',
+    'cybersecurity training Nigeria',
     'online tech course UK Nigeria',
     'e-technix',
     'tech bootcamp Nigeria',

@@ -1,18 +1,16 @@
+// Home-page track showcase data. Names/order mirror the curriculum source of truth
+// (src/lib/data/curriculum.ts); this file adds the short marketing copy + tool chips
+// the homepage cards use. Keep the two in sync when tracks change.
+
 export type TrackId =
   | 'data-analytics'
   | 'web-development'
   | 'mobile-apps'
   | 'ai-systems'
-  | 'ui-ux-design'
-  | 'business-development';
-
-export type CertId =
-  | 'Certified Data Analyst'
-  | 'Certified Web Developer'
-  | 'Certified Mobile App Developer'
-  | 'Certified AI Systems Builder'
-  | 'Certified UX/UI Designer'
-  | 'Certified Business Development Specialist';
+  | 'product-design'
+  | 'digital-entrepreneurship'
+  | 'ai-product-management'
+  | 'cybersecurity';
 
 export interface Track {
   id: TrackId;
@@ -21,7 +19,7 @@ export interface Track {
   description: string;
   tools: string[];
   accent: 'cyan' | 'orange';
-  cert: CertId;
+  cert: string;
 }
 
 export const tracks: Track[] = [
@@ -29,9 +27,8 @@ export const tracks: Track[] = [
     id: 'data-analytics',
     icon: '📊',
     name: 'Data Analytics',
-    description:
-      'Turn raw data into business decisions. Learn to clean, analyse, and visualise data that tells a story.',
-    tools: ['Excel', 'SQL', 'Python', 'Power BI', 'Tableau'],
+    description: 'Turn raw data into business decisions. Clean, analyse, and visualise data that tells a story.',
+    tools: ['Excel', 'SQL', 'Python', 'Power BI'],
     accent: 'cyan',
     cert: 'Certified Data Analyst',
   },
@@ -39,9 +36,8 @@ export const tracks: Track[] = [
     id: 'web-development',
     icon: '🌐',
     name: 'Web App Development',
-    description:
-      'Build full-stack web applications from scratch — SaaS tools, marketplaces, and portfolios that work.',
-    tools: ['React', 'Next.js', 'Node.js', 'PostgreSQL'],
+    description: 'Build full-stack web applications from scratch — SaaS tools, marketplaces, and products that work.',
+    tools: ['React', 'Next.js', 'Supabase'],
     accent: 'orange',
     cert: 'Certified Web Developer',
   },
@@ -49,9 +45,8 @@ export const tracks: Track[] = [
     id: 'mobile-apps',
     icon: '📱',
     name: 'Mobile & Desktop Apps',
-    description:
-      'Create cross-platform apps for Android, iOS, and Windows. Build the next fintech or marketplace app.',
-    tools: ['Flutter', 'Dart', 'Firebase', 'Supabase'],
+    description: 'Create cross-platform apps for Android, iOS, and Windows from a single Flutter codebase.',
+    tools: ['Flutter', 'Dart', 'Supabase'],
     accent: 'cyan',
     cert: 'Certified Mobile App Developer',
   },
@@ -59,68 +54,63 @@ export const tracks: Track[] = [
     id: 'ai-systems',
     icon: '🤖',
     name: 'AI & Agentic Systems',
-    description:
-      'The most future-proof track. Build AI assistants, automation workflows, and intelligent business tools.',
-    tools: ['Python', 'LangChain', 'CrewAI', 'AutoGPT'],
+    description: 'Build AI-powered products — APIs, RAG, and agents that take real actions — and know when they are wrong.',
+    tools: ['Python', 'LLM APIs', 'RAG', 'Agents'],
     accent: 'orange',
     cert: 'Certified AI Systems Builder',
   },
   {
-    id: 'ui-ux-design',
+    id: 'product-design',
     icon: '🎨',
-    name: 'Product Design (UI/UX)',
-    description:
-      'Design products people love. Master wireframing, design systems, and product thinking with industry tools.',
-    tools: ['Figma', 'Adobe XD', 'UX Research'],
+    name: 'Product Design',
+    description: 'Design products people love. Master user research, wireframing, design systems, and prototyping.',
+    tools: ['Figma', 'UX Research', 'Design Systems'],
     accent: 'cyan',
-    cert: 'Certified UX/UI Designer',
+    cert: 'Certified Product Designer',
   },
   {
-    id: 'business-development',
+    id: 'digital-entrepreneurship',
     icon: '📈',
-    name: 'Business Development',
-    description:
-      'Learn to build, grow, and scale businesses. From sales systems to startup strategy and customer acquisition.',
-    tools: ['CRM Tools', 'Funnels', 'Growth Strategy'],
+    name: 'Digital Entrepreneurship',
+    description: 'Build a real digital business — customer discovery, marketing, sales, and your first paying customers.',
+    tools: ['Customer Discovery', 'Marketing', 'Sales'],
     accent: 'orange',
-    cert: 'Certified Business Development Specialist',
+    cert: 'Certified Digital Entrepreneur',
+  },
+  {
+    id: 'ai-product-management',
+    icon: '🧭',
+    name: 'AI Product Management',
+    description: 'Decide what gets built, why, and for whom — with the judgment to lead AI-powered product teams.',
+    tools: ['PRDs', 'Prioritisation', 'Metrics'],
+    accent: 'cyan',
+    cert: 'Certified AI Product Manager',
+  },
+  {
+    id: 'cybersecurity',
+    icon: '🛡️',
+    name: 'Cybersecurity Fundamentals',
+    description: 'Think like an attacker and a defender. Hands-on labs across web, network, and human security.',
+    tools: ['Kali Linux', 'Wireshark', 'Burp Suite'],
+    accent: 'orange',
+    cert: 'Certified Security Analyst',
   },
 ];
 
 export const foundationCourses = [
-  {
-    icon: '💻',
-    title: 'Digital Literacy',
-    desc: 'Notion, Google Workspace, internet research',
-  },
-  {
-    icon: '🧠',
-    title: 'Problem Solving',
-    desc: 'Critical thinking, structured decision-making',
-  },
-  {
-    icon: '🏢',
-    title: 'Business Fundamentals',
-    desc: 'Models, customer discovery, monetisation',
-  },
-  {
-    icon: '🗣️',
-    title: 'Communication',
-    desc: 'Presentations, writing, professional pitch',
-  },
-  {
-    icon: '⚡',
-    title: 'AI Productivity',
-    desc: 'ChatGPT, prompt engineering, AI research',
-  },
+  { icon: '💻', title: 'Digital Literacy', desc: 'Notion, Google Workspace, internet research' },
+  { icon: '🧠', title: 'Problem Solving', desc: 'Critical thinking, structured decision-making' },
+  { icon: '🏢', title: 'Business Fundamentals', desc: 'Models, customer discovery, monetisation' },
+  { icon: '🗣️', title: 'Communication', desc: 'Presentations, writing, professional pitch' },
+  { icon: '⚡', title: 'AI Productivity', desc: 'ChatGPT, prompt engineering, AI research' },
 ];
 
 export const stats = [
-  { num: '6+', label: 'Specialisation Tracks' },
-  { num: '9',  label: 'Month Programme' },
+  { num: '8', label: 'Specialisation Tracks' },
+  { num: '9', label: 'Month Programme' },
   { num: '5+', label: 'Real Project Labs' },
-  { num: '3',  label: 'Career Paths' },
-  { num: 'UK+NG', label: 'Backed Programme' },
+  { num: '3', label: 'Career Paths' },
+  { num: 'UK×NG', label: 'Backed Programme' },
 ];
 
 export const steps = [
@@ -132,7 +122,7 @@ export const steps = [
   {
     num: '02',
     title: 'Pick Your Track',
-    desc: 'Month 3–5. Choose from 6 specialisation tracks — Data, Web, Mobile, AI, Design, or Business. Go deep in what matters to you.',
+    desc: 'Month 3–5. Score 60% in Phase 1, then choose from eight specialisation tracks — Data, Web, Mobile, AI, Design, Business, Product, or Security. Go deep in what matters to you.',
   },
   {
     num: '03',

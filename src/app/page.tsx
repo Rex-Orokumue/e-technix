@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { TRACKS } from '@/lib/data/curriculum';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import Hero from '@/components/home/Hero';
@@ -18,7 +19,7 @@ import {
 export const metadata: Metadata = {
   title: 'E-Technix — Build Your Digital Career',
   description:
-    'E-Technix is a structured 6–9 month digital skills training programme based in Nigeria and the UK. Learn Data Analytics, Web Development, Mobile Apps, AI, Product Design, or Business Development — with real projects, live mentorship, and a career-ready certificate.',
+    'E-Technix is a structured 6–9 month digital skills training programme, UK-directed and Nigeria-delivered. Start with Phase 1 (Foundation), then specialise in Data, Web, Mobile, AI, Product Design, Digital Entrepreneurship, AI Product Management, or Cybersecurity — with real projects, live mentorship, and a career-ready certificate.',
   alternates: { canonical: 'https://e-technix.com' },
 };
 
@@ -50,27 +51,15 @@ const homepageSchema = {
   url: 'https://e-technix.com',
   logo: { '@type': 'ImageObject', url: 'https://e-technix.com/icon.png' },
   description:
-    'E-Technix is a structured 6–9 month digital skills training programme covering Data Analytics, Web Development, Mobile Apps, AI Systems, Product Design, and Business Development. Based in Nigeria and the UK.',
-  offers: {
-    '@type': 'Offer',
-    description: 'All tracks currently at 50% off the original price — limited-time offer.',
-    price: '0',
-    priceCurrency: 'NGN',
-    availability: 'https://schema.org/InStock',
-    url: 'https://e-technix.com/register',
-  },
+    'E-Technix is a structured 6–9 month digital skills training programme, UK-directed and Nigeria-delivered. Every student completes Phase 1 (Foundation), then specialises across eight tracks plus two advanced tracks.',
   hasOfferCatalog: {
     '@type': 'OfferCatalog',
     name: 'E-Technix Training Tracks',
-    numberOfItems: 6,
-    itemListElement: [
-      { '@type': 'Offer', itemOffered: { '@type': 'Course', name: 'Data Analytics' } },
-      { '@type': 'Offer', itemOffered: { '@type': 'Course', name: 'Web App Development' } },
-      { '@type': 'Offer', itemOffered: { '@type': 'Course', name: 'Mobile & Desktop Apps' } },
-      { '@type': 'Offer', itemOffered: { '@type': 'Course', name: 'AI & Agentic Systems' } },
-      { '@type': 'Offer', itemOffered: { '@type': 'Course', name: 'Product Design (UI/UX)' } },
-      { '@type': 'Offer', itemOffered: { '@type': 'Course', name: 'Business Development' } },
-    ],
+    numberOfItems: TRACKS.length,
+    itemListElement: TRACKS.map((t) => ({
+      '@type': 'Offer',
+      itemOffered: { '@type': 'Course', name: t.name },
+    })),
   },
 };
 
@@ -107,9 +96,11 @@ function AboutDefinition() {
           </p>
           <p id="etechnix-guarantee" style={{ fontSize: '0.95rem', color: 'var(--muted)', lineHeight: 1.8 }}>
             Every student starts with a mandatory 2-month <strong style={{ color: 'var(--text)' }}>Digital & Business Foundations</strong> phase,
-            then chooses one of six specialisation tracks. The programme ends with a
-            real project portfolio, a track-specific certificate, and a career launch plan.
-            There is a 7-day full refund guarantee if the programme is not right for you.
+            then — after scoring at least 60% — chooses one of eight specialisation tracks
+            (two advanced tracks are also available). The programme continues through Project
+            Labs and Career Launch, ending with a real project portfolio, a track-specific
+            certificate, and a career plan. There is a 7-day full refund guarantee if the
+            programme is not right for you.
           </p>
         </div>
 
@@ -122,7 +113,7 @@ function AboutDefinition() {
             {[
               { label: 'Duration', value: '6–9 months (4 phases)' },
               { label: 'Format', value: 'Fully online — live sessions + recordings' },
-              { label: 'Tracks', value: 'Data Analytics · Web Dev · Mobile · AI · UI/UX · Business' },
+              { label: 'Tracks', value: 'Data · Web · Mobile · AI · Design · Business · AI PM · Security (+ 2 advanced)' },
               { label: 'Time commitment', value: '10–15 hours per week' },
               { label: 'Who it is for', value: 'Complete beginners and career-changers' },
               { label: 'Based in', value: 'Nigeria and United Kingdom' },
