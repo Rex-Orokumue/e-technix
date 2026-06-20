@@ -145,114 +145,101 @@ export function HowItWorks() {
 
 // ─── Track Grid ───────────────────────────────────────────────────────────────
 import { tracks } from '@/lib/data/tracks';
+import { BarChart3, Code2, Smartphone, Cpu, PenTool, TrendingUp, Compass, ShieldCheck, type LucideIcon } from 'lucide-react';
+
+const TRACK_ICON: Record<string, LucideIcon> = {
+  'data-analytics': BarChart3,
+  'web-development': Code2,
+  'mobile-apps': Smartphone,
+  'ai-systems': Cpu,
+  'product-design': PenTool,
+  'digital-entrepreneurship': TrendingUp,
+  'ai-product-management': Compass,
+  'cybersecurity': ShieldCheck,
+};
 
 export function TrackGrid() {
   return (
     <section id="programs" style={{ padding: '0 2.5rem 6rem', maxWidth: '1180px', margin: '0 auto' }}>
-      <SectionLabel>Specialisation Tracks</SectionLabel>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.75rem' }}>
+        <span className="eyebrow">02 — Specialise</span>
+        <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+      </div>
       <h2 style={{
         fontFamily: 'var(--font-head)',
         fontSize: 'clamp(1.9rem, 3.5vw, 2.8rem)',
         fontWeight: 800,
-        lineHeight: 1.12,
-        letterSpacing: '-0.025em',
-        maxWidth: '600px',
-        marginBottom: '1rem',
+        lineHeight: 1.08,
+        letterSpacing: '-0.03em',
+        maxWidth: '640px',
+        margin: 0,
       }}>
-        Eight Tracks.{' '}
-        <span style={{ color: 'var(--cyan)' }}>One Career</span> Transformation.
+        Eight tracks. <span style={{ color: 'var(--cyan)' }}>One career transformation.</span>
       </h2>
       <p style={{
         color: 'var(--muted)',
         fontSize: '1.05rem',
         maxWidth: '540px',
-        marginBottom: '3.5rem',
+        margin: '1.25rem 0 3rem',
         lineHeight: 1.7,
       }}>
-        Choose the path that aligns with your goals. Every track includes tools,
+        Choose the path that aligns with your goals. Every track includes real tools,
         projects, and a capstone you&apos;ll be proud to show.
       </p>
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-        gap: '1.25rem',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(258px, 1fr))',
+        gap: '1px',
+        background: 'var(--border)',
+        border: '1px solid var(--border)',
+        borderRadius: '8px',
+        overflow: 'hidden',
       }}>
-        {tracks.map((track) => (
-          <div
-            key={track.id}
-            style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: '12px',
-              padding: '1.75rem',
-              transition: 'border-color 0.25s, transform 0.25s',
-              cursor: 'default',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--cyan-border)';
-              (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-4px)';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border)';
-              (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)';
-            }}
-          >
-            {/* Icon */}
-            <div style={{
-              width: '44px', height: '44px',
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.3rem',
-              marginBottom: '1.2rem',
-              background: track.accent === 'cyan' ? 'var(--cyan-dim)' : 'var(--orange-dim)',
-            }}>
-              {track.icon}
-            </div>
-
-            <h3 style={{
-              fontFamily: 'var(--font-head)',
-              fontWeight: 700,
-              fontSize: '1rem',
-              marginBottom: '0.5rem',
-              color: 'var(--text)',
-            }}>
-              {track.name}
-            </h3>
-
-            <p style={{
-              fontSize: '0.85rem',
-              color: 'var(--muted)',
-              marginBottom: '1.2rem',
-              lineHeight: 1.6,
-            }}>
-              {track.description}
-            </p>
-
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-              {track.tools.map((tool, i) => (
-                <span key={tool} style={{
-                  fontSize: '0.72rem',
-                  fontWeight: 600,
-                  padding: '0.2rem 0.6rem',
-                  borderRadius: '4px',
-                  background: i === 0
-                    ? (track.accent === 'cyan' ? 'var(--cyan-dim)' : 'var(--orange-dim)')
-                    : 'rgba(255,255,255,0.06)',
-                  color: i === 0
-                    ? (track.accent === 'cyan' ? 'var(--cyan)' : 'var(--orange)')
-                    : 'var(--muted)',
-                  letterSpacing: '0.03em',
-                }}>
-                  {tool}
-                </span>
-              ))}
-            </div>
-          </div>
-        ))}
+        {tracks.map((track, idx) => {
+          const Icon = TRACK_ICON[track.id] ?? Code2;
+          const ac = track.accent === 'cyan' ? 'var(--cyan)' : 'var(--orange)';
+          return (
+            <Link
+              key={track.id}
+              href="/programs"
+              className="trk-card"
+              style={{
+                background: 'var(--bg)',
+                padding: '1.6rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.85rem',
+                textDecoration: 'none',
+                color: 'var(--text)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ color: ac, display: 'inline-flex' }}><Icon size={22} strokeWidth={1.6} /></span>
+                <span className="eyebrow" style={{ fontSize: '0.66rem' }}>{String(idx + 1).padStart(2, '0')}</span>
+              </div>
+              <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '1.05rem', margin: 0, letterSpacing: '-0.01em' }}>
+                {track.name}
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--muted)', lineHeight: 1.6, margin: 0, flex: 1 }}>
+                {track.description}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                {track.tools.map((tool) => (
+                  <span key={tool} className="mono" style={{ fontSize: '0.68rem', padding: '0.15rem 0.45rem', border: '1px solid var(--border)', borderRadius: '3px', color: 'var(--muted)' }}>
+                    {tool}
+                  </span>
+                ))}
+              </div>
+            </Link>
+          );
+        })}
       </div>
+
+      <style>{`
+        .trk-card { transition: background 0.18s ease; }
+        .trk-card:hover { background: var(--surface) !important; }
+      `}</style>
     </section>
   );
 }
