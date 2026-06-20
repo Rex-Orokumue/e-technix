@@ -42,6 +42,8 @@ const s = StyleSheet.create({
   cover: { backgroundColor: DARK, color: '#fff', padding: 56, height: '100%', flexDirection: 'column', justifyContent: 'space-between' },
   coverTop: { flexDirection: 'row', alignItems: 'center' },
   wordmark: { fontSize: 30, fontFamily: 'Helvetica-Bold', color: '#fff' },
+  kicker: { fontSize: 9, letterSpacing: 3, color: CY, textTransform: 'uppercase', marginTop: 10, fontFamily: 'Helvetica-Bold' },
+  docTitle: { fontSize: 11, letterSpacing: 2, color: '#AAB4C8', textTransform: 'uppercase', marginTop: 4 },
   coverRule: { height: 3, width: 60, backgroundColor: OR, marginTop: 22, marginBottom: 22 },
   tagline: { fontSize: 26, fontFamily: 'Helvetica-Bold', color: CY, lineHeight: 1.15, maxWidth: 360 },
   coverSub: { fontSize: 11, color: '#AAB4C8', marginTop: 18, maxWidth: 380, lineHeight: 1.5 },
@@ -117,9 +119,15 @@ export async function renderCurriculumPdf(lead: { name: string; email: string })
       {/* ── Cover ── */}
       <Page size="A4" style={s.cover}>
         <View style={s.coverTop}>
-          <Text style={s.wordmark}>e-technix</Text>
+          <Text style={s.wordmark}>
+            <Text style={{ color: CY }}>e-</Text>
+            <Text>technix</Text>
+            <Text style={{ color: OR }}> .</Text>
+          </Text>
         </View>
         <View>
+          <Text style={s.kicker}>Digital Careers Programme</Text>
+          <Text style={s.docTitle}>Master Curriculum</Text>
           <Text style={s.coverRule} />
           <Text style={s.tagline}>{PROGRAMME.tagline}</Text>
           <Text style={s.coverSub}>{PROGRAMME.overview}</Text>

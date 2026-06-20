@@ -155,6 +155,8 @@ export default function CurriculumClient({ programme, tracks, trackChoices, unlo
             {unlocked ? (
               <a
                 href="/api/curriculum/pdf"
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
                   background: 'transparent', color: 'var(--text)',

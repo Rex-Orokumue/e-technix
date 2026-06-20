@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { renderCurriculumPdf } from '@/lib/curriculum-pdf';
-import { UNLOCK_COOKIE } from '@/app/api/curriculum/lead/route';
+import { UNLOCK_COOKIE } from '@/lib/curriculum-cookie';
 
 export async function GET(req: NextRequest) {
   const id = req.cookies.get(UNLOCK_COOKIE)?.value;
@@ -21,7 +21,9 @@ export async function GET(req: NextRequest) {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="E-Technix-Curriculum.pdf"',
+        // inline so the browser opens it in a new tab's PDF viewer (the user can
+        // still save from there) — an "attachment" disposition downloads silently.
+        'Content-Disposition': 'inline; filename="E-Technix-Curriculum.pdf"',
         'Cache-Control': 'no-store',
       },
     });

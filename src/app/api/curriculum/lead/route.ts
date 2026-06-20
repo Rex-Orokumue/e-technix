@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isValidEmail, isValidName, insertLead } from '@/lib/curriculum-lead';
-
-export const UNLOCK_COOKIE = 'etx_curr_unlock';
+import { UNLOCK_COOKIE } from '@/lib/curriculum-cookie';
 
 export async function POST(req: NextRequest) {
   let body: { name?: unknown; email?: unknown; track_interest?: unknown };

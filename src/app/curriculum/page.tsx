@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { TRACKS, PROGRAMME, publicTrack } from '@/lib/data/curriculum';
-import { UNLOCK_COOKIE } from '@/app/api/curriculum/lead/route';
+import { UNLOCK_COOKIE } from '@/lib/curriculum-cookie';
 import CurriculumClient, { type ClientTrack } from './_client';
 
 export const metadata = {
