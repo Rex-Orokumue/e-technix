@@ -3,41 +3,19 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import CountdownTimer from '@/components/home/CountdownTimer';
+import { TRACKS } from '@/lib/data/curriculum';
+import { PRICING, CURRENCY_META, fmtPrice, type Currency } from '@/lib/data/pricing';
 
 const WHATSAPP_NUMBER = '2348120288390';
 
-// ─── Exchange rates (update periodically) ─────────────────────────────────────
-const RATES = { NGN: 1, USD: 1 / 1580, GBP: 1 / 2020 };
-type Currency = 'NGN' | 'USD' | 'GBP';
-
-const CURRENCY_META: Record<Currency, { symbol: string; label: string; flag: string }> = {
-  NGN: { symbol: '₦', label: 'NGN', flag: '🇳🇬' },
-  USD: { symbol: '$', label: 'USD', flag: '🇺🇸' },
-  GBP: { symbol: '£', label: 'GBP', flag: '🇬🇧' },
-};
-
-const convertPrice = (ngnAmount: number, currency: Currency) =>
-  Math.round(ngnAmount * RATES[currency]);
-
-const fmtPrice = (ngnAmount: number, currency: Currency) => {
-  const val = convertPrice(ngnAmount, currency);
-  const { symbol } = CURRENCY_META[currency];
-  if (currency === 'NGN') return symbol + val.toLocaleString('en-NG');
-  return symbol + val.toLocaleString('en-US');
-};
-
-// ─── Pricing Data ─────────────────────────────────────────────────────────────
-// orig = original price, full = current sale price (50% off), install = 1st instalment at sale price
-
-const tracks = [
-  { id: 'data-analytics',       icon: '📊', name: 'Data Analytics',           orig: 180000, full: 90000,  origInstall: 100000, install: 50000  },
-  { id: 'web-development',      icon: '🌐', name: 'Web App Development',       orig: 230000, full: 115000, origInstall: 125000, install: 62500  },
-  { id: 'mobile-apps',          icon: '📱', name: 'Mobile & Desktop Apps',     orig: 230000, full: 115000, origInstall: 125000, install: 62500  },
-  { id: 'ai-systems',           icon: '🤖', name: 'AI & Agentic Systems',      orig: 300000, full: 150000, origInstall: 160000, install: 80000  },
-  { id: 'ui-ux-design',         icon: '🎨', name: 'Product Design (UI/UX)',    orig: 180000, full: 90000,  origInstall: 100000, install: 50000  },
-  { id: 'business-development', icon: '📈', name: 'Business Development',      orig: 180000, full: 90000,  origInstall: 100000, install: 50000  },
-];
+// Registerable tracks = everything except Phase 1 (Phase 1 is included in the fee).
+const regTracks = TRACKS.filter((t) => t.code !== 'DT-101').map((t) => ({
+  code: t.code,
+  icon: t.icon,
+  name: t.name,
+  isAdvanced: !!t.isAdvanced,
+  price: PRICING[t.code],
+}));
 
 const experienceLevels = [
   'Complete beginner — no tech background',
@@ -47,11 +25,11 @@ const experienceLevels = [
 ];
 
 const educationLevels = [
-  "Secondary school / O-Level",
-  "Diploma / OND / HND",
+  'Secondary school / O-Level',
+  'Diploma / OND / HND',
   "Bachelor's degree",
-  "Postgraduate / Masters",
-  "Self-taught / No formal education",
+  'Postgraduate / Masters',
+  'Self-taught / No formal education',
 ];
 
 interface FormData {
@@ -66,11 +44,17 @@ const EMPTY: FormData = {
   paymentType: 'full',
 };
 
+const amountFor = (code: string, currency: Currency, paymentType: 'full' | 'installment') => {
+  const p = PRICING[code];
+  if (!p) return 0;
+  return paymentType === 'full' ? p.full[currency] : p.install[currency];
+};
+
 const buildWhatsAppMessage = (data: FormData, currency: Currency) => {
-  const track = tracks.find(t => t.id === data.track);
-  const ngnAmount = data.paymentType === 'full' ? (track?.full ?? 0) : (track?.install ?? 0);
-  const displayAmount = fmtPrice(ngnAmount, currency);
-  return `Hello! I'd like to register for E-Technix. Here are my details:\n\n*Name:* ${data.firstName} ${data.lastName}\n*Email:* ${data.email}\n*Phone:* ${data.phone}\n*Country:* ${data.country}\n*Track:* ${track?.name}\n*Payment:* ${displayAmount} (${data.paymentType === 'full' ? 'Full payment — 50% off' : '1st Instalment — 50% off'})\n*Education:* ${data.education}\n*Experience:* ${data.experience}\n*Motivation:* ${data.motivation}\n*Goal:* ${data.goal}\n\nLooking forward to starting! 🚀`;
+  const track = regTracks.find((t) => t.code === data.track);
+  const amount = amountFor(data.track, currency, data.paymentType);
+  const displayAmount = fmtPrice(amount, currency);
+  return `Hello! I'd like to register for E-Technix. Here are my details:\n\n*Name:* ${data.firstName} ${data.lastName}\n*Email:* ${data.email}\n*Phone:* ${data.phone}\n*Country:* ${data.country}\n*Track:* ${track?.name}${track?.isAdvanced ? ' (Advanced)' : ''}\n*Payment:* ${displayAmount} (${data.paymentType === 'full' ? 'Full payment' : '1st instalment of 2'})\n*Education:* ${data.education}\n*Experience:* ${data.experience}\n*Motivation:* ${data.motivation}\n*Goal:* ${data.goal}\n\nLooking forward to starting! 🚀`;
 };
 
 const redirectToWhatsApp = (data: FormData, currency: Currency) => {
@@ -89,12 +73,10 @@ export default function RegisterPage() {
     else if (['Ghana', 'Kenya', 'South Africa', 'Other'].includes(form.country)) setCurrency('USD');
   }, [form.country]);
 
-  const set = (field: keyof FormData, value: string) => setForm(f => ({ ...f, [field]: value }));
+  const set = (field: keyof FormData, value: string) => setForm((f) => ({ ...f, [field]: value }));
 
-  const selectedTrack = tracks.find(t => t.id === form.track);
-  const ngnAmount = selectedTrack
-    ? (form.paymentType === 'full' ? selectedTrack.full : selectedTrack.install)
-    : 0;
+  const selectedTrack = regTracks.find((t) => t.code === form.track);
+  const amount = selectedTrack ? amountFor(form.track, currency, form.paymentType) : 0;
 
   const isComplete = form.firstName && form.lastName && form.email && form.phone &&
     form.track && form.education && form.experience && form.motivation && form.goal;
@@ -123,34 +105,6 @@ export default function RegisterPage() {
       <Navbar />
       <main style={{ paddingTop: '68px' }}>
 
-        {/* ── Promo Banner ── */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(52,211,102,0.12) 0%, rgba(0,200,255,0.10) 50%, rgba(255,107,43,0.08) 100%)',
-          borderBottom: '1px solid rgba(52,211,102,0.25)',
-          padding: '1rem 2.5rem',
-          textAlign: 'center',
-        }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: '0.75rem', flexWrap: 'wrap',
-          }}>
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: '6px',
-              background: 'rgba(52,211,102,0.15)', border: '1px solid rgba(52,211,102,0.3)',
-              borderRadius: '999px', padding: '0.3rem 0.85rem',
-              fontSize: '0.75rem', fontWeight: 700, color: '#34D366',
-              letterSpacing: '0.05em', textTransform: 'uppercase',
-              animation: 'promoPulse 2s ease-in-out infinite',
-            }}>
-              🔥 Limited Time
-            </span>
-            <span style={{ fontSize: '0.88rem', color: 'var(--text)', fontWeight: 500 }}>
-              <strong>All tracks</strong> are currently at <strong style={{ color: '#00C8FF' }}>50% off</strong> the original price
-            </span>
-          </div>
-          <CountdownTimer variant="banner" />
-        </div>
-
         <div style={{ maxWidth: '1180px', margin: '0 auto', padding: '5rem 2.5rem 6rem' }}>
 
           {/* Header */}
@@ -176,11 +130,11 @@ export default function RegisterPage() {
             {/* Trust badges */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem' }}>
               {[
-                { icon: '🔥', text: '50% off — limited time' },
+                { icon: '🎯', text: 'Two phases, one fee' },
                 { icon: '💬', text: 'Register via WhatsApp' },
-                { icon: '🇬🇧', text: 'UK-Nigeria backed programme' },
+                { icon: '🇬🇧', text: 'UK–Nigeria backed programme' },
                 { icon: '🎓', text: 'Certificate on completion' },
-              ].map(b => (
+              ].map((b) => (
                 <div key={b.text} style={{
                   display: 'inline-flex', alignItems: 'center', gap: '6px',
                   background: 'var(--surface)', border: '1px solid var(--border)',
@@ -193,38 +147,33 @@ export default function RegisterPage() {
             </div>
 
             <p style={{ color: 'var(--muted)', fontSize: '1rem', lineHeight: 1.7 }}>
-              Fill in your details, choose your track, and register via WhatsApp. Our team will get you set up and ready to start right away.
+              Fill in your details, choose your track, and register via WhatsApp. Every track
+              starts with Phase 1 (Foundation) and your fee covers your full programme. Our team
+              will get you set up and ready to start.
             </p>
           </div>
 
           {/* Currency switcher */}
-          {(
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.78rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                View prices in:
-              </span>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                {(Object.keys(CURRENCY_META) as Currency[]).map(c => (
-                  <button key={c} onClick={() => setCurrency(c)} style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '6px',
-                    padding: '0.4rem 1rem', borderRadius: '7px', cursor: 'pointer',
-                    border: `1px solid ${currency === c ? 'var(--cyan-border)' : 'var(--border)'}`,
-                    background: currency === c ? 'var(--cyan-dim)' : 'transparent',
-                    color: currency === c ? 'var(--cyan)' : 'var(--muted)',
-                    fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.82rem',
-                    transition: 'all 0.2s',
-                  }}>
-                    {CURRENCY_META[c].flag} {CURRENCY_META[c].label}
-                  </button>
-                ))}
-              </div>
-              {currency !== 'NGN' && (
-                <span style={{ fontSize: '0.72rem', color: 'var(--muted)', fontStyle: 'italic' }}>
-                  Approx. conversion
-                </span>
-              )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              View prices in:
+            </span>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {(Object.keys(CURRENCY_META) as Currency[]).map((c) => (
+                <button key={c} onClick={() => setCurrency(c)} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '0.4rem 1rem', borderRadius: '7px', cursor: 'pointer',
+                  border: `1px solid ${currency === c ? 'var(--cyan-border)' : 'var(--border)'}`,
+                  background: currency === c ? 'var(--cyan-dim)' : 'transparent',
+                  color: currency === c ? 'var(--cyan)' : 'var(--muted)',
+                  fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.82rem',
+                  transition: 'all 0.2s',
+                }}>
+                  {CURRENCY_META[c].flag} {CURRENCY_META[c].label}
+                </button>
+              ))}
             </div>
-          )}
+          </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '2.5rem', alignItems: 'start' }} className="register-grid">
 
@@ -240,37 +189,37 @@ export default function RegisterPage() {
                   <div style={groupStyle}>
                     <label style={labelStyle}>First Name *</label>
                     <input style={inputStyle} placeholder="John" value={form.firstName}
-                      onChange={e => set('firstName', e.target.value)}
-                      onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-                      onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
+                      onChange={(e) => set('firstName', e.target.value)}
+                      onFocus={(e) => (e.target.style.borderColor = 'var(--cyan-border)')}
+                      onBlur={(e) => (e.target.style.borderColor = 'var(--border)')} />
                   </div>
                   <div style={groupStyle}>
                     <label style={labelStyle}>Last Name *</label>
                     <input style={inputStyle} placeholder="Doe" value={form.lastName}
-                      onChange={e => set('lastName', e.target.value)}
-                      onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-                      onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
+                      onChange={(e) => set('lastName', e.target.value)}
+                      onFocus={(e) => (e.target.style.borderColor = 'var(--cyan-border)')}
+                      onBlur={(e) => (e.target.style.borderColor = 'var(--border)')} />
                   </div>
                   <div style={groupStyle}>
                     <label style={labelStyle}>Email Address *</label>
                     <input style={inputStyle} type="email" placeholder="john@example.com" value={form.email}
-                      onChange={e => set('email', e.target.value)}
-                      onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-                      onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
+                      onChange={(e) => set('email', e.target.value)}
+                      onFocus={(e) => (e.target.style.borderColor = 'var(--cyan-border)')}
+                      onBlur={(e) => (e.target.style.borderColor = 'var(--border)')} />
                   </div>
                   <div style={groupStyle}>
                     <label style={labelStyle}>Phone Number *</label>
                     <input style={inputStyle} placeholder="+234 800 000 0000" value={form.phone}
-                      onChange={e => set('phone', e.target.value)}
-                      onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-                      onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
+                      onChange={(e) => set('phone', e.target.value)}
+                      onFocus={(e) => (e.target.style.borderColor = 'var(--cyan-border)')}
+                      onBlur={(e) => (e.target.style.borderColor = 'var(--border)')} />
                   </div>
                   <div style={{ ...groupStyle, gridColumn: '1 / -1' }}>
                     <label style={labelStyle}>Country *</label>
                     <select style={{ ...inputStyle, cursor: 'pointer' }} value={form.country}
-                      onChange={e => set('country', e.target.value)}
-                      onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-                      onBlur={e => (e.target.style.borderColor = 'var(--border)')}>
+                      onChange={(e) => set('country', e.target.value)}
+                      onFocus={(e) => (e.target.style.borderColor = 'var(--cyan-border)')}
+                      onBlur={(e) => (e.target.style.borderColor = 'var(--border)')}>
                       <option value="Nigeria">Nigeria 🇳🇬</option>
                       <option value="United Kingdom">United Kingdom 🇬🇧</option>
                       <option value="Ghana">Ghana 🇬🇭</option>
@@ -284,14 +233,17 @@ export default function RegisterPage() {
 
               {/* 02 Track Selection */}
               <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '2rem' }}>
-                <h2 style={{ fontFamily: 'var(--font-head)', fontSize: '1rem', fontWeight: 700, marginBottom: '1.5rem' }}>
+                <h2 style={{ fontFamily: 'var(--font-head)', fontSize: '1rem', fontWeight: 700, marginBottom: '0.4rem' }}>
                   02 — Choose Your Track
                 </h2>
+                <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '1.5rem' }}>
+                  Every track includes Phase 1 (Foundation). Advanced tracks require a prerequisite track or a placement assessment.
+                </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {tracks.map((track) => {
-                    const isSelected = form.track === track.id;
+                  {regTracks.map((track) => {
+                    const isSelected = form.track === track.code;
                     return (
-                      <div key={track.id} onClick={() => set('track', track.id)} style={{
+                      <div key={track.code} onClick={() => set('track', track.code)} style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                         gap: '1rem', padding: '1rem 1.25rem',
                         background: isSelected ? 'var(--cyan-dim)' : 'rgba(255,255,255,0.02)',
@@ -307,36 +259,30 @@ export default function RegisterPage() {
                             }}>
                               {track.name}
                             </span>
-                            <span style={{
-                              display: 'inline-flex', alignItems: 'center', gap: '4px',
-                              background: 'rgba(0,200,255,0.1)',
-                              border: '1px solid var(--cyan-border)',
-                              borderRadius: '4px', padding: '0.15rem 0.5rem',
-                              fontSize: '0.65rem', fontWeight: 800, color: 'var(--cyan)',
-                              letterSpacing: '0.08em', textTransform: 'uppercase',
-                            }}>
-                              50% OFF
-                            </span>
+                            {track.isAdvanced && (
+                              <span style={{
+                                fontSize: '0.62rem', fontWeight: 800, color: 'var(--orange)',
+                                background: 'var(--orange-dim)', border: '1px solid rgba(255,107,43,0.25)',
+                                borderRadius: '4px', padding: '0.12rem 0.45rem',
+                                letterSpacing: '0.05em', textTransform: 'uppercase',
+                              }}>
+                                ▲ Advanced
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                            <span style={{
-                              fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.8rem',
-                              color: 'var(--muted)', textDecoration: 'line-through', opacity: 0.6,
-                            }}>
-                              {fmtPrice(track.orig, currency)}
-                            </span>
-                            <span style={{
-                              fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '0.95rem',
-                              color: isSelected ? 'var(--cyan)' : 'var(--text)',
-                            }}>
-                              {fmtPrice(track.full, currency)}
-                            </span>
+                          <div style={{
+                            fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '0.95rem',
+                            color: isSelected ? 'var(--cyan)' : 'var(--text)',
+                          }}>
+                            {track.price ? fmtPrice(track.price.full[currency], currency) : '—'}
                           </div>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>
-                            or {fmtPrice(track.install, currency)} × 2
-                          </div>
+                          {track.price && (
+                            <div style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>
+                              or {fmtPrice(track.price.install[currency], currency)} × 2
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -353,21 +299,21 @@ export default function RegisterPage() {
                   <div style={groupStyle}>
                     <label style={labelStyle}>Highest Education Level *</label>
                     <select style={{ ...inputStyle, cursor: 'pointer' }} value={form.education}
-                      onChange={e => set('education', e.target.value)}
-                      onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-                      onBlur={e => (e.target.style.borderColor = 'var(--border)')}>
+                      onChange={(e) => set('education', e.target.value)}
+                      onFocus={(e) => (e.target.style.borderColor = 'var(--cyan-border)')}
+                      onBlur={(e) => (e.target.style.borderColor = 'var(--border)')}>
                       <option value="">Select your education level</option>
-                      {educationLevels.map(l => <option key={l} value={l}>{l}</option>)}
+                      {educationLevels.map((l) => <option key={l} value={l}>{l}</option>)}
                     </select>
                   </div>
                   <div style={groupStyle}>
                     <label style={labelStyle}>Current Experience Level *</label>
                     <select style={{ ...inputStyle, cursor: 'pointer' }} value={form.experience}
-                      onChange={e => set('experience', e.target.value)}
-                      onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-                      onBlur={e => (e.target.style.borderColor = 'var(--border)')}>
+                      onChange={(e) => set('experience', e.target.value)}
+                      onFocus={(e) => (e.target.style.borderColor = 'var(--cyan-border)')}
+                      onBlur={(e) => (e.target.style.borderColor = 'var(--border)')}>
                       <option value="">Select your experience level</option>
-                      {experienceLevels.map(l => <option key={l} value={l}>{l}</option>)}
+                      {experienceLevels.map((l) => <option key={l} value={l}>{l}</option>)}
                     </select>
                   </div>
                 </div>
@@ -383,17 +329,17 @@ export default function RegisterPage() {
                     <label style={labelStyle}>Why do you want to join this programme? *</label>
                     <textarea style={{ ...inputStyle, minHeight: '100px', resize: 'vertical', lineHeight: 1.6 }}
                       placeholder="Tell us what motivated you to enrol and what you hope to get out of the programme..."
-                      value={form.motivation} onChange={e => set('motivation', e.target.value)}
-                      onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-                      onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
+                      value={form.motivation} onChange={(e) => set('motivation', e.target.value)}
+                      onFocus={(e) => (e.target.style.borderColor = 'var(--cyan-border)')}
+                      onBlur={(e) => (e.target.style.borderColor = 'var(--border)')} />
                   </div>
                   <div style={groupStyle}>
                     <label style={labelStyle}>Where do you want to be in 12 months? *</label>
                     <textarea style={{ ...inputStyle, minHeight: '100px', resize: 'vertical', lineHeight: 1.6 }}
                       placeholder="Describe your career goal — a new job, freelance income, launching a product, or something else..."
-                      value={form.goal} onChange={e => set('goal', e.target.value)}
-                      onFocus={e => (e.target.style.borderColor = 'var(--cyan-border)')}
-                      onBlur={e => (e.target.style.borderColor = 'var(--border)')} />
+                      value={form.goal} onChange={(e) => set('goal', e.target.value)}
+                      onFocus={(e) => (e.target.style.borderColor = 'var(--cyan-border)')}
+                      onBlur={(e) => (e.target.style.borderColor = 'var(--border)')} />
                   </div>
                 </div>
               </div>
@@ -405,15 +351,15 @@ export default function RegisterPage() {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }} className="form-grid">
                   {[
-                    '✅ 9-month structured curriculum',
+                    '✅ Phase 1 Foundation + your track',
                     '✅ Live sessions & recordings',
                     '✅ 1-on-1 mentor support',
                     '✅ Real project experience',
-                    '✅ Career path preparation',
+                    '✅ Project Labs & Career Launch',
                     '✅ Private student community',
                     '✅ Tools & resource library',
                     '✅ Track certificate on completion',
-                  ].map(item => (
+                  ].map((item) => (
                     <div key={item} style={{ fontSize: '0.83rem', color: 'var(--text)', fontWeight: 500 }}>{item}</div>
                   ))}
                 </div>
@@ -442,14 +388,16 @@ export default function RegisterPage() {
                       <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.95rem' }}>
                         {selectedTrack.icon} {selectedTrack.name}
                       </div>
-                      <div style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '4px',
-                        background: 'rgba(0,200,255,0.1)', border: '1px solid var(--cyan-border)',
-                        borderRadius: '4px', padding: '0.2rem 0.6rem', marginTop: '0.5rem',
-                        fontSize: '0.7rem', fontWeight: 700, color: 'var(--cyan)', letterSpacing: '0.05em',
-                      }}>
-                        🔥 50% off — limited time
-                      </div>
+                      {selectedTrack.isAdvanced && (
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '4px',
+                          background: 'var(--orange-dim)', border: '1px solid rgba(255,107,43,0.25)',
+                          borderRadius: '4px', padding: '0.2rem 0.6rem', marginTop: '0.5rem',
+                          fontSize: '0.68rem', fontWeight: 700, color: 'var(--orange)', letterSpacing: '0.05em',
+                        }}>
+                          ▲ Advanced — prerequisite or placement test
+                        </div>
+                      )}
                     </>
                   ) : (
                     <div style={{ fontSize: '0.85rem', color: 'var(--muted)', textAlign: 'center' }}>
@@ -459,7 +407,7 @@ export default function RegisterPage() {
                 </div>
 
                 {/* Payment type toggle */}
-                {selectedTrack && (
+                {selectedTrack && selectedTrack.price && (
                   <div style={{ marginBottom: '1.25rem' }}>
                     <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)', marginBottom: '0.6rem' }}>
                       Payment Type
@@ -480,40 +428,23 @@ export default function RegisterPage() {
                     </div>
                     {form.paymentType === 'installment' && (
                       <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.5rem', lineHeight: 1.5 }}>
-                        Pay the 1st instalment first. 2nd instalment is due at the start of Month 3.
+                        Two instalments. Pay the 1st now; the 2nd is due at the start of Phase 2.
                       </p>
                     )}
                   </div>
                 )}
 
                 {/* Price breakdown */}
-                {selectedTrack && (
+                {selectedTrack && selectedTrack.price && (
                   <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem', marginBottom: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--muted)' }}>
-                      <span>Original price</span>
-                      <span style={{ textDecoration: 'line-through', opacity: 0.6 }}>
-                        {fmtPrice(form.paymentType === 'full' ? selectedTrack.orig : selectedTrack.origInstall, currency)}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--muted)' }}>
-                      <span>50% discount</span>
-                      <span style={{ color: 'var(--cyan)', fontWeight: 600 }}>
-                        −{fmtPrice(form.paymentType === 'full' ? selectedTrack.orig - selectedTrack.full : selectedTrack.origInstall - selectedTrack.install, currency)}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--muted)' }}>
-                      <span>{form.paymentType === 'full' ? 'Programme fee' : '1st Instalment'}</span>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ color: 'var(--text)', fontWeight: 600 }}>{fmtPrice(ngnAmount, currency)}</div>
-                        {currency !== 'NGN' && (
-                          <div style={{ fontSize: '0.7rem', color: 'var(--muted)' }}>≈ ₦{ngnAmount.toLocaleString('en-NG')}</div>
-                        )}
-                      </div>
+                      <span>{form.paymentType === 'full' ? 'Programme fee' : '1st instalment'}</span>
+                      <span style={{ color: 'var(--text)', fontWeight: 600 }}>{fmtPrice(amount, currency)}</span>
                     </div>
                     {form.paymentType === 'installment' && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--muted)' }}>
-                        <span>2nd Instalment (later)</span>
-                        <span>{fmtPrice(selectedTrack.install, currency)}</span>
+                        <span>2nd instalment (later)</span>
+                        <span>{fmtPrice(selectedTrack.price.install[currency], currency)}</span>
                       </div>
                     )}
                     <div style={{
@@ -522,7 +453,7 @@ export default function RegisterPage() {
                       borderTop: '1px solid var(--border)', paddingTop: '0.75rem', marginTop: '0.25rem',
                     }}>
                       <span>Due Today</span>
-                      <span style={{ color: 'var(--cyan)' }}>{fmtPrice(ngnAmount, currency)}</span>
+                      <span style={{ color: 'var(--cyan)' }}>{fmtPrice(amount, currency)}</span>
                     </div>
                   </div>
                 )}
@@ -541,8 +472,8 @@ export default function RegisterPage() {
                     transition: 'opacity 0.2s, transform 0.2s', marginTop: '0.5rem',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
                   }}
-                  onMouseEnter={e => { if (isComplete && selectedTrack) { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
-                  onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  onMouseEnter={(e) => { if (isComplete && selectedTrack) { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
@@ -550,7 +481,7 @@ export default function RegisterPage() {
                   </svg>
                   {!selectedTrack ? 'Select a track to continue'
                     : !isComplete ? 'Fill all fields to continue'
-                    : `Register via WhatsApp — ${fmtPrice(ngnAmount, currency)}`}
+                    : `Register via WhatsApp — ${fmtPrice(amount, currency)}`}
                 </button>
 
                 <p style={{ fontSize: '0.72rem', color: 'var(--muted)', textAlign: 'center', marginTop: '1rem', lineHeight: 1.5 }}>
@@ -582,10 +513,6 @@ export default function RegisterPage() {
       <Footer />
 
       <style>{`
-        @keyframes promoPulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,102,0.3); }
-          50% { box-shadow: 0 0 12px 4px rgba(52,211,102,0.15); }
-        }
         @media (max-width: 900px) {
           .register-grid { grid-template-columns: 1fr !important; }
           .register-grid > div:last-child { position: static !important; }
