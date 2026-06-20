@@ -60,7 +60,7 @@ export function publicTrack(t: Track): PublicTrack {
 export const PROGRAMME = {
   tagline: 'Build the judgment AI cannot replace.',
   subtitle: '10 tracks · Phase 1 + 8 Specialisation Tracks + 2 Advanced Tracks',
-  location: 'Lagos, Nigeria · 2025 / 2026',
+  location: 'United Kingdom × Nigeria · 2025 / 2026',
   overview:
     'E-Technix is a structured digital careers programme. Every student begins with Phase 1. After completing Phase 1, you choose one specialisation track. Advanced tracks have additional prerequisites.',
   philosophyQuestion:
