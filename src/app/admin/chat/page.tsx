@@ -257,13 +257,13 @@ export default function AdminChatPage() {
 
   const renameGroup = async (id: string, name: string) => {
     if (!name.trim()) return;
-    await fetch(`/api/admin/chat/channels/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name.trim() }) });
+    await fetch(`/api/chat/channels/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name.trim() }) });
     setEditingChannel(null);
     loadChannels();
   };
 
   const deleteGroup = async (id: string) => {
-    await fetch(`/api/admin/chat/channels/${id}`, { method: 'DELETE' });
+    await fetch(`/api/chat/channels/${id}`, { method: 'DELETE' });
     setDeletingChannel(null);
     if (active?.id === id) { setActive(null); setMessages([]); }
     loadChannels();
@@ -276,7 +276,7 @@ export default function AdminChatPage() {
   const createGroup = async () => {
     if (!groupName.trim()) return;
     setCreatingGroup(true);
-    const res = await fetch('/api/admin/chat/channels', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: groupName.trim(), member_ids: selectedMembers }) });
+    const res = await fetch('/api/chat/channels', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: groupName.trim(), member_ids: selectedMembers }) });
     setCreatingGroup(false);
     if (res.ok) {
       const newCh = await res.json();
