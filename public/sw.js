@@ -1,4 +1,4 @@
-const CACHE = 'etx-v1';
+const CACHE = 'etx-v2';
 
 // App shell — pages and key assets to pre-cache on install
 const PRECACHE = [
