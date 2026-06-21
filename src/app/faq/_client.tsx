@@ -37,6 +37,22 @@ const faqs = [
     category: 'Tracks & Curriculum',
     questions: [
       {
+        q: 'How many tracks are there?',
+        a: 'Ten in total: eight specialisation tracks — Data Analytics, Web App Development, Mobile & Desktop Apps, AI & Agentic Systems, Product Design, Digital Entrepreneurship, AI Product Management, and Cybersecurity Fundamentals — plus two advanced tracks, Data Engineering and Machine Learning. Everyone starts with Phase 1 (Foundation) before choosing one.',
+      },
+      {
+        q: 'How do the four phases work?',
+        a: 'The programme runs in four phases. Phase 1 — Foundation (compulsory for everyone). Phase 2 — your chosen specialisation track. Phase 3 — Real Project Labs, where you build a live product with a cross-functional team and present it at a public Demo Day. Phase 4 — Career Launch, four weeks of employment, freelancing, or startup preparation. One fee covers all four.',
+      },
+      {
+        q: 'How do I move from Phase 1 to Phase 2?',
+        a: 'You advance to your specialisation track by scoring at least 60% cumulatively across Phase 1 — attendance, assignments, participation, and the capstone project all count.',
+      },
+      {
+        q: 'How do the advanced tracks work?',
+        a: 'The two advanced tracks (Data Engineering and Machine Learning) are open by application. You either complete the prerequisite track first, or — if you already have the experience — pass a placement assessment to verify it and enter directly.',
+      },
+      {
         q: 'Can I switch tracks after I start?',
         a: 'You can switch tracks before the Specialisation phase begins (i.e. during Month 1–2). Once you begin Month 3, we ask that you commit to your chosen track to get the full depth of the programme.',
       },

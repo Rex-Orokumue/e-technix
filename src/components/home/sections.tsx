@@ -1,7 +1,34 @@
 // ─── Stats ────────────────────────────────────────────────────────────────────
 'use client';
 
+import Image from 'next/image';
 import { stats } from '@/lib/data/tracks';
+
+// ─── Community band — a real, fully-online cohort ─────────────────────────────
+export function CommunityBand() {
+  return (
+    <section style={{ padding: '0 2.5rem 6rem', maxWidth: '1180px', margin: '0 auto' }}>
+      <div style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border-bright)', aspectRatio: '16 / 7', minHeight: '300px' }}>
+        <Image
+          src="/images/community.jpg"
+          alt="E-Technix students learning together online"
+          fill
+          sizes="(max-width: 1180px) 100vw, 1180px"
+          style={{ objectFit: 'cover', filter: 'saturate(0.75) contrast(1.03)' }}
+        />
+        {/* Grade overlays — dark gradient for legibility + a subtle cyan tint so it reads as designed */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(7,13,26,0.92) 0%, rgba(7,13,26,0.6) 45%, rgba(7,13,26,0.15) 100%)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'var(--cyan)', opacity: 0.1, mixBlendMode: 'overlay', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 'clamp(1.5rem, 5vw, 3.5rem)', maxWidth: '640px' }}>
+          <span className="eyebrow" style={{ color: 'var(--cyan)' }}>A real cohort · fully online</span>
+          <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(1.6rem, 3.5vw, 2.6rem)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.05, margin: '0.85rem 0 0', color: '#fff' }}>
+            Learn alongside people<br />building the same future.
+          </h2>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export function Stats() {
   return (
@@ -155,7 +182,7 @@ export function TrackGrid() {
         maxWidth: '640px',
         margin: 0,
       }}>
-        Eight tracks. <span style={{ color: 'var(--cyan)' }}>One career transformation.</span>
+        Ten tracks. <span style={{ color: 'var(--cyan)' }}>One career transformation.</span>
       </h2>
       <p style={{
         color: 'var(--muted)',
@@ -668,7 +695,7 @@ export function GuaranteeStrip() {
         gap: '2.5rem', flexWrap: 'wrap', textAlign: 'center',
       }}>
         {[
-          { Icon: Layers, text: 'Two phases, one fee' },
+          { Icon: Layers, text: 'Four phases, one fee' },
           { Icon: MessageCircle, text: 'Easy WhatsApp registration' },
           { Icon: Globe, text: 'UK × Nigeria backed' },
           { Icon: GraduationCap, text: 'Certificate on completion' },

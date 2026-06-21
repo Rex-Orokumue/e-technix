@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -372,6 +373,7 @@ export default function CurriculumClient({ programme, tracks }: Props) {
 function TrackSection({ track, advancedEntry }: { track: ClientTrack; advancedEntry: string }) {
   const sm = STATUS_META[track.status];
   const ac = accentColor(track.accent);
+  const [weeksOpen, setWeeksOpen] = useState(false);
   return (
     <div id={track.slug} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden', scrollMarginTop: '84px' }}>
       {/* Header */}
@@ -444,12 +446,29 @@ function TrackSection({ track, advancedEntry }: { track: ClientTrack; advancedEn
           </div>
         </div>
 
-        <div style={sectionLabel}>Week by week</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {track.weeks.map((w) => (
-            <WeekRow key={w.n} week={w} accent={track.accent} />
-          ))}
-        </div>
+        <button
+          onClick={() => setWeeksOpen((o) => !o)}
+          aria-expanded={weeksOpen}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem',
+            background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '10px',
+            padding: '0.85rem 1.1rem', cursor: 'pointer',
+          }}
+        >
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+            Week by week · {track.weeks.length} weeks
+          </span>
+          <span style={{ fontSize: '0.78rem', color: ac, fontWeight: 700, whiteSpace: 'nowrap' }}>
+            {weeksOpen ? 'Hide ▲' : 'Show ▾'}
+          </span>
+        </button>
+        {weeksOpen && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.85rem' }}>
+            {track.weeks.map((w) => (
+              <WeekRow key={w.n} week={w} accent={track.accent} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
