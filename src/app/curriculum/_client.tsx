@@ -1,11 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import CurriculumUnlockModal from '@/components/curriculum/CurriculumUnlockModal';
 import type { PROGRAMME, TrackStatus, Accent } from '@/lib/data/curriculum';
 
 const WHATSAPP_NUMBER = '2348120288390';
@@ -43,9 +40,6 @@ export interface ClientTrack {
 interface Props {
   programme: typeof PROGRAMME;
   tracks: ClientTrack[];
-  trackChoices: { code: string; name: string }[];
-  unlocked: boolean;
-  leadName: string | null;
 }
 
 const STATUS_META: Record<TrackStatus, { label: string; color: string; bg: string; border: string }> = {
@@ -80,20 +74,7 @@ const sectionLabel: React.CSSProperties = {
   marginBottom: '0.85rem',
 };
 
-export default function CurriculumClient({ programme, tracks, trackChoices, unlocked: initialUnlocked, leadName }: Props) {
-  const router = useRouter();
-  const [unlocked, setUnlocked] = useState(initialUnlocked);
-  const [modal, setModal] = useState(false);
-  const [name, setName] = useState(leadName);
-
-  const handleUnlocked = (n: string) => {
-    setName(n);
-    setUnlocked(true);
-    setModal(false);
-    // Re-render the server component with the new cookie so full session detail arrives.
-    router.refresh();
-  };
-
+export default function CurriculumClient({ programme, tracks }: Props) {
   return (
     <>
       <Navbar />
@@ -145,45 +126,23 @@ export default function CurriculumClient({ programme, tracks, trackChoices, unlo
             >
               Enrol now →
             </Link>
-            {unlocked ? (
-              <a
-                href="/api/curriculum/pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                  background: 'transparent', color: 'var(--text)',
-                  fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.92rem',
-                  padding: '0.85rem 1.85rem', borderRadius: '8px',
-                  border: '1px solid var(--cyan-border)', textDecoration: 'none',
-                }}
-              >
-                ⬇ Download curriculum PDF
-              </a>
-            ) : (
-              <button
-                onClick={() => setModal(true)}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                  background: 'transparent', color: 'var(--text)',
-                  fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.92rem',
-                  padding: '0.85rem 1.85rem', borderRadius: '8px',
-                  border: '1px solid var(--border-bright)', cursor: 'pointer',
-                }}
-              >
-                Get the full curriculum (PDF)
-              </button>
-            )}
+            <Link
+              href="/how-it-works"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                background: 'transparent', color: 'var(--text)',
+                fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: '0.92rem',
+                padding: '0.85rem 1.85rem', borderRadius: '8px',
+                border: '1px solid var(--border-bright)', textDecoration: 'none',
+              }}
+            >
+              How it works
+            </Link>
           </div>
-          {unlocked && name && (
-            <p style={{ fontSize: '0.82rem', color: 'var(--cyan)', marginTop: '1rem', marginBottom: 0 }}>
-              ✓ Unlocked for {name} — every session is visible below.
-            </p>
-          )}
         </section>
 
         {/* ── At a glance ── */}
-        <section style={{ padding: '3.5rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
+        <section className="atglance-section" style={{ padding: '3.5rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
           <div style={sectionLabel}>Tracks at a glance</div>
           <div style={{ border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
             {tracks.map((t, i) => {
@@ -200,13 +159,13 @@ export default function CurriculumClient({ programme, tracks, trackChoices, unlo
                     background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)',
                   }}
                 >
-                  <span style={{ fontSize: '1.2rem', width: '28px', flexShrink: 0 }}>{t.icon}</span>
-                  <span style={{ width: '64px', flexShrink: 0, fontSize: '0.74rem', fontWeight: 700, color: 'var(--muted)', fontFamily: 'var(--font-head)' }}>{t.code}</span>
-                  <span style={{ flex: 1, fontWeight: 600, fontSize: '0.92rem' }}>{t.name}</span>
+                  <span style={{ fontSize: '1.15rem', width: '26px', flexShrink: 0 }}>{t.icon}</span>
+                  <span className="atglance-code" style={{ width: '64px', flexShrink: 0, fontSize: '0.74rem', fontWeight: 700, color: 'var(--muted)', fontFamily: 'var(--font-head)' }}>{t.code}</span>
+                  <span style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</span>
                   <span className="atglance-dur" style={{ width: '80px', flexShrink: 0, fontSize: '0.8rem', color: 'var(--muted)' }}>{t.duration}</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
                     {t.isAdvanced && (
-                      <span style={{ fontSize: '0.66rem', fontWeight: 700, color: 'var(--orange)', background: 'var(--orange-dim)', border: '1px solid rgba(255,107,43,0.25)', padding: '0.25rem 0.55rem', borderRadius: '999px', whiteSpace: 'nowrap' }}>
+                      <span className="atglance-adv" style={{ fontSize: '0.66rem', fontWeight: 700, color: 'var(--orange)', background: 'var(--orange-dim)', border: '1px solid rgba(255,107,43,0.25)', padding: '0.25rem 0.55rem', borderRadius: '999px', whiteSpace: 'nowrap' }}>
                         ▲ Advanced
                       </span>
                     )}
@@ -214,7 +173,7 @@ export default function CurriculumClient({ programme, tracks, trackChoices, unlo
                       style={{
                         fontSize: '0.68rem', fontWeight: 700,
                         color: sm.color, background: sm.bg, border: `1px solid ${sm.border}`,
-                        padding: '0.25rem 0.65rem', borderRadius: '999px', whiteSpace: 'nowrap',
+                        padding: '0.25rem 0.6rem', borderRadius: '999px', whiteSpace: 'nowrap',
                       }}
                     >
                       {sm.label}
@@ -317,7 +276,7 @@ export default function CurriculumClient({ programme, tracks, trackChoices, unlo
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             {tracks.map((t) => (
-              <TrackSection key={t.code} track={t} unlocked={unlocked} onUnlock={() => setModal(true)} advancedEntry={programme.howItWorks.advancedEntry} />
+              <TrackSection key={t.code} track={t} advancedEntry={programme.howItWorks.advancedEntry} />
             ))}
           </div>
         </section>
@@ -344,21 +303,19 @@ export default function CurriculumClient({ programme, tracks, trackChoices, unlo
       </main>
       <Footer />
 
-      {modal && (
-        <CurriculumUnlockModal tracks={trackChoices} onUnlocked={handleUnlocked} onClose={() => setModal(false)} />
-      )}
-
       <style>{`
         .atglance-row:hover { background: var(--cyan-dim) !important; }
         @media (max-width: 640px) {
-          .atglance-dur { display: none !important; }
+          .atglance-dur, .atglance-code, .atglance-adv { display: none !important; }
+          .atglance-row { padding: 0.7rem 0.85rem !important; gap: 0.6rem !important; }
+          .atglance-section { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
         }
       `}</style>
     </>
   );
 }
 
-function TrackSection({ track, unlocked, onUnlock, advancedEntry }: { track: ClientTrack; unlocked: boolean; onUnlock: () => void; advancedEntry: string }) {
+function TrackSection({ track, advancedEntry }: { track: ClientTrack; advancedEntry: string }) {
   const sm = STATUS_META[track.status];
   const ac = accentColor(track.accent);
   return (
@@ -436,7 +393,7 @@ function TrackSection({ track, unlocked, onUnlock, advancedEntry }: { track: Cli
         <div style={sectionLabel}>Week by week</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {track.weeks.map((w) => (
-            <WeekRow key={w.n} week={w} accent={track.accent} unlocked={unlocked} onUnlock={onUnlock} />
+            <WeekRow key={w.n} week={w} accent={track.accent} />
           ))}
         </div>
       </div>
@@ -444,7 +401,7 @@ function TrackSection({ track, unlocked, onUnlock, advancedEntry }: { track: Cli
   );
 }
 
-function WeekRow({ week, accent, unlocked, onUnlock }: { week: ClientWeek; accent: Accent; unlocked: boolean; onUnlock: () => void }) {
+function WeekRow({ week, accent }: { week: ClientWeek; accent: Accent }) {
   const ac = accentColor(accent);
   const hasChallenge = week.hasAiChallenge ?? !!week.aiChallenge;
   const hasAudit = week.hasAiAudit ?? !!week.aiAudit;
@@ -477,55 +434,8 @@ function WeekRow({ week, accent, unlocked, onUnlock }: { week: ClientWeek; accen
             <span style={{ color: ac, fontWeight: 700, fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Deliverable · </span>
             {week.deliverable}
           </div>
-
-          {/* Gated session detail */}
-          {unlocked && week.sessions ? (
-            <div style={{ marginTop: '0.85rem', borderTop: '1px dashed var(--border)', paddingTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {week.sessions.map((blk, i) => {
-                const lines = blk.split('\n');
-                const head = lines[0];
-                const bullets = lines.slice(1).filter(Boolean);
-                return (
-                  <div key={i}>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text)', marginBottom: bullets.length ? '0.35rem' : 0 }}>{head}</div>
-                    {bullets.length > 0 && (
-                      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                        {bullets.map((b, j) => (
-                          <li key={j} style={{ fontSize: '0.8rem', color: 'var(--muted)', lineHeight: 1.5, paddingLeft: '0.5rem' }}>{b}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                );
-              })}
-              {week.aiChallenge && <Callout label="AI Challenge" color="var(--cyan)" bg="var(--cyan-dim)" border="var(--cyan-border)" text={week.aiChallenge} />}
-              {week.aiAudit && <Callout label="AI Audit" color="var(--orange)" bg="var(--orange-dim)" border="rgba(255,107,43,0.25)" text={week.aiAudit} />}
-              {week.note && <Callout label="Note" color="var(--muted)" bg="rgba(255,255,255,0.03)" border="var(--border)" text={week.note} />}
-            </div>
-          ) : !unlocked ? (
-            <button
-              onClick={onUnlock}
-              style={{
-                marginTop: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                background: 'rgba(255,255,255,0.03)', border: '1px dashed var(--border-bright)',
-                borderRadius: '8px', padding: '0.5rem 0.85rem', cursor: 'pointer',
-                color: 'var(--muted)', fontSize: '0.76rem', fontWeight: 600, fontFamily: 'var(--font-head)',
-              }}
-            >
-              🔒 Unlock full session detail
-            </button>
-          ) : null}
         </div>
       </div>
-    </div>
-  );
-}
-
-function Callout({ label, color, bg, border, text }: { label: string; color: string; bg: string; border: string; text: string }) {
-  return (
-    <div style={{ background: bg, border: `1px solid ${border}`, borderRadius: '8px', padding: '0.6rem 0.8rem' }}>
-      <span style={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color }}>{label}</span>
-      <p style={{ fontSize: '0.8rem', color: 'var(--text)', lineHeight: 1.55, margin: '0.25rem 0 0' }}>{text}</p>
     </div>
   );
 }

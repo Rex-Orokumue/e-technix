@@ -217,9 +217,31 @@ export function TrackGrid() {
         })}
       </div>
 
+      {/* Advanced tracks — prerequisite/application tier */}
+      <Link
+        href="/programs"
+        className="trk-adv"
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem',
+          flexWrap: 'wrap', marginTop: '1px', padding: '1.1rem 1.6rem',
+          background: 'var(--bg)', border: '1px solid var(--border)', borderTop: 'none',
+          borderRadius: '0 0 8px 8px', textDecoration: 'none', color: 'var(--text)',
+        }}
+      >
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <span className="eyebrow" style={{ color: 'var(--orange)', fontSize: '0.66rem' }}>▲ Advanced</span>
+          <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
+            Already experienced? <strong style={{ color: 'var(--text)', fontWeight: 600 }}>Data Engineering</strong> & <strong style={{ color: 'var(--text)', fontWeight: 600 }}>Machine Learning</strong> are open by application.
+          </span>
+        </span>
+        <span className="mono" style={{ fontSize: '0.78rem', color: 'var(--orange)', whiteSpace: 'nowrap' }}>View advanced tracks →</span>
+      </Link>
+
       <style>{`
         .trk-card { transition: background 0.18s ease; }
         .trk-card:hover { background: var(--surface) !important; }
+        .trk-adv { transition: background 0.18s ease; }
+        .trk-adv:hover { background: var(--surface) !important; }
       `}</style>
     </section>
   );
