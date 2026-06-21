@@ -1,15 +1,17 @@
 import type { Metadata } from 'next';
 import RegisterPageClient from './_client';
+import { TRACKS } from '@/lib/data/curriculum';
+import { PRICING } from '@/lib/data/pricing';
 
 export const metadata: Metadata = {
   title: 'Register — Secure Your Spot',
   description:
-    'Register for E-Technix. Choose your track — Data Analytics, Web Development, Mobile Apps, AI Systems, UI/UX Design, or Business Development. 3 tracks currently FREE. Full payment or instalments available.',
+    'Register for E-Technix. Start with Phase 1 (Foundation), then choose one of eight specialisation tracks — Data Analytics, Web & Mobile Development, AI, Product Design, Cybersecurity, and more. One fee covers your full programme. Full payment or instalments available.',
   alternates: { canonical: 'https://e-technix.com/register' },
   openGraph: {
     title: 'Register for E-Technix — Secure Your Spot',
     description:
-      '3 tracks completely FREE for a limited time. Choose your path, fill in your details, and register via WhatsApp.',
+      'Choose your specialisation track, fill in your details, and register via WhatsApp. One fee covers Phase 1 and your full programme.',
     url: 'https://e-technix.com/register',
     images: [{ url: '/og-image.png', width: 1200, height: 630 }],
   },
@@ -20,7 +22,7 @@ const registerSchema = {
   '@type': 'Event',
   name: 'E-Technix Cohort Enrolment',
   description:
-    'Register for the next E-Technix cohort. Choose from 6 specialisation tracks and secure your place in the programme.',
+    'Register for the next E-Technix cohort. Start with Phase 1, choose a specialisation track, and continue through Project Labs and Career Launch.',
   eventAttendanceMode: 'https://schema.org/OnlineEventAttendanceMode',
   eventStatus: 'https://schema.org/EventScheduled',
   organizer: {
@@ -28,14 +30,14 @@ const registerSchema = {
     name: 'E-Technix',
     url: 'https://e-technix.com',
   },
-  offers: [
-    { '@type': 'Offer', name: 'Data Analytics Track',         price: '90000',  priceCurrency: 'NGN', availability: 'https://schema.org/InStock', url: 'https://e-technix.com/register' },
-    { '@type': 'Offer', name: 'Web App Development Track',    price: '115000', priceCurrency: 'NGN', availability: 'https://schema.org/InStock', url: 'https://e-technix.com/register' },
-    { '@type': 'Offer', name: 'Mobile & Desktop Apps Track',  price: '115000', priceCurrency: 'NGN', availability: 'https://schema.org/InStock', url: 'https://e-technix.com/register' },
-    { '@type': 'Offer', name: 'AI & Agentic Systems Track',   price: '150000', priceCurrency: 'NGN', availability: 'https://schema.org/InStock', url: 'https://e-technix.com/register' },
-    { '@type': 'Offer', name: 'Product Design (UI/UX) Track', price: '90000',  priceCurrency: 'NGN', availability: 'https://schema.org/InStock', url: 'https://e-technix.com/register' },
-    { '@type': 'Offer', name: 'Business Development Track',   price: '90000',  priceCurrency: 'NGN', availability: 'https://schema.org/InStock', url: 'https://e-technix.com/register' },
-  ],
+  offers: TRACKS.filter((t) => t.code !== 'DT-101').map((t) => ({
+    '@type': 'Offer',
+    name: `${t.name} Track`,
+    price: String(PRICING[t.code]?.full.NGN ?? ''),
+    priceCurrency: 'NGN',
+    availability: 'https://schema.org/InStock',
+    url: 'https://e-technix.com/register',
+  })),
 };
 
 const breadcrumbSchema = {

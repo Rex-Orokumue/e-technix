@@ -3,18 +3,23 @@
 import Link from 'next/link';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { TRACKS } from '@/lib/data/curriculum';
 
-const WHATSAPP_NUMBER = '2348000000000'; // ← replace with real number
+const WHATSAPP_NUMBER = '2348120288390';
+
+// Derived from the curriculum source of truth so this page can never drift.
+const specialisations = TRACKS.filter((t) => t.code !== 'DT-101' && !t.isAdvanced);
+const advancedTracks = TRACKS.filter((t) => t.isAdvanced);
 
 const phases = [
   {
     num: '01',
-    tag: 'Month 1–2',
+    tag: 'Phase 1 · Month 1–2',
     title: 'Digital & Business Foundations',
     subtitle: 'Everyone starts here.',
     accent: 'cyan' as const,
     description:
-      'Before you specialise, you need to understand how to think, communicate, and create value. This phase is mandatory for all students and gives you the mindset and tools that make everything else click.',
+      'Before you specialise, you need to understand how to think, communicate, and create value. This phase is compulsory for everyone in the cohort and gives you the mindset and tools that make everything else click.',
     details: [
       {
         icon: '💻',
@@ -42,49 +47,25 @@ const phases = [
         desc: 'Learn to use ChatGPT, prompt engineering, and AI research tools to work 10x faster. AI is not your replacement — it\'s your advantage.',
       },
     ],
-    outcome: 'By the end of Phase 1, every student has a working digital toolkit, a business mindset, and the communication skills to operate professionally in any environment.',
+    outcome: 'By the end of Phase 1, every student has a working digital toolkit, a business mindset, and the communication skills to operate professionally. Advancing to Phase 2 requires a cumulative score of at least 60% across Phase 1 — attendance, assignments, participation, and the capstone all count.',
   },
   {
     num: '02',
-    tag: 'Month 3–5',
+    tag: 'Phase 2 · Month 3–5',
     title: 'Specialisation Track',
     subtitle: 'Go deep in what matters to you.',
     accent: 'orange' as const,
     description:
-      'After foundations, you choose one of six career tracks. This is where you develop deep, marketable skills in your chosen field — guided by structured curriculum and real tools.',
-    details: [
-      {
-        icon: '📊',
-        title: 'Data Analytics',
-        desc: 'Excel, SQL, Python, Power BI, Tableau — turn raw data into business intelligence.',
-      },
-      {
-        icon: '🌐',
-        title: 'Web App Development',
-        desc: 'React, Next.js, Node.js, PostgreSQL — build full-stack web applications that work.',
-      },
-      {
-        icon: '📱',
-        title: 'Mobile & Desktop Apps',
-        desc: 'Flutter, Dart, Firebase, Supabase — create cross-platform apps for Android, iOS, and Windows.',
-      },
-      {
-        icon: '🤖',
-        title: 'AI & Agentic Systems',
-        desc: 'Python, LangChain, CrewAI — build intelligent tools and automation workflows.',
-      },
-      {
-        icon: '🎨',
-        title: 'Product Design (UI/UX)',
-        desc: 'Figma, Adobe XD — design digital products people love to use.',
-      },
-      {
-        icon: '📈',
-        title: 'Business Development',
-        desc: 'CRM, funnels, growth strategy — learn to build and scale real businesses.',
-      },
-    ],
-    outcome: 'By the end of Phase 2, you have deep, job-ready skills in your chosen track — with a portfolio of mini-projects to prove it.',
+      'Score at least 60% cumulatively across Phase 1, then choose one of eight specialisation tracks. This is where you develop deep, marketable skills in your chosen field — guided by a structured, week-by-week curriculum and real tools.',
+    details: specialisations.map((t) => ({
+      icon: t.icon,
+      title: t.name,
+      desc: t.careerPaths.slice(0, 3).join(' · '),
+    })),
+    footnote: `Two advanced tracks — ${advancedTracks
+      .map((t) => t.name)
+      .join(' and ')} — are also open by application, for graduates of the prerequisite track or those who pass a placement assessment.`,
+    outcome: 'By the end of Phase 2, you have deep, job-ready skills in your chosen track — with a portfolio of work to prove it.',
   },
   {
     num: '03',
@@ -173,11 +154,11 @@ export default function HowItWorksPage() {
           borderBottom: '1px solid var(--border)',
         }}>
           <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-            color: 'var(--cyan)', fontSize: '0.78rem', fontWeight: 700,
-            letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1rem',
+            display: 'inline-flex', alignItems: 'center', gap: '0.6rem',
+            fontFamily: 'var(--font-mono)', color: 'var(--muted)', fontSize: '0.72rem', fontWeight: 500,
+            letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: '1rem',
           }}>
-            <span style={{ width: '24px', height: '2px', background: 'var(--cyan)', borderRadius: '1px' }} />
+            <span style={{ width: '20px', height: '1px', background: 'var(--cyan)' }} />
             The Journey
           </div>
           <h1 style={{
@@ -330,6 +311,13 @@ export default function HowItWorksPage() {
                   ))}
                 </div>
 
+                {/* Optional footnote (e.g. advanced tracks) */}
+                {'footnote' in phase && phase.footnote ? (
+                  <div style={{ fontSize: '0.82rem', color: 'var(--muted)', lineHeight: 1.6, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '10px', padding: '0.9rem 1.1rem' }}>
+                    <span style={{ color: 'var(--orange)', fontWeight: 700 }}>▲ Advanced: </span>{phase.footnote}
+                  </div>
+                ) : null}
+
                 {/* Outcome */}
                 <div style={{
                   background: phase.accent === 'cyan' ? 'var(--cyan-dim)' : 'var(--orange-dim)',
@@ -358,12 +346,6 @@ export default function HowItWorksPage() {
             borderRadius: '20px', padding: '4rem 3rem',
             textAlign: 'center', position: 'relative', overflow: 'hidden',
           }}>
-            <div style={{
-              position: 'absolute', top: '-80px', left: '50%',
-              transform: 'translateX(-50%)', width: '600px', height: '300px',
-              background: 'radial-gradient(ellipse, rgba(0,200,255,0.07) 0%, transparent 70%)',
-              pointerEvents: 'none',
-            }} />
             <h2 style={{
               fontFamily: 'var(--font-head)',
               fontSize: 'clamp(1.6rem, 3vw, 2.4rem)',

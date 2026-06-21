@@ -27,17 +27,11 @@ export function Stats() {
             fontSize: '2.2rem',
             fontWeight: 800,
             letterSpacing: '-0.03em',
+            color: 'var(--cyan)',
           }}>
-            <span style={{ color: 'var(--cyan)' }}>{s.num}</span>
+            {s.num}
           </div>
-          <div style={{
-            fontSize: '0.78rem',
-            color: 'var(--muted)',
-            fontWeight: 500,
-            marginTop: '0.2rem',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-          }}>
+          <div className="eyebrow" style={{ marginTop: '0.35rem', fontSize: '0.66rem' }}>
             {s.label}
           </div>
         </div>
@@ -47,21 +41,13 @@ export function Stats() {
 }
 
 // ─── Section Label ────────────────────────────────────────────────────────────
-export function SectionLabel({ children }: { children: React.ReactNode }) {
+// Editorial-technical eyebrow: optional mono index + hairline + label.
+export function SectionLabel({ children, num }: { children: React.ReactNode; num?: string }) {
   return (
-    <div style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '0.5rem',
-      color: 'var(--cyan)',
-      fontSize: '0.78rem',
-      fontWeight: 700,
-      letterSpacing: '0.1em',
-      textTransform: 'uppercase',
-      marginBottom: '1rem',
-    }}>
-      <span style={{ width: '24px', height: '2px', background: 'var(--cyan)', borderRadius: '1px' }} />
-      {children}
+    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.75rem' }}>
+      {num && <span className="section-num mono" style={{ fontSize: '0.8rem' }}>{num}</span>}
+      <span className="eyebrow">{children}</span>
+      <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
     </div>
   );
 }
@@ -72,18 +58,18 @@ import { steps } from '@/lib/data/tracks';
 export function HowItWorks() {
   return (
     <section id="how-it-works" style={{ padding: '6rem 2.5rem', maxWidth: '1180px', margin: '0 auto' }}>
-      <SectionLabel>The Journey</SectionLabel>
+      <SectionLabel num="02">The Journey</SectionLabel>
       <h2 style={{
         fontFamily: 'var(--font-head)',
         fontSize: 'clamp(1.9rem, 3.5vw, 2.8rem)',
         fontWeight: 800,
-        lineHeight: 1.12,
-        letterSpacing: '-0.025em',
+        lineHeight: 1.08,
+        letterSpacing: '-0.03em',
         maxWidth: '600px',
         marginBottom: '1rem',
       }}>
-        From Foundation to{' '}
-        <span style={{ color: 'var(--cyan)' }}>Future-Ready</span>
+        From foundation to{' '}
+        <span style={{ color: 'var(--cyan)' }}>future-ready.</span>
       </h2>
       <p style={{
         color: 'var(--muted)',
@@ -102,21 +88,8 @@ export function HowItWorks() {
         gap: '0',
       }}>
         {steps.map((step) => (
-          <div key={step.num} style={{ padding: '2rem 1.5rem 2rem 0' }}>
-            <div style={{
-              width: '48px', height: '48px',
-              borderRadius: '50%',
-              background: 'var(--surface)',
-              border: '1px solid var(--cyan-border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontFamily: 'var(--font-head)',
-              fontWeight: 800,
-              fontSize: '0.9rem',
-              color: 'var(--cyan)',
-              marginBottom: '1.5rem',
-            }}>
+          <div key={step.num} style={{ padding: '2rem 1.5rem 2rem 0', borderTop: '1px solid var(--border-bright)' }}>
+            <div className="section-num mono" style={{ fontSize: '1.6rem', marginBottom: '1.25rem', marginTop: '0.25rem' }}>
               {step.num}
             </div>
             <h3 style={{
@@ -145,114 +118,109 @@ export function HowItWorks() {
 
 // ─── Track Grid ───────────────────────────────────────────────────────────────
 import { tracks } from '@/lib/data/tracks';
+import { BarChart3, Code2, Smartphone, Cpu, PenTool, TrendingUp, Compass, ShieldCheck, Laptop, Brain, Building2, MessageSquare, Zap, Video, Clapperboard, UserCheck, Hammer, Users, BookOpen, Briefcase, Award, Layers, MessageCircle, Globe, GraduationCap, type LucideIcon } from 'lucide-react';
+
+const TRACK_ICON: Record<string, LucideIcon> = {
+  'data-analytics': BarChart3,
+  'web-development': Code2,
+  'mobile-apps': Smartphone,
+  'ai-systems': Cpu,
+  'product-design': PenTool,
+  'digital-entrepreneurship': TrendingUp,
+  'ai-product-management': Compass,
+  'cybersecurity': ShieldCheck,
+};
+
+const FOUNDATION_ICON: Record<string, LucideIcon> = {
+  'Digital Literacy': Laptop,
+  'Problem Solving': Brain,
+  'Business Fundamentals': Building2,
+  'Communication': MessageSquare,
+  'AI Productivity': Zap,
+};
 
 export function TrackGrid() {
   return (
     <section id="programs" style={{ padding: '0 2.5rem 6rem', maxWidth: '1180px', margin: '0 auto' }}>
-      <SectionLabel>Specialisation Tracks</SectionLabel>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.75rem' }}>
+        <span className="eyebrow">03 — Specialise</span>
+        <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+      </div>
       <h2 style={{
         fontFamily: 'var(--font-head)',
         fontSize: 'clamp(1.9rem, 3.5vw, 2.8rem)',
         fontWeight: 800,
-        lineHeight: 1.12,
-        letterSpacing: '-0.025em',
-        maxWidth: '600px',
-        marginBottom: '1rem',
+        lineHeight: 1.08,
+        letterSpacing: '-0.03em',
+        maxWidth: '640px',
+        margin: 0,
       }}>
-        6 Tracks.{' '}
-        <span style={{ color: 'var(--cyan)' }}>One Career</span> Transformation.
+        Eight tracks. <span style={{ color: 'var(--cyan)' }}>One career transformation.</span>
       </h2>
       <p style={{
         color: 'var(--muted)',
         fontSize: '1.05rem',
         maxWidth: '540px',
-        marginBottom: '3.5rem',
+        margin: '1.25rem 0 3rem',
         lineHeight: 1.7,
       }}>
-        Choose the path that aligns with your goals. Every track includes tools,
+        Choose the path that aligns with your goals. Every track includes real tools,
         projects, and a capstone you&apos;ll be proud to show.
       </p>
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-        gap: '1.25rem',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(258px, 1fr))',
+        gap: '1px',
+        background: 'var(--border)',
+        border: '1px solid var(--border)',
+        borderRadius: '8px',
+        overflow: 'hidden',
       }}>
-        {tracks.map((track) => (
-          <div
-            key={track.id}
-            style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: '12px',
-              padding: '1.75rem',
-              transition: 'border-color 0.25s, transform 0.25s',
-              cursor: 'default',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--cyan-border)';
-              (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-4px)';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border)';
-              (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)';
-            }}
-          >
-            {/* Icon */}
-            <div style={{
-              width: '44px', height: '44px',
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.3rem',
-              marginBottom: '1.2rem',
-              background: track.accent === 'cyan' ? 'var(--cyan-dim)' : 'var(--orange-dim)',
-            }}>
-              {track.icon}
-            </div>
-
-            <h3 style={{
-              fontFamily: 'var(--font-head)',
-              fontWeight: 700,
-              fontSize: '1rem',
-              marginBottom: '0.5rem',
-              color: 'var(--text)',
-            }}>
-              {track.name}
-            </h3>
-
-            <p style={{
-              fontSize: '0.85rem',
-              color: 'var(--muted)',
-              marginBottom: '1.2rem',
-              lineHeight: 1.6,
-            }}>
-              {track.description}
-            </p>
-
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-              {track.tools.map((tool, i) => (
-                <span key={tool} style={{
-                  fontSize: '0.72rem',
-                  fontWeight: 600,
-                  padding: '0.2rem 0.6rem',
-                  borderRadius: '4px',
-                  background: i === 0
-                    ? (track.accent === 'cyan' ? 'var(--cyan-dim)' : 'var(--orange-dim)')
-                    : 'rgba(255,255,255,0.06)',
-                  color: i === 0
-                    ? (track.accent === 'cyan' ? 'var(--cyan)' : 'var(--orange)')
-                    : 'var(--muted)',
-                  letterSpacing: '0.03em',
-                }}>
-                  {tool}
-                </span>
-              ))}
-            </div>
-          </div>
-        ))}
+        {tracks.map((track, idx) => {
+          const Icon = TRACK_ICON[track.id] ?? Code2;
+          const ac = track.accent === 'cyan' ? 'var(--cyan)' : 'var(--orange)';
+          return (
+            <Link
+              key={track.id}
+              href="/programs"
+              className="trk-card"
+              style={{
+                background: 'var(--bg)',
+                padding: '1.6rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.85rem',
+                textDecoration: 'none',
+                color: 'var(--text)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ color: ac, display: 'inline-flex' }}><Icon size={22} strokeWidth={1.6} /></span>
+                <span className="eyebrow" style={{ fontSize: '0.66rem' }}>{String(idx + 1).padStart(2, '0')}</span>
+              </div>
+              <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '1.05rem', margin: 0, letterSpacing: '-0.01em' }}>
+                {track.name}
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--muted)', lineHeight: 1.6, margin: 0, flex: 1 }}>
+                {track.description}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                {track.tools.map((tool) => (
+                  <span key={tool} className="mono" style={{ fontSize: '0.68rem', padding: '0.15rem 0.45rem', border: '1px solid var(--border)', borderRadius: '3px', color: 'var(--muted)' }}>
+                    {tool}
+                  </span>
+                ))}
+              </div>
+            </Link>
+          );
+        })}
       </div>
+
+      <style>{`
+        .trk-card { transition: background 0.18s ease; }
+        .trk-card:hover { background: var(--surface) !important; }
+      `}</style>
     </section>
   );
 }
@@ -263,7 +231,7 @@ import { foundationCourses } from '@/lib/data/tracks';
 export function Foundation() {
   return (
     <section style={{ padding: '0 2.5rem 6rem', maxWidth: '1180px', margin: '0 auto' }}>
-      <SectionLabel>Phase 1 — Month 1 & 2</SectionLabel>
+      <SectionLabel num="05">Phase 1 — Month 1 & 2</SectionLabel>
       <h2 style={{
         fontFamily: 'var(--font-head)',
         fontSize: 'clamp(1.9rem, 3.5vw, 2.8rem)',
@@ -290,37 +258,38 @@ export function Foundation() {
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-        gap: '1rem',
+        gap: '1px',
+        background: 'var(--border)',
+        border: '1px solid var(--border)',
+        borderRadius: '8px',
+        overflow: 'hidden',
       }}>
-        {foundationCourses.map((course) => (
-          <div
-            key={course.title}
-            style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: '10px',
-              padding: '1.5rem 1.25rem',
-              textAlign: 'center',
-              transition: 'border-color 0.2s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border-bright)')}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-          >
-            <div style={{ fontSize: '1.8rem', marginBottom: '0.75rem' }}>{course.icon}</div>
-            <h4 style={{
-              fontFamily: 'var(--font-head)',
-              fontSize: '0.88rem',
-              fontWeight: 700,
-              color: 'var(--text)',
-              marginBottom: '0.3rem',
-            }}>
-              {course.title}
-            </h4>
-            <p style={{ fontSize: '0.78rem', color: 'var(--muted)', marginBottom: 0 }}>
-              {course.desc}
-            </p>
-          </div>
-        ))}
+        {foundationCourses.map((course) => {
+          const Icon = FOUNDATION_ICON[course.title] ?? Laptop;
+          return (
+            <div
+              key={course.title}
+              style={{
+                background: 'var(--bg)',
+                padding: '1.5rem 1.4rem',
+              }}
+            >
+              <span style={{ color: 'var(--cyan)', display: 'inline-flex', marginBottom: '1rem' }}><Icon size={20} strokeWidth={1.6} /></span>
+              <h4 style={{
+                fontFamily: 'var(--font-head)',
+                fontSize: '0.92rem',
+                fontWeight: 700,
+                color: 'var(--text)',
+                margin: '0 0 0.35rem',
+              }}>
+                {course.title}
+              </h4>
+              <p style={{ fontSize: '0.8rem', color: 'var(--muted)', margin: 0, lineHeight: 1.55 }}>
+                {course.desc}
+              </p>
+            </div>
+          );
+        })}
       </div>
     </section>
   );
@@ -332,7 +301,7 @@ import { tracks as allTracks } from '@/lib/data/tracks';
 export function Certifications() {
   return (
     <section id="certifications" style={{ padding: '0 2.5rem 6rem', maxWidth: '1180px', margin: '0 auto' }}>
-      <SectionLabel>Credentials That Matter</SectionLabel>
+      <SectionLabel num="06">Credentials That Matter</SectionLabel>
       <h2 style={{
         fontFamily: 'var(--font-head)',
         fontSize: 'clamp(1.9rem, 3.5vw, 2.8rem)',
@@ -357,43 +326,33 @@ export function Certifications() {
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: '1rem',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(278px, 1fr))',
+        gap: '1px',
+        background: 'var(--border)',
+        border: '1px solid var(--border)',
+        borderRadius: '8px',
+        overflow: 'hidden',
       }}>
-        {allTracks.map((track) => (
-          <div
-            key={track.id}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem',
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: '10px',
-              padding: '1.25rem 1.5rem',
-              transition: 'border-color 0.2s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--cyan-border)')}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-          >
-            <div style={{
-              width: '40px', height: '40px',
-              borderRadius: '8px',
-              background: 'var(--cyan-dim)',
-              border: '1px solid var(--cyan-border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              fontSize: '1.1rem',
-            }}>
-              {track.icon}
+        {allTracks.map((track) => {
+          const Icon = TRACK_ICON[track.id] ?? Code2;
+          return (
+            <div
+              key={track.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1rem',
+                background: 'var(--bg)',
+                padding: '1.25rem 1.5rem',
+              }}
+            >
+              <span style={{ color: 'var(--cyan)', display: 'inline-flex', flexShrink: 0 }}><Icon size={20} strokeWidth={1.6} /></span>
+              <span style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text)' }}>
+                {track.cert}
+              </span>
             </div>
-            <span style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text)' }}>
-              {track.cert}
-            </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
@@ -409,51 +368,29 @@ export function CTASection() {
     <div id="register" style={{ margin: '0 2.5rem 6rem' }}>
       <div style={{
         background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        borderRadius: '20px',
-        padding: '5rem 3rem',
+        border: '1px solid var(--border-bright)',
+        borderRadius: '10px',
+        padding: '4.5rem 3rem',
         textAlign: 'center',
         position: 'relative',
         overflow: 'hidden',
       }}>
-        {/* Glow */}
-        <div style={{
-          position: 'absolute',
-          top: '-80px', left: '50%',
-          transform: 'translateX(-50%)',
-          width: '600px', height: '300px',
-          background: 'radial-gradient(ellipse, rgba(0,200,255,0.07) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          color: 'var(--cyan)',
-          fontSize: '0.78rem',
-          fontWeight: 700,
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          marginBottom: '1rem',
-          position: 'relative',
-        }}>
-          <span style={{ width: '24px', height: '2px', background: 'var(--cyan)', borderRadius: '1px' }} />
-          Ready to Start?
+        <div className="eyebrow" style={{ color: 'var(--cyan)', marginBottom: '1.25rem' }}>
+          Ready to start?
         </div>
 
         <h2 style={{
           fontFamily: 'var(--font-head)',
           fontSize: 'clamp(1.9rem, 3.5vw, 2.8rem)',
           fontWeight: 800,
-          lineHeight: 1.12,
-          letterSpacing: '-0.025em',
-          margin: '0.5rem auto 1rem',
+          lineHeight: 1.08,
+          letterSpacing: '-0.03em',
+          margin: '0 auto 1rem',
           maxWidth: '600px',
           position: 'relative',
         }}>
-          Take the First Step Towards{' '}
-          <span style={{ color: 'var(--cyan)' }}>Your Digital Future</span>
+          Take the first step towards{' '}
+          <span style={{ color: 'var(--cyan)' }}>your digital future.</span>
         </h2>
 
         <p style={{
@@ -536,37 +473,29 @@ export function CTASection() {
     </div>
   );
 }
-// ─── Urgency Bar ──────────────────────────────────────────────────────────────
-import CountdownTimer from './CountdownTimer';
-
+// ─── Value Bar ────────────────────────────────────────────────────────────────
 export function UrgencyBar() {
   return (
     <div style={{
-      background: 'linear-gradient(90deg, rgba(52,211,102,0.12) 0%, rgba(0,200,255,0.08) 50%, rgba(255,107,43,0.06) 100%)',
-      borderBottom: '1px solid rgba(52,211,102,0.25)',
+      background: 'linear-gradient(90deg, rgba(0,200,255,0.08) 0%, rgba(0,200,255,0.05) 50%, rgba(255,107,43,0.05) 100%)',
+      borderBottom: '1px solid var(--cyan-border)',
       padding: '0.75rem 2.5rem',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      gap: '1.5rem', flexWrap: 'wrap', textAlign: 'center',
+      gap: '1.25rem', flexWrap: 'wrap', textAlign: 'center',
     }}>
       <span style={{
-        display: 'inline-flex', alignItems: 'center', gap: '4px',
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
         fontSize: '0.85rem', color: 'var(--text)', fontWeight: 500,
       }}>
-        🔥 <strong style={{ color: 'var(--cyan)' }}>All tracks at 50% off</strong> — limited time offer
+        🎯 <strong style={{ color: 'var(--cyan)' }}>Now enrolling</strong> — next cohort · UK-directed, Nigeria-delivered
       </span>
-      <span style={{
-        width: '1px', height: '16px',
-        background: 'rgba(255,255,255,0.15)',
-        flexShrink: 0,
-      }} />
-      <CountdownTimer variant="banner" />
       <a href="/register" style={{
         display: 'inline-flex', alignItems: 'center', gap: '4px',
         color: 'var(--cyan)', fontWeight: 700, fontSize: '0.82rem',
         textDecoration: 'none', fontFamily: 'var(--font-head)',
         borderBottom: '1px solid var(--cyan-border)',
       }}>
-        Register at 50% off →
+        Reserve your spot →
       </a>
     </div>
   );
@@ -575,34 +504,27 @@ export function UrgencyBar() {
 // ─── What's Included ─────────────────────────────────────────────────────────
 export function WhatsIncluded() {
   const items = [
-    { icon: '📹', title: 'Live Sessions', desc: 'Weekly live classes with real instructors — not pre-recorded videos you fall asleep watching.' },
-    { icon: '🎬', title: 'Session Recordings', desc: 'Every session is recorded. Watch at your own pace, rewind as many times as you need.' },
-    { icon: '👤', title: 'Mentor Support', desc: 'Direct access to a mentor in your track who reviews your work and keeps you moving forward.' },
-    { icon: '🏗️', title: 'Real Projects', desc: 'You build actual products in startup-style teams — the kind of work that goes in a portfolio.' },
-    { icon: '👥', title: 'Student Community', desc: 'A private community of students in your cohort — for collaboration, accountability, and support.' },
-    { icon: '📚', title: 'Resource Library', desc: 'Curated tools, templates, reading lists, and frameworks for every topic in the curriculum.' },
-    { icon: '💼', title: 'Career Preparation', desc: 'CV, GitHub, LinkedIn, mock interviews, client proposal writing — everything for your chosen path.' },
-    { icon: '🎓', title: 'Track Certificate', desc: 'A verified certificate tied to your capstone project — proof of real skill, not just attendance.' },
+    { Icon: Video, title: 'Live Sessions', desc: 'Weekly live classes with real instructors — not pre-recorded videos you fall asleep watching.' },
+    { Icon: Clapperboard, title: 'Session Recordings', desc: 'Every session is recorded. Watch at your own pace, rewind as many times as you need.' },
+    { Icon: UserCheck, title: 'Mentor Support', desc: 'Direct access to a mentor in your track who reviews your work and keeps you moving forward.' },
+    { Icon: Hammer, title: 'Real Projects', desc: 'You build actual products in startup-style teams — the kind of work that goes in a portfolio.' },
+    { Icon: Users, title: 'Student Community', desc: 'A private community of students in your cohort — for collaboration, accountability, and support.' },
+    { Icon: BookOpen, title: 'Resource Library', desc: 'Curated tools, templates, reading lists, and frameworks for every topic in the curriculum.' },
+    { Icon: Briefcase, title: 'Career Preparation', desc: 'CV, GitHub, LinkedIn, mock interviews, client proposal writing — everything for your chosen path.' },
+    { Icon: Award, title: 'Track Certificate', desc: 'A verified certificate tied to your capstone project — proof of real skill, not just attendance.' },
   ];
 
   return (
     <section style={{ padding: '6rem 2.5rem', maxWidth: '1180px', margin: '0 auto' }}>
-      <div style={{
-        display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-        color: 'var(--cyan)', fontSize: '0.78rem', fontWeight: 700,
-        letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1rem',
-      }}>
-        <span style={{ width: '24px', height: '2px', background: 'var(--cyan)', borderRadius: '1px' }} />
-        What You Get
-      </div>
+      <SectionLabel num="01">What You Get</SectionLabel>
       <h2 style={{
         fontFamily: 'var(--font-head)',
         fontSize: 'clamp(1.9rem, 3.5vw, 2.8rem)',
-        fontWeight: 800, lineHeight: 1.12,
-        letterSpacing: '-0.025em', maxWidth: '600px', marginBottom: '1rem',
+        fontWeight: 800, lineHeight: 1.08,
+        letterSpacing: '-0.03em', maxWidth: '600px', marginBottom: '1rem',
       }}>
-        Everything Included.<br />
-        <span style={{ color: 'var(--cyan)' }}>Nothing Extra to Buy.</span>
+        Everything included.<br />
+        <span style={{ color: 'var(--cyan)' }}>Nothing extra to buy.</span>
       </h2>
       <p style={{ color: 'var(--muted)', fontSize: '1.05rem', maxWidth: '540px', marginBottom: '3.5rem', lineHeight: 1.7 }}>
         One fee. One programme. Everything you need to go from where you are now to career-ready.
@@ -611,17 +533,12 @@ export function WhatsIncluded() {
         {items.map(item => (
           <div key={item.title} style={{
             background: 'var(--surface)', border: '1px solid var(--border)',
-            borderRadius: '12px', padding: '1.5rem',
+            borderRadius: '8px', padding: '1.5rem',
             display: 'flex', gap: '1rem', alignItems: 'flex-start',
           }}>
-            <div style={{
-              width: '40px', height: '40px', borderRadius: '9px',
-              background: 'var(--cyan-dim)', display: 'flex',
-              alignItems: 'center', justifyContent: 'center',
-              fontSize: '1.1rem', flexShrink: 0,
-            }}>
-              {item.icon}
-            </div>
+            <span style={{ color: 'var(--cyan)', display: 'inline-flex', flexShrink: 0, marginTop: '2px' }}>
+              <item.Icon size={20} strokeWidth={1.6} />
+            </span>
             <div>
               <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.9rem', marginBottom: '4px' }}>{item.title}</div>
               <div style={{ fontSize: '0.8rem', color: 'var(--muted)', lineHeight: 1.6 }}>{item.desc}</div>
@@ -637,52 +554,45 @@ export function WhatsIncluded() {
 export function Testimonials() {
   const testimonials = [
     {
-      name: 'Amara O.',
-      role: 'Data Analytics Graduate',
+      name: 'Gift Oluwaferanmi',
+      role: 'Data Analytics Student',
       location: 'Lagos, Nigeria',
-      text: 'Before E-Technix, I had tried three online courses and finished none of them. The structure here is different — you have real deadlines, a mentor checking on you, and actual projects. I built my first Power BI dashboard in week 6 and sent it to a potential employer before I even finished the programme.',
+      text: 'I learnt a lot in these class and I can say for a fact that with all I gained, if I am asked to rewrite my final year project, I’d do way better than I did previously',
       accent: 'cyan',
     },
     {
-      name: 'David K.',
-      role: 'Web Development Graduate',
-      location: 'Abuja, Nigeria',
-      text: 'The project labs phase changed everything for me. Working in a team with a designer and a business student on a real SaaS product taught me more in 8 weeks than 2 years of solo YouTube tutorials. I have two freelance clients now and a portfolio I am genuinely proud of.',
+      name: 'Ezra Chisom Eze',
+      role: 'Mobile & Desktop Apps Student',
+      location: 'Port Harcourt, Nigeria',
+      text: 'The pace was right, I learnt how to build databases using Notion and how to create a dashboard. It was absolutely new to me, and I loved it',
       accent: 'orange',
     },
     {
-      name: 'Chisom N.',
-      role: 'UI/UX Design Graduate',
-      location: 'Port Harcourt, Nigeria',
-      text: 'I was worried the programme would be too technical for me since I had no background. The foundation phase made sure I was ready. By Month 5, I had designed a complete fintech app from user research to prototype. My certificate and portfolio got me my first design role within 6 weeks of graduating.',
+      name: 'Favour Aheybor',
+      role: 'Data Analytics Student',
+      location: 'Benin, Nigeria',
+      text: 'This exercise helped me understand the importance of organization and task management within a digital workspace. Thank you for this opportunity 😇',
       accent: 'cyan',
     },
   ];
 
   return (
     <section style={{ padding: '6rem 2.5rem', maxWidth: '1180px', margin: '0 auto' }}>
-      <div style={{
-        display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-        color: 'var(--cyan)', fontSize: '0.78rem', fontWeight: 700,
-        letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1rem',
-      }}>
-        <span style={{ width: '24px', height: '2px', background: 'var(--cyan)', borderRadius: '1px' }} />
-        Student Outcomes
-      </div>
+      <SectionLabel num="04">Student Outcomes</SectionLabel>
       <h2 style={{
         fontFamily: 'var(--font-head)',
         fontSize: 'clamp(1.9rem, 3.5vw, 2.8rem)',
-        fontWeight: 800, lineHeight: 1.12,
-        letterSpacing: '-0.025em', maxWidth: '600px', marginBottom: '3.5rem',
+        fontWeight: 800, lineHeight: 1.08,
+        letterSpacing: '-0.03em', maxWidth: '600px', marginBottom: '3.5rem',
       }}>
-        Results From People<br />
-        <span style={{ color: 'var(--cyan)' }}>Just Like You.</span>
+        Results from people<br />
+        <span style={{ color: 'var(--cyan)' }}>just like you.</span>
       </h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
         {testimonials.map(t => (
           <div key={t.name} style={{
             background: 'var(--surface)', border: '1px solid var(--border)',
-            borderRadius: '16px', padding: '2rem',
+            borderRadius: '8px', padding: '2rem',
             display: 'flex', flexDirection: 'column', gap: '1.25rem',
           }}>
             <div style={{
@@ -715,7 +625,7 @@ export function Testimonials() {
         ))}
       </div>
       <p style={{ fontSize: '0.78rem', color: 'var(--muted)', marginTop: '1.5rem', fontStyle: 'italic', textAlign: 'center' }}>
-        * Testimonials are representative of expected student outcomes based on programme completion.
+        * Testimonials are from real students in the e-technix programme.
       </p>
     </section>
   );
@@ -725,25 +635,25 @@ export function Testimonials() {
 export function GuaranteeStrip() {
   return (
     <div style={{
-      background: 'rgba(52,211,102,0.05)',
-      borderTop: '1px solid rgba(52,211,102,0.15)',
-      borderBottom: '1px solid rgba(52,211,102,0.15)',
-      padding: '2rem 2.5rem',
+      background: 'var(--surface)',
+      borderTop: '1px solid var(--border)',
+      borderBottom: '1px solid var(--border)',
+      padding: '1.75rem 2.5rem',
     }}>
       <div style={{
         maxWidth: '1180px', margin: '0 auto',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: '3rem', flexWrap: 'wrap', textAlign: 'center',
+        gap: '2.5rem', flexWrap: 'wrap', textAlign: 'center',
       }}>
         {[
-          { icon: '🔥', text: '50% Off — Limited Time' },
-          { icon: '💬', text: 'Easy WhatsApp Registration' },
-          { icon: '🇬🇧', text: 'UK-Nigeria Backed Programme' },
-          { icon: '🎓', text: 'Certificate on Completion' },
-          { icon: '👤', text: 'Dedicated Mentor Support' },
+          { Icon: Layers, text: 'Two phases, one fee' },
+          { Icon: MessageCircle, text: 'Easy WhatsApp registration' },
+          { Icon: Globe, text: 'UK × Nigeria backed' },
+          { Icon: GraduationCap, text: 'Certificate on completion' },
+          { Icon: UserCheck, text: 'Dedicated mentor support' },
         ].map(item => (
           <div key={item.text} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '1rem' }}>{item.icon}</span>
+            <span style={{ color: 'var(--cyan)', display: 'inline-flex' }}><item.Icon size={17} strokeWidth={1.7} /></span>
             <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--muted)' }}>{item.text}</span>
           </div>
         ))}

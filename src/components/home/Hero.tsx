@@ -1,220 +1,129 @@
-'use client';
-
-import { motion } from 'framer-motion';
 import Link from 'next/link';
-import CountdownTimer from './CountdownTimer';
+import { ArrowRight } from 'lucide-react';
+import { TRACKS } from '@/lib/data/curriculum';
 
-const WHATSAPP_NUMBER = '2348120288390'; // ← replace with real number
-
-const fadeUp = (delay: number) => ({
-  initial: { opacity: 0, y: 24 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.55, delay, ease: 'easeOut' as const },
-});
+const ticker = TRACKS.map((t) => `${t.code} · ${t.name}`);
 
 export default function Hero() {
   return (
-    <section style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      position: 'relative',
-      padding: '7rem 2.5rem 5rem',
-      textAlign: 'center',
-      overflow: 'hidden',
-    }}>
-      {/* Grid background */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        backgroundImage: `
-          linear-gradient(rgba(0,200,255,0.04) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(0,200,255,0.04) 1px, transparent 1px)
-        `,
-        backgroundSize: '60px 60px',
-        maskImage: 'radial-gradient(ellipse 80% 70% at 50% 50%, black 40%, transparent 100%)',
-        WebkitMaskImage: 'radial-gradient(ellipse 80% 70% at 50% 50%, black 40%, transparent 100%)',
-      }} />
+    <section style={{ position: 'relative', overflow: 'hidden', borderBottom: '1px solid var(--border)' }}>
+      {/* Faint structural grid for depth (no glow) */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          backgroundImage:
+            'linear-gradient(90deg, var(--border) 1px, transparent 1px), linear-gradient(var(--border) 1px, transparent 1px)',
+          backgroundSize: '12.5% 130px',
+          opacity: 0.45,
+          maskImage: 'radial-gradient(120% 80% at 15% 0%, black, transparent 75%)',
+          WebkitMaskImage: 'radial-gradient(120% 80% at 15% 0%, black, transparent 75%)',
+        }}
+      />
 
-      {/* Glow */}
-      <div style={{
-        position: 'absolute',
-        top: '-10%', left: '50%',
-        transform: 'translateX(-50%)',
-        width: '800px', height: '500px',
-        background: 'radial-gradient(ellipse, rgba(0,200,255,0.08) 0%, transparent 70%)',
-        pointerEvents: 'none',
-      }} />
-
-      <div style={{ position: 'relative', maxWidth: '860px' }}>
-
-        {/* Badge */}
-        <motion.div
-          {...fadeUp(0)}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: 'var(--cyan-dim)',
-            border: '1px solid var(--cyan-border)',
-            color: 'var(--cyan)',
-            fontSize: '0.78rem',
-            fontWeight: 600,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            padding: '0.4rem 1rem',
-            borderRadius: '999px',
-            marginBottom: '2rem',
-          }}
-        >
-          <span style={{
-            width: '6px', height: '6px',
-            background: 'var(--cyan)',
-            borderRadius: '50%',
-          }} />
-          Now Enrolling — 2026 Cohort
-        </motion.div>
-
-        {/* Free tracks promo badge */}
-        <motion.div
-          {...fadeUp(0.05)}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: 'linear-gradient(135deg, rgba(52,211,102,0.15), rgba(52,211,102,0.08))',
-            border: '1px solid rgba(52,211,102,0.3)',
-            color: '#34D366',
-            fontSize: '0.82rem',
-            fontWeight: 700,
-            letterSpacing: '0.05em',
-            padding: '0.45rem 1.2rem',
-            borderRadius: '999px',
-            marginBottom: '2rem',
-            animation: 'promoBadgePulse 2.5s ease-in-out infinite',
-          }}
-        >
-          🔥 All Tracks at 50% Off — Limited Time Only
-        </motion.div>
-
-        <style>{`
-          @keyframes promoBadgePulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,102,0.25); }
-            50% { box-shadow: 0 0 20px 6px rgba(52,211,102,0.1); }
-          }
-        `}</style>
+      <div style={{ position: 'relative', maxWidth: '1180px', margin: '0 auto', padding: '7rem 2.5rem 3rem' }}>
+        {/* Eyebrow */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '3rem' }}>
+          <span className="section-num mono" style={{ fontSize: '0.78rem', color: 'var(--orange)' }}>(01)</span>
+          <span className="eyebrow">Digital Careers Programme</span>
+          <span style={{ flex: 1, maxWidth: '160px', height: '1px', background: 'var(--border-bright)' }} />
+          <span className="eyebrow" style={{ color: 'var(--cyan)' }}>UK × Nigeria</span>
+        </div>
 
         {/* Headline */}
-        <motion.h1
-          {...fadeUp(0.1)}
+        <h1
           style={{
             fontFamily: 'var(--font-head)',
-            fontSize: 'clamp(2.8rem, 6vw, 5rem)',
+            fontSize: 'clamp(3rem, 8.5vw, 6.6rem)',
             fontWeight: 800,
-            lineHeight: 1.08,
-            letterSpacing: '-0.03em',
-            marginBottom: '1.5rem',
+            lineHeight: 0.98,
+            letterSpacing: '-0.04em',
+            margin: 0,
           }}
         >
-          Build Your<br />
-          <span style={{ color: 'var(--cyan)' }}>Digital Career</span>
-          <br />From Scratch
-        </motion.h1>
+          Build the <span style={{ color: 'var(--cyan)' }}>judgment</span><br />
+          AI cannot replace.
+        </h1>
 
-        {/* Subheading */}
-        <motion.p
-          {...fadeUp(0.2)}
-          style={{
-            fontSize: '1.15rem',
-            color: 'var(--muted)',
-            maxWidth: '580px',
-            margin: '0 auto 2.5rem',
-            fontWeight: 400,
-            lineHeight: 1.7,
-          }}
-        >
-          A structured 6–9 month training programme covering everything from digital
-          foundations to specialised tracks in Data, Web, Mobile, AI, Design, and
-          Business Growth.
-        </motion.p>
-
-        {/* CTAs */}
-        <motion.div
-          {...fadeUp(0.3)}
+        {/* Sub + CTAs */}
+        <div
           style={{
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '1rem',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+            gap: '2.5rem',
             flexWrap: 'wrap',
+            marginTop: '2.5rem',
           }}
         >
-          <Link
-            href="/register"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              background: 'var(--cyan)',
-              color: '#070D1A',
-              fontFamily: 'var(--font-head)',
-              fontWeight: 700,
-              fontSize: '0.95rem',
-              padding: '0.9rem 2rem',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,200,255,0.3)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          >
-            Enrol Now →
-          </Link>
-
-          <a
-            href={`https://wa.me/${WHATSAPP_NUMBER}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              background: 'transparent',
-              color: 'var(--text)',
-              fontFamily: 'var(--font-head)',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              padding: '0.9rem 2rem',
-              borderRadius: '8px',
-              border: '1px solid var(--border-bright)',
-              textDecoration: 'none',
-              transition: 'border-color 0.2s, color 0.2s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = '#25D366';
-              e.currentTarget.style.color = '#25D366';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = 'var(--border-bright)';
-              e.currentTarget.style.color = 'var(--text)';
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-              <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.123 1.534 5.856L0 24l6.293-1.513A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.891 0-3.662-.5-5.197-1.375l-.372-.221-3.857.927.973-3.746-.241-.384A9.961 9.961 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
-            </svg>
-            Chat on WhatsApp
-          </a>
-        </motion.div>
-
-        <CountdownTimer variant="hero" />
+          <p style={{ fontSize: '1.12rem', color: 'var(--muted)', maxWidth: '440px', lineHeight: 1.65, margin: 0 }}>
+            A structured 6–9 month digital skills programme. Specialise in one of ten tracks,
+            build real products, and leave with the judgment, portfolio, and certificate the
+            market actually hires for.
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
+            <Link href="/register" className="hero-cta-primary">
+              Enrol now <ArrowRight size={17} strokeWidth={2.4} />
+            </Link>
+            <Link href="/curriculum" className="hero-cta-ghost">
+              Explore the curriculum
+            </Link>
+          </div>
+        </div>
       </div>
+
+      {/* Ticker band — all tracks, scrolling (departures-board motif) */}
+      <div
+        style={{
+          position: 'relative',
+          borderTop: '1px solid var(--border-bright)',
+          background: 'var(--surface)',
+          overflow: 'hidden',
+          padding: '0.85rem 0',
+          maskImage: 'linear-gradient(90deg, transparent, black 4%, black 96%, transparent)',
+          WebkitMaskImage: 'linear-gradient(90deg, transparent, black 4%, black 96%, transparent)',
+        }}
+      >
+        <div className="hero-ticker" style={{ display: 'inline-flex', whiteSpace: 'nowrap', willChange: 'transform' }}>
+          {[0, 1].map((dup) => (
+            <div key={dup} style={{ display: 'inline-flex' }} aria-hidden={dup === 1}>
+              {ticker.map((label) => (
+                <span
+                  key={dup + label}
+                  className="mono"
+                  style={{ fontSize: '0.78rem', color: 'var(--muted)', padding: '0 1.75rem', display: 'inline-flex', alignItems: 'center', gap: '1.75rem' }}
+                >
+                  {label}
+                  <span style={{ width: '4px', height: '4px', background: 'var(--cyan)', borderRadius: '50%' }} />
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <style>{`
+        .hero-cta-primary {
+          display: inline-flex; align-items: center; gap: 0.5rem;
+          background: var(--cyan); color: #070D1A;
+          font-family: var(--font-head); font-weight: 700; font-size: 0.95rem;
+          padding: 0.85rem 1.6rem; border-radius: 6px; text-decoration: none;
+          transition: transform 0.18s ease, opacity 0.18s ease;
+        }
+        .hero-cta-primary:hover { transform: translateY(-1px); opacity: 0.9; }
+        .hero-cta-ghost {
+          display: inline-flex; align-items: center;
+          color: var(--text);
+          font-family: var(--font-head); font-weight: 600; font-size: 0.95rem;
+          padding: 0.85rem 1.6rem; border-radius: 6px; text-decoration: none;
+          border: 1px solid var(--border-bright);
+          transition: border-color 0.18s ease, color 0.18s ease;
+        }
+        .hero-cta-ghost:hover { border-color: var(--cyan-border); color: var(--cyan); }
+        .hero-ticker { animation: heroTicker 38s linear infinite; }
+        @keyframes heroTicker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        @media (prefers-reduced-motion: reduce) { .hero-ticker { animation: none; } }
+      `}</style>
     </section>
   );
 }

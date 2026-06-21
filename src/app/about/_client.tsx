@@ -346,7 +346,7 @@ export default function AboutPage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {[
-                { phase: 'Now', label: 'Digital Skills Training', desc: 'Structured 6–9 month programme across 6 tracks — Africa-first, globally open' },
+                { phase: 'Now', label: 'Digital Skills Training', desc: 'Structured 6–9 month programme across ten tracks — Africa-first, globally open' },
                 { phase: 'Next', label: 'Talent Placement Network', desc: 'Connecting graduates with employers and clients directly across Africa and the UK' },
                 { phase: 'Future', label: 'Startup Incubator', desc: 'Supporting the best graduates to launch their own ventures with mentorship and funding access' },
               ].map((item, i) => (
@@ -384,12 +384,6 @@ export default function AboutPage() {
             borderRadius: '20px', padding: '4rem 3rem',
             textAlign: 'center', position: 'relative', overflow: 'hidden',
           }}>
-            <div style={{
-              position: 'absolute', top: '-80px', left: '50%',
-              transform: 'translateX(-50%)', width: '600px', height: '300px',
-              background: 'radial-gradient(ellipse, rgba(0,200,255,0.07) 0%, transparent 70%)',
-              pointerEvents: 'none',
-            }} />
             <h2 style={{
               fontFamily: 'var(--font-head)',
               fontSize: 'clamp(1.6rem, 3vw, 2.4rem)',

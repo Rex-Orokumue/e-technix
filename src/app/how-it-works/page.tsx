@@ -40,7 +40,9 @@ const howItWorksSchema = {
     { '@type': 'Thing', name: 'Mobile App Development' },
     { '@type': 'Thing', name: 'AI Systems' },
     { '@type': 'Thing', name: 'Product Design' },
-    { '@type': 'Thing', name: 'Business Development' },
+    { '@type': 'Thing', name: 'Digital Entrepreneurship' },
+    { '@type': 'Thing', name: 'AI Product Management' },
+    { '@type': 'Thing', name: 'Cybersecurity' },
     { '@type': 'Thing', name: 'Career Preparation' },
   ],
   syllabusSections: [
@@ -52,7 +54,7 @@ const howItWorksSchema = {
     {
       '@type': 'Syllabus',
       name: 'Phase 2 — Specialisation Track',
-      description: 'Month 3–5: Choose one of six tracks — Data Analytics, Web Development, Mobile Apps, AI Systems, UI/UX Design, or Business Development.',
+      description: 'Month 3–5: Score at least 60% in Phase 1, then choose one of eight specialisation tracks — Data Analytics, Web App Development, Mobile & Desktop Apps, AI & Agentic Systems, Product Design, Digital Entrepreneurship, AI Product Management, or Cybersecurity. Two advanced tracks are also available.',
     },
     {
       '@type': 'Syllabus',
@@ -85,7 +87,7 @@ const howToSchema = {
       '@type': 'HowToStep',
       position: 2,
       name: 'Phase 2 — Specialisation Track (Month 3–5)',
-      text: 'After foundations, students choose one of six tracks: Data Analytics, Web App Development, Mobile & Desktop Apps, AI & Agentic Systems, Product Design (UI/UX), or Business Development. Three months of deep, guided learning with real tools and hands-on projects.',
+      text: 'After scoring at least 60% in Phase 1, students choose one of eight specialisation tracks: Data Analytics, Web App Development, Mobile & Desktop Apps, AI & Agentic Systems, Product Design, Digital Entrepreneurship, AI Product Management, or Cybersecurity. Two advanced tracks (Data Engineering, Machine Learning) are also available by application. Twelve weeks of deep, guided learning with real tools and hands-on projects.',
       url: 'https://e-technix.com/how-it-works#phase-2',
     },
     {

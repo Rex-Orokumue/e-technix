@@ -61,18 +61,20 @@ const accentBorder = (a: Accent) => (a === 'cyan' ? 'var(--cyan-border)' : 'rgba
 const eyebrow: React.CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
-  gap: '0.5rem',
-  color: 'var(--cyan)',
-  fontSize: '0.78rem',
-  fontWeight: 700,
-  letterSpacing: '0.1em',
+  gap: '0.6rem',
+  fontFamily: 'var(--font-mono)',
+  color: 'var(--muted)',
+  fontSize: '0.72rem',
+  fontWeight: 500,
+  letterSpacing: '0.18em',
   textTransform: 'uppercase',
   marginBottom: '1rem',
 };
 const sectionLabel: React.CSSProperties = {
+  fontFamily: 'var(--font-mono)',
   fontSize: '0.72rem',
-  fontWeight: 700,
-  letterSpacing: '0.1em',
+  fontWeight: 500,
+  letterSpacing: '0.18em',
   textTransform: 'uppercase',
   color: 'var(--muted)',
   marginBottom: '0.85rem',
@@ -107,19 +109,8 @@ export default function CurriculumClient({ programme, tracks, trackChoices, unlo
             overflow: 'hidden',
           }}
         >
-          <div
-            style={{
-              position: 'absolute',
-              top: '-120px',
-              right: '-80px',
-              width: '460px',
-              height: '320px',
-              background: 'radial-gradient(ellipse, rgba(0,200,255,0.10) 0%, transparent 70%)',
-              pointerEvents: 'none',
-            }}
-          />
           <div style={eyebrow}>
-            <span style={{ width: '24px', height: '2px', background: 'var(--cyan)', borderRadius: '1px' }} />
+            <span style={{ width: '20px', height: '1px', background: 'var(--cyan)' }} />
             Master Curriculum · {programme.location}
           </div>
           <h1
@@ -334,7 +325,6 @@ export default function CurriculumClient({ programme, tracks, trackChoices, unlo
         {/* ── CTA ── */}
         <div style={{ margin: '2rem 2.5rem 6rem' }}>
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '20px', padding: '4rem 3rem', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: '-80px', left: '50%', transform: 'translateX(-50%)', width: '600px', height: '300px', background: 'radial-gradient(ellipse, rgba(0,200,255,0.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
             <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '1rem', position: 'relative' }}>
               Ready to start building?
             </h2>

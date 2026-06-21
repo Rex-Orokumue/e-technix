@@ -2,20 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import {
+  BarChart3, Calendar, Clapperboard, BookOpen, PencilLine,
+  Brain, Star, MessageSquare, User, Globe, LogOut, Menu, X,
+  type LucideIcon,
+} from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Tab = 'sessions' | 'schedule' | 'resources' | 'assignments' | 'quizzes' | 'reviews' | 'chat' | 'profile' | 'progress';
 
-const navItems: { id: Tab; label: string; icon: string }[] = [
-  { id: 'progress',    label: 'My Progress',    icon: '📊' },
-  { id: 'schedule',    label: 'Schedule',       icon: '📅' },
-  { id: 'sessions',    label: 'Past Sessions',  icon: '🎬' },
-  { id: 'resources',   label: 'Resources',      icon: '📚' },
-  { id: 'assignments', label: 'Assignments',    icon: '📝' },
-  { id: 'quizzes',     label: 'Quizzes',         icon: '🧠' },
-  { id: 'reviews',     label: 'Leave a Review', icon: '⭐' },
-  { id: 'chat',        label: 'Chat',           icon: '💬' },
-  { id: 'profile',     label: 'My Profile',     icon: '👤' },
+const navItems: { id: Tab; label: string; Icon: LucideIcon }[] = [
+  { id: 'progress',    label: 'My Progress',    Icon: BarChart3 },
+  { id: 'schedule',    label: 'Schedule',       Icon: Calendar },
+  { id: 'sessions',    label: 'Past Sessions',  Icon: Clapperboard },
+  { id: 'resources',   label: 'Resources',      Icon: BookOpen },
+  { id: 'assignments', label: 'Assignments',    Icon: PencilLine },
+  { id: 'quizzes',     label: 'Quizzes',        Icon: Brain },
+  { id: 'reviews',     label: 'Leave a Review', Icon: Star },
+  { id: 'chat',        label: 'Chat',           Icon: MessageSquare },
+  { id: 'profile',     label: 'My Profile',     Icon: User },
 ];
 
 interface Props {
@@ -27,27 +32,43 @@ interface Props {
 
 export type { Tab };
 
+function Wordmark({ size = '1.2rem' }: { size?: string }) {
+  return (
+    <div style={{ fontFamily: 'var(--font-head)', fontSize: size, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text)', display: 'inline-flex', alignItems: 'center' }}>
+      <span style={{ color: 'var(--cyan)' }}>e-</span>technix
+      <span style={{ width: '6px', height: '6px', background: 'var(--orange)', borderRadius: '50%', display: 'inline-block', marginBottom: '3px', marginLeft: '2px' }} />
+    </div>
+  );
+}
+
 function NavItems({ tab, setTab, onNavigate }: { tab: Tab; setTab: (t: Tab) => void; onNavigate?: () => void }) {
   return (
     <>
-      {navItems.map(item => (
-        <button
-          key={item.id}
-          onClick={() => { setTab(item.id); onNavigate?.(); }}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '0.65rem',
-            width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px',
-            background: tab === item.id ? 'var(--cyan-dim)' : 'transparent',
-            border: tab === item.id ? '1px solid var(--cyan-border)' : '1px solid transparent',
-            color: tab === item.id ? 'var(--cyan)' : 'var(--muted)',
-            fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 600,
-            cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s, color 0.15s',
-          }}
-        >
-          <span style={{ fontSize: '1rem' }}>{item.icon}</span>
-          {item.label}
-        </button>
-      ))}
+      {navItems.map(({ id, label, Icon }) => {
+        const active = tab === id;
+        return (
+          <button
+            key={id}
+            onClick={() => { setTab(id); onNavigate?.(); }}
+            className="hub-nav-item"
+            data-active={active}
+            style={{
+              position: 'relative',
+              display: 'flex', alignItems: 'center', gap: '0.75rem',
+              width: '100%', padding: '0.6rem 0.85rem', borderRadius: '8px',
+              background: active ? 'var(--cyan-dim)' : 'transparent',
+              color: active ? 'var(--cyan)' : 'var(--muted)',
+              border: 'none', cursor: 'pointer', textAlign: 'left',
+              fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: active ? 700 : 500,
+              transition: 'background 0.15s, color 0.15s',
+            }}
+          >
+            {active && <span style={{ position: 'absolute', left: 0, top: '18%', bottom: '18%', width: '2px', background: 'var(--cyan)', borderRadius: '2px' }} />}
+            <Icon size={17} strokeWidth={active ? 2.4 : 2} />
+            {label}
+          </button>
+        );
+      })}
     </>
   );
 }
@@ -58,21 +79,19 @@ function SignOutButton() {
     await supabase.auth.signOut();
     window.location.href = '/';
   };
-
   return (
     <button
       onClick={handleSignOut}
+      className="hub-signout"
       style={{
-        width: '100%', display: 'flex', alignItems: 'center', gap: '0.65rem',
-        padding: '0.65rem 0.85rem', borderRadius: '8px',
-        background: 'transparent', border: 'none',
-        color: 'var(--muted)', cursor: 'pointer',
-        fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 600,
+        width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
+        padding: '0.6rem 0.85rem', borderRadius: '8px',
+        background: 'transparent', border: 'none', color: 'var(--muted)', cursor: 'pointer',
+        fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 500,
+        transition: 'background 0.15s, color 0.15s',
       }}
-      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,107,43,0.08)'; e.currentTarget.style.color = 'var(--orange)'; }}
-      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--muted)'; }}
     >
-      <span>🚪</span> Sign Out
+      <LogOut size={17} strokeWidth={2} /> Sign Out
     </button>
   );
 }
@@ -81,7 +100,6 @@ export default function HubShell({ tab, setTab, student, children }: Props) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => { setOpen(false); }, [tab]);
-
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
@@ -89,20 +107,16 @@ export default function HubShell({ tab, setTab, student, children }: Props) {
 
   const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => (
     <>
-      {/* Logo */}
-      <div style={{ padding: '1.5rem 1.25rem 1rem', borderBottom: '1px solid var(--border)' }}>
-        <Link href="/" style={{ textDecoration: 'none' }}>
-          <div style={{ fontFamily: 'var(--font-head)', fontSize: '1.2rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text)' }}>
-            <span style={{ color: 'var(--cyan)' }}>e-</span>technix
-            <span style={{ width: '6px', height: '6px', background: 'var(--orange)', borderRadius: '50%', display: 'inline-block', marginBottom: '3px', marginLeft: '2px' }} />
-          </div>
-        </Link>
+      {/* Brand + student */}
+      <div style={{ padding: '1.5rem 1.25rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
+        <Link href="/" style={{ textDecoration: 'none' }}><Wordmark /></Link>
         {student && (
-          <div style={{ marginTop: '0.75rem' }}>
-            <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.85rem', color: 'var(--text)', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ marginTop: '1.25rem', padding: '0.85rem', borderRadius: '10px', background: 'var(--bg)', border: '1px solid var(--border)' }}>
+            <div className="eyebrow" style={{ fontSize: '0.6rem', marginBottom: '0.4rem' }}>Enrolled</div>
+            <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.92rem', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {student.full_name}
             </div>
-            <div style={{ fontSize: '0.68rem', color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div className="mono" style={{ fontSize: '0.68rem', color: 'var(--cyan)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {student.track}
             </div>
           </div>
@@ -110,19 +124,20 @@ export default function HubShell({ tab, setTab, student, children }: Props) {
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '2px', overflowY: 'auto' }}>
+      <nav style={{ flex: 1, padding: '0.85rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '2px', overflowY: 'auto' }}>
+        <div className="eyebrow" style={{ fontSize: '0.6rem', padding: '0 0.85rem', marginBottom: '0.6rem' }}>Workspace</div>
         <NavItems tab={tab} setTab={setTab} onNavigate={onNavigate} />
       </nav>
 
       {/* Bottom */}
-      <div style={{ padding: '0.75rem', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-        <Link href="/" onClick={onNavigate} style={{
-          display: 'flex', alignItems: 'center', gap: '0.65rem',
-          padding: '0.65rem 0.85rem', borderRadius: '8px',
+      <div style={{ padding: '0.75rem', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+        <Link href="/" onClick={onNavigate} className="hub-nav-item" style={{
+          display: 'flex', alignItems: 'center', gap: '0.75rem',
+          padding: '0.6rem 0.85rem', borderRadius: '8px',
           color: 'var(--muted)', textDecoration: 'none',
-          fontSize: '0.88rem', fontWeight: 600, border: '1px solid var(--border)',
+          fontSize: '0.88rem', fontWeight: 500, fontFamily: 'var(--font-body)',
         }}>
-          <span>🌐</span> Homepage
+          <Globe size={17} strokeWidth={2} /> Homepage
         </Link>
         <SignOutButton />
       </div>
@@ -134,7 +149,7 @@ export default function HubShell({ tab, setTab, student, children }: Props) {
 
       {/* Desktop sidebar */}
       <aside style={{
-        width: '230px', flexShrink: 0,
+        width: '240px', flexShrink: 0,
         background: 'var(--surface)', borderRight: '1px solid var(--border)',
         display: 'flex', flexDirection: 'column',
         position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50,
@@ -148,19 +163,15 @@ export default function HubShell({ tab, setTab, student, children }: Props) {
         background: 'var(--surface)', borderBottom: '1px solid var(--border)',
         padding: '0.75rem 1.25rem', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        <div style={{ fontFamily: 'var(--font-head)', fontSize: '1.1rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
-          <span style={{ color: 'var(--cyan)' }}>e-</span>technix
-          <span style={{ width: '6px', height: '6px', background: 'var(--orange)', borderRadius: '50%', display: 'inline-block', marginBottom: '3px', marginLeft: '2px' }} />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {student && <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{student.full_name.split(' ')[0]}</span>}
+        <Wordmark size="1.1rem" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          {student && <span className="mono" style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>{student.full_name.split(' ')[0]}</span>}
           <button
             onClick={() => setOpen(o => !o)}
-            style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.4rem 0.6rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '4px' }}
+            aria-label="Toggle menu"
+            style={{ background: 'transparent', border: '1px solid var(--border-bright)', borderRadius: '8px', padding: '0.4rem', cursor: 'pointer', color: 'var(--text)', display: 'flex' }}
           >
-            <span style={{ display: 'block', width: '20px', height: '2px', background: 'var(--text)', borderRadius: '2px', transition: 'all 0.25s', transform: open ? 'rotate(45deg) translate(4px, 4px)' : 'none' }} />
-            <span style={{ display: 'block', width: '20px', height: '2px', background: 'var(--text)', borderRadius: '2px', transition: 'all 0.25s', opacity: open ? 0 : 1 }} />
-            <span style={{ display: 'block', width: '20px', height: '2px', background: 'var(--text)', borderRadius: '2px', transition: 'all 0.25s', transform: open ? 'rotate(-45deg) translate(4px, -4px)' : 'none' }} />
+            {open ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </div>
@@ -168,15 +179,12 @@ export default function HubShell({ tab, setTab, student, children }: Props) {
       {/* Mobile slide-in sidebar */}
       <div style={{
         position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 70,
-        width: '270px',
+        width: '280px',
         background: 'var(--surface)', borderRight: '1px solid var(--border)',
         display: 'flex', flexDirection: 'column',
         transform: open ? 'translateX(0)' : 'translateX(-100%)',
         transition: 'transform 0.3s ease',
       }} className="hub-sidebar-mobile">
-        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0.75rem 0.75rem 0' }}>
-          <button onClick={() => setOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '1.4rem', lineHeight: 1 }}>✕</button>
-        </div>
         <SidebarContent onNavigate={() => setOpen(false)} />
       </div>
 
@@ -186,11 +194,14 @@ export default function HubShell({ tab, setTab, student, children }: Props) {
       )}
 
       {/* Main content */}
-      <main style={{ flex: 1, marginLeft: '230px', minHeight: '100vh' }} className="hub-main">
+      <main style={{ flex: 1, marginLeft: '240px', minHeight: '100vh' }} className="hub-main">
         {children}
       </main>
 
       <style>{`
+        .hub-nav-item:hover { background: var(--border) !important; color: var(--text) !important; }
+        .hub-nav-item[data-active="true"]:hover { background: var(--cyan-dim) !important; color: var(--cyan) !important; }
+        .hub-signout:hover { background: rgba(255,107,43,0.08) !important; color: var(--orange) !important; }
         @media (max-width: 768px) {
           .hub-sidebar-desktop { display: none !important; }
           .hub-topbar-mobile { display: flex !important; }

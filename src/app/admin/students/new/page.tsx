@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
-const TRACKS = ['Data Analytics', 'Web App Development', 'Mobile & Desktop Apps', 'AI & Agentic Systems', 'Product Design (UI/UX)', 'Business Development'];
+import { TRACKS } from '@/lib/tracks';
 
 function generatePassword(length = 12) {
   const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';

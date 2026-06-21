@@ -43,7 +43,16 @@ export async function POST(req: NextRequest) {
         return `${label}: ${v}`;
       }).join('\n');
     const system = `You are a Socratic coach for an E-Technix assignment: "${a.title}". ${tpl.coachingPrompt ?? ''}
-You guide the student through ONE step at a time. For the step "${target.label}", write a SHORT, CONCRETE guiding question in plain, beginner-friendly language (no jargon) that leads the student to produce this step in THEIR OWN words, building directly on their most recent answer below. Ask for ONE specific thing they can actually answer. If the step is abstract or reflective (e.g. a "first principles" or "reflection" step), make it easy to begin: ground it with a concrete angle AND add a fill-in-the-blank sentence-starter the student can complete — for example: "One assumption you're making here is ___. If that weren't true, what would change?" Do NOT answer it yourself and do NOT write the step for them. Keep it to 1-3 short sentences. Return plain text: the question only, no labels or quotes.${brief}`;
+
+For the step "${target.label}", write ONE short, concrete guiding QUESTION (1-3 sentences, plain beginner-friendly language, no jargon) that leads the student to write this step in THEIR OWN words. Do NOT answer it and do NOT write the step for them. Return plain text: the question only, no labels or quotes.
+
+Ground every question in EVIDENCE, never speculation:
+- Build directly on the student's most recent answer and the facts in their input or the case. Each step must follow logically from the one before it.
+- NEVER invite the student to invent, assume, or imagine facts that are not established. Do not ask leading questions that smuggle in a cause or conclusion.
+- For a root-cause or "why" step (e.g. the 5 Whys): ask why the student's PREVIOUS answer is true, staying tied to observable facts in the case — and keep the focus on why the PROBLEM exists, not why a proposed solution matters. If the causal chain runs past what the evidence supports, ask the student to either point to the evidence for it, or state plainly that it is a hypothesis or that more information is needed. Stopping there is a valid, correct answer.
+- Only for a genuinely generative or reflective step (e.g. first principles, brainstorming) may you offer a short fill-in-the-blank sentence-starter — and even then keep it tied to the student's real situation, not an invented premise.
+
+Test your question before returning it: could the student answer it truthfully from the case and their own answers so far, without making anything up? If not, rephrase it.${brief}`;
     try {
       const out = await aiGenerate({
         system,
@@ -64,7 +73,7 @@ You guide the student through ONE step at a time. For the step "${target.label}"
     system = `You are a coaching assistant for an E-Technix assignment: "${a.title}". ${a.description ?? ''} ${tpl.coachingPrompt ?? ''} Use the student's input to produce a strong first draft they will edit. Guide and scaffold — keep it in the student's voice, do not invent facts they didn't provide.${brief}`;
   } else {
     const fieldList = (tpl.fields ?? []).map(f => `"${f.key}" (${f.label})`).join(', ');
-    system = `You are a coaching assistant for an E-Technix assignment: "${a.title}". ${tpl.coachingPrompt ?? ''} Produce a JSON object with EXACTLY these keys: ${fieldList}. Each value is concise text for that section, based on the student's input. Do not invent facts the student didn't provide; where information is missing, give a brief prompt of what they should add.${brief}`;
+    system = `You are a coaching assistant for an E-Technix assignment: "${a.title}". ${tpl.coachingPrompt ?? ''} Produce a JSON object with EXACTLY these keys: ${fieldList}. Each value is concise text for that section, based on the student's input. Do not invent facts the student didn't provide; where information is missing, give a brief prompt of what they should add. For causal or "why" chains (e.g. root-cause analysis), each field must follow logically from the previous one using only facts the student or case established — never fabricate a cause; if the chain runs past the available evidence, say so or mark it a hypothesis rather than inventing one.${brief}`;
     json = true;
   }
 
