@@ -174,82 +174,13 @@ const breadcrumbSchema = {
   ],
 };
 
-/**
- * AEO: Server-rendered Q&A text — always in the HTML, always crawlable by AI engines
- * even if they don't execute JavaScript. Visually understated so it doesn't clash
- * with the interactive accordion below it.
- */
-function ServerFAQs() {
-  const allQAs = faqSchema.mainEntity;
-  return (
-    <div
-      aria-label="Frequently asked questions about E-Technix"
-      style={{
-        maxWidth: '860px',
-        margin: '0 auto',
-        padding: '0 2.5rem 4rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0',
-      }}
-    >
-      {allQAs.map((item, i) => (
-        <div
-          key={i}
-          itemScope
-          itemType="https://schema.org/Question"
-          style={{
-            borderBottom: '1px solid var(--border)',
-            padding: '1.5rem 0',
-          }}
-        >
-          <h3
-            itemProp="name"
-            style={{
-              fontFamily: 'var(--font-head)',
-              fontWeight: 700,
-              fontSize: '0.95rem',
-              color: 'var(--text)',
-              marginBottom: '0.6rem',
-            }}
-          >
-            {item.name}
-          </h3>
-          <div
-            itemScope
-            itemType="https://schema.org/Answer"
-            itemProp="acceptedAnswer"
-          >
-            <p
-              itemProp="text"
-              style={{
-                fontSize: '0.9rem',
-                color: 'var(--muted)',
-                lineHeight: 1.75,
-                margin: 0,
-              }}
-            >
-              {item.acceptedAnswer.text}
-            </p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export default function FAQPage() {
   return (
     <>
+      {/* FAQPage JSON-LD gives search/AI engines the full Q&A; the accordion serves users. */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-      {/*
-        AEO: The server-rendered Q&As below are ALWAYS in the HTML.
-        The interactive accordion in FAQPageClient is JS-rendered on top of this.
-        Both coexist — crawlers get the text, users get the interactive version.
-      */}
       <FAQPageClient />
-      <ServerFAQs />
     </>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import type { PROGRAMME, TrackStatus, Accent } from '@/lib/data/curriculum';
@@ -288,11 +289,19 @@ export default function CurriculumClient({ programme, tracks }: Props) {
           <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(1.6rem, 3vw, 2.3rem)', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '1rem', maxWidth: '640px' }}>
             Build something real, <span style={{ color: 'var(--cyan)' }}>with a team.</span>
           </h2>
+          <div style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', border: '1px solid var(--border-bright)', aspectRatio: '16 / 6', minHeight: '220px', marginBottom: '2rem' }}>
+            <Image src="/images/demo-day.jpg" alt="A team presenting their product at Demo Day" fill sizes="(max-width: 1180px) 100vw, 1180px" style={{ objectFit: 'cover', filter: 'saturate(0.75) contrast(1.03)' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(7,13,26,0.85) 0%, rgba(7,13,26,0.4) 55%, rgba(7,13,26,0.1) 100%)' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'var(--cyan)', opacity: 0.09, mixBlendMode: 'overlay', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', left: 0, bottom: 0, padding: 'clamp(1rem, 3vw, 2rem)' }}>
+              <span className="mono" style={{ fontSize: '0.72rem', color: 'var(--cyan)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Demo Day · open to employers</span>
+            </div>
+          </div>
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', borderRadius: '12px', padding: '1.1rem 1.25rem', marginBottom: '2rem', maxWidth: '760px' }}>
             <span style={{ fontSize: '1.1rem', flexShrink: 0, marginTop: '1px' }}>🚀</span>
             <p style={{ fontSize: '0.92rem', color: 'var(--text)', lineHeight: 1.6, marginBottom: 0 }}>{programme.phase3.outcome}</p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem' }}>
+          <div className="sprint-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem' }}>
             {programme.phase3.sprints.map((s, i) => (
               <div key={s.name} style={{ background: 'var(--surface)', padding: '1.25rem' }}>
                 <div className="mono" style={{ fontSize: '0.7rem', color: 'var(--cyan)', marginBottom: '0.4rem' }}>SPRINT {i + 1}</div>
@@ -360,6 +369,8 @@ export default function CurriculumClient({ programme, tracks }: Props) {
 
       <style>{`
         .atglance-row:hover { background: var(--cyan-dim) !important; }
+        @media (max-width: 860px) { .sprint-grid { grid-template-columns: repeat(2, 1fr) !important; } }
+        @media (max-width: 560px) { .sprint-grid { grid-template-columns: 1fr !important; } }
         @media (max-width: 640px) {
           .atglance-dur, .atglance-code, .atglance-adv { display: none !important; }
           .atglance-row { padding: 0.7rem 0.85rem !important; gap: 0.6rem !important; }
