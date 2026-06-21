@@ -289,7 +289,7 @@ export default function CurriculumClient({ programme, tracks }: Props) {
           <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(1.6rem, 3vw, 2.3rem)', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '1rem', maxWidth: '640px' }}>
             Build something real, <span style={{ color: 'var(--cyan)' }}>with a team.</span>
           </h2>
-          <div style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', border: '1px solid var(--border-bright)', aspectRatio: '16 / 6', minHeight: '220px', marginBottom: '2rem' }}>
+          <div style={{ position: 'relative', width: '100%', borderRadius: '14px', overflow: 'hidden', border: '1px solid var(--border-bright)', aspectRatio: '16 / 6', minHeight: '220px', marginBottom: '2rem' }}>
             <Image src="/images/demo-day.jpg" alt="A team presenting their product at Demo Day" fill sizes="(max-width: 1180px) 100vw, 1180px" style={{ objectFit: 'cover', filter: 'saturate(0.75) contrast(1.03)' }} />
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(7,13,26,0.85) 0%, rgba(7,13,26,0.4) 55%, rgba(7,13,26,0.1) 100%)' }} />
             <div style={{ position: 'absolute', inset: 0, background: 'var(--cyan)', opacity: 0.09, mixBlendMode: 'overlay', pointerEvents: 'none' }} />

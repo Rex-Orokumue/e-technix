@@ -76,7 +76,7 @@ export default function AboutPage() {
 
         {/* ── Online-class image band ── */}
         <section className="img-band-section" style={{ padding: '2.5rem 2.5rem 0', maxWidth: '1180px', margin: '0 auto' }}>
-          <div style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border-bright)', aspectRatio: '16 / 6', minHeight: '240px' }}>
+          <div style={{ position: 'relative', width: '100%', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border-bright)', aspectRatio: '16 / 6', minHeight: '240px' }}>
             <Image src="/images/online-class.jpg" alt="A live E-Technix online class" fill sizes="(max-width: 1180px) 100vw, 1180px" style={{ objectFit: 'cover', filter: 'saturate(0.75) contrast(1.03)' }} />
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(7,13,26,0.85) 0%, rgba(7,13,26,0.35) 55%, transparent 100%)' }} />
             <div style={{ position: 'absolute', inset: 0, background: 'var(--cyan)', opacity: 0.08, mixBlendMode: 'overlay', pointerEvents: 'none' }} />

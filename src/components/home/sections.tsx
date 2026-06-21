@@ -8,7 +8,7 @@ import { stats } from '@/lib/data/tracks';
 export function CommunityBand() {
   return (
     <section style={{ padding: '0 2.5rem 6rem', maxWidth: '1180px', margin: '0 auto' }}>
-      <div style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border-bright)', aspectRatio: '16 / 7', minHeight: '300px' }}>
+      <div style={{ position: 'relative', width: '100%', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border-bright)', aspectRatio: '16 / 7', minHeight: '300px' }}>
         <Image
           src="/images/community.jpg"
           alt="E-Technix students learning together online"
