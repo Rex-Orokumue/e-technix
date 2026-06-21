@@ -47,6 +47,14 @@ describe('curriculum data', () => {
     expect(PROGRAMME.howItWorks.advancedEntry.toLowerCase()).toContain('placement assessment');
   });
 
+  it('PROGRAMME has the full four-phase journey + Phase 3/4 student content', () => {
+    expect(PROGRAMME.journey.map((p) => p.n)).toEqual([1, 2, 3, 4]);
+    expect(PROGRAMME.phase3.sprints.length).toBe(6);
+    expect(PROGRAMME.phase3.domains.length).toBeGreaterThan(0);
+    expect(PROGRAMME.phase4.paths.map((p) => p.name)).toEqual(['Employment', 'Freelancing', 'Startup']);
+    expect(PROGRAMME.phase4.outcomes.length).toBeGreaterThan(0);
+  });
+
   it('the 2 advanced tracks are enrolling, flagged, and explain what to expect', () => {
     const advanced = TRACKS.filter((t) => t.isAdvanced);
     expect(advanced.map((t) => t.code).sort()).toEqual(['DE-301', 'ML-301']);
