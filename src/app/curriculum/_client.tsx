@@ -188,7 +188,7 @@ export default function CurriculumClient({ programme, tracks }: Props) {
         </section>
 
         {/* ── How the programme works ── */}
-        <section style={{ padding: '4rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
+        <section className="phase-section" style={{ padding: '4rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
           <div style={sectionLabel}>How the programme works</div>
           <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(1.5rem, 3vw, 2.1rem)', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '1rem', maxWidth: '640px' }}>
             Four phases. <span style={{ color: 'var(--cyan)' }}>One outcome.</span>
@@ -229,7 +229,7 @@ export default function CurriculumClient({ programme, tracks }: Props) {
         </section>
 
         {/* ── Philosophy ── */}
-        <section style={{ padding: '4rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
+        <section className="phase-section" style={{ padding: '4rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
           <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(1.5rem, 3vw, 2.1rem)', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '0.75rem' }}>
             Our Teaching Philosophy
           </h2>
@@ -247,7 +247,7 @@ export default function CurriculumClient({ programme, tracks }: Props) {
         </section>
 
         {/* ── How we integrate AI ── */}
-        <section style={{ padding: '4rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
+        <section className="phase-section" style={{ padding: '4rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
           <div style={sectionLabel}>How we integrate AI</div>
           <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(1.5rem, 3vw, 2.1rem)', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '2rem', maxWidth: '640px' }}>
             AI is not the enemy of this programme — <span style={{ color: 'var(--cyan)' }}>it is the test.</span>
@@ -284,7 +284,7 @@ export default function CurriculumClient({ programme, tracks }: Props) {
         </section>
 
         {/* ── Phase 3 — Real Project Labs ── */}
-        <section style={{ padding: '4rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+        <section className="phase-section" style={{ padding: '4rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
           <div style={sectionLabel}>Phase 3 · Real Project Labs · 12 weeks</div>
           <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(1.6rem, 3vw, 2.3rem)', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '1rem', maxWidth: '640px' }}>
             Build something real, <span style={{ color: 'var(--cyan)' }}>with a team.</span>
@@ -319,7 +319,7 @@ export default function CurriculumClient({ programme, tracks }: Props) {
         </section>
 
         {/* ── Phase 4 — Career Launch ── */}
-        <section style={{ padding: '4rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
+        <section className="phase-section" style={{ padding: '4rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
           <div style={sectionLabel}>Phase 4 · Career Launch · 4 weeks</div>
           <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(1.6rem, 3vw, 2.3rem)', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '1rem', maxWidth: '640px' }}>
             From trained <span style={{ color: 'var(--cyan)' }}>to earning.</span>
@@ -375,6 +375,7 @@ export default function CurriculumClient({ programme, tracks }: Props) {
           .atglance-dur, .atglance-code, .atglance-adv { display: none !important; }
           .atglance-row { padding: 0.7rem 0.85rem !important; gap: 0.6rem !important; }
           .atglance-section { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
+          .phase-section { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
         }
       `}</style>
     </>

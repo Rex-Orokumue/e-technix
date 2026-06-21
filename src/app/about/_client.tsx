@@ -75,7 +75,7 @@ export default function AboutPage() {
         </section>
 
         {/* ── Online-class image band ── */}
-        <section style={{ padding: '2.5rem 2.5rem 0', maxWidth: '1180px', margin: '0 auto' }}>
+        <section className="img-band-section" style={{ padding: '2.5rem 2.5rem 0', maxWidth: '1180px', margin: '0 auto' }}>
           <div style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border-bright)', aspectRatio: '16 / 6', minHeight: '240px' }}>
             <Image src="/images/online-class.jpg" alt="A live E-Technix online class" fill sizes="(max-width: 1180px) 100vw, 1180px" style={{ objectFit: 'cover', filter: 'saturate(0.75) contrast(1.03)' }} />
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(7,13,26,0.85) 0%, rgba(7,13,26,0.35) 55%, transparent 100%)' }} />
@@ -87,7 +87,7 @@ export default function AboutPage() {
         </section>
 
         {/* ── How It Started ── */}
-        <section style={{
+        <section className="about-section" style={{
           padding: '5rem 2.5rem', maxWidth: '1180px', margin: '0 auto',
           borderBottom: '1px solid var(--border)',
         }}>
@@ -146,7 +146,7 @@ export default function AboutPage() {
         </section>
 
         {/* ── Mission ── */}
-        <section style={{
+        <section className="about-section" style={{
           padding: '5rem 2.5rem', maxWidth: '1180px', margin: '0 auto',
           borderBottom: '1px solid var(--border)',
         }}>
@@ -174,7 +174,7 @@ export default function AboutPage() {
         </section>
 
         {/* ── Team ── */}
-        <section style={{
+        <section className="about-section" style={{
           padding: '5rem 2.5rem', maxWidth: '1180px', margin: '0 auto',
           borderBottom: '1px solid var(--border)',
         }}>
@@ -296,7 +296,7 @@ export default function AboutPage() {
         </section>
 
         {/* ── Values ── */}
-        <section style={{ padding: '5rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
+        <section className="about-section" style={{ padding: '5rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
           <h2 style={{
             fontFamily: 'var(--font-head)',
             fontSize: 'clamp(1.6rem, 2.5vw, 2rem)',
@@ -334,7 +334,7 @@ export default function AboutPage() {
         </section>
 
         {/* ── Long-term vision ── */}
-        <section style={{ padding: '5rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
+        <section className="about-section" style={{ padding: '5rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center' }} className="about-grid">
             <div>
               <div style={{
@@ -448,6 +448,8 @@ export default function AboutPage() {
         @media (max-width: 768px) {
           .about-grid { grid-template-columns: 1fr !important; gap: 2.5rem !important; }
           .team-grid { grid-template-columns: 1fr !important; }
+          .img-band-section { padding-left: 1rem !important; padding-right: 1rem !important; }
+          .about-section { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
         }
       `}</style>
     </>
