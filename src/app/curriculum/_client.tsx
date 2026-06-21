@@ -189,22 +189,22 @@ export default function CurriculumClient({ programme, tracks }: Props) {
         <section style={{ padding: '4rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
           <div style={sectionLabel}>How the programme works</div>
           <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(1.5rem, 3vw, 2.1rem)', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '1rem', maxWidth: '640px' }}>
-            Foundation first. <span style={{ color: 'var(--cyan)' }}>Then you specialise.</span>
+            Four phases. <span style={{ color: 'var(--cyan)' }}>One outcome.</span>
           </h2>
           <p style={{ color: 'var(--muted)', fontSize: '0.95rem', lineHeight: 1.7, maxWidth: '640px', marginTop: 0, marginBottom: '2rem' }}>
-            The taught curriculum runs in two phases. After your specialisation, the programme
-            continues into <Link href="/how-it-works" style={{ color: 'var(--cyan)', textDecoration: 'none', fontWeight: 600 }}>Project Labs and Career Launch</Link> —
-            where you build real products in a team and prepare to enter the market.
+            Every student moves through the same journey — foundation, specialisation, a real
+            team-built product, and a focused career launch. One fee covers all four.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
-            {programme.howItWorks.phases.map((p, i) => (
-              <div key={p.n} style={{ position: 'relative', background: 'var(--surface)', border: `1px solid ${i === 0 ? 'var(--cyan-border)' : 'var(--border)'}`, borderRadius: '14px', padding: '1.5rem' }}>
-                <div style={{ fontFamily: 'var(--font-head)', fontSize: '2.5rem', fontWeight: 800, lineHeight: 1, color: i === 0 ? 'var(--cyan-border)' : 'rgba(255,255,255,0.12)', marginBottom: '0.75rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
+            {programme.journey.map((p, i) => (
+              <div key={p.n} style={{ position: 'relative', background: 'var(--surface)', border: `1px solid ${i < 2 ? 'var(--cyan-border)' : 'var(--border)'}`, borderRadius: '14px', padding: '1.5rem' }}>
+                <div style={{ fontFamily: 'var(--font-head)', fontSize: '2.5rem', fontWeight: 800, lineHeight: 1, color: i < 2 ? 'var(--cyan-border)' : 'rgba(255,255,255,0.12)', marginBottom: '0.6rem' }}>
                   0{p.n}
                 </div>
-                <h3 style={{ fontFamily: 'var(--font-head)', fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.5rem' }}>{p.name}</h3>
-                <p style={{ color: 'var(--muted)', fontSize: '0.9rem', lineHeight: 1.65, marginBottom: 0 }}>{p.body}</p>
+                <h3 style={{ fontFamily: 'var(--font-head)', fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.25rem' }}>{p.name}</h3>
+                <div className="mono" style={{ fontSize: '0.66rem', color: 'var(--muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>{p.tag}</div>
+                <p style={{ color: 'var(--muted)', fontSize: '0.88rem', lineHeight: 1.6, marginBottom: 0 }}>{p.body}</p>
               </div>
             ))}
           </div>
@@ -269,7 +269,7 @@ export default function CurriculumClient({ programme, tracks }: Props) {
 
         {/* ── Track sections ── */}
         <section style={{ padding: '4rem 2.5rem 2rem', maxWidth: '1180px', margin: '0 auto' }}>
-          <div style={sectionLabel}>The full programme</div>
+          <div style={sectionLabel}>Phase 1 &amp; 2 · The taught curriculum</div>
           <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(1.6rem, 3vw, 2.3rem)', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '2.5rem' }}>
             Every track, week by week
           </h2>
@@ -278,6 +278,60 @@ export default function CurriculumClient({ programme, tracks }: Props) {
             {tracks.map((t) => (
               <TrackSection key={t.code} track={t} advancedEntry={programme.howItWorks.advancedEntry} />
             ))}
+          </div>
+        </section>
+
+        {/* ── Phase 3 — Real Project Labs ── */}
+        <section style={{ padding: '4rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+          <div style={sectionLabel}>Phase 3 · Real Project Labs · 12 weeks</div>
+          <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(1.6rem, 3vw, 2.3rem)', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '1rem', maxWidth: '640px' }}>
+            Build something real, <span style={{ color: 'var(--cyan)' }}>with a team.</span>
+          </h2>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', borderRadius: '12px', padding: '1.1rem 1.25rem', marginBottom: '2rem', maxWidth: '760px' }}>
+            <span style={{ fontSize: '1.1rem', flexShrink: 0, marginTop: '1px' }}>🚀</span>
+            <p style={{ fontSize: '0.92rem', color: 'var(--text)', lineHeight: 1.6, marginBottom: 0 }}>{programme.phase3.outcome}</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1px', background: 'var(--border)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem' }}>
+            {programme.phase3.sprints.map((s, i) => (
+              <div key={s.name} style={{ background: 'var(--surface)', padding: '1.25rem' }}>
+                <div className="mono" style={{ fontSize: '0.7rem', color: 'var(--cyan)', marginBottom: '0.4rem' }}>SPRINT {i + 1}</div>
+                <h3 style={{ fontFamily: 'var(--font-head)', fontSize: '0.98rem', fontWeight: 700, margin: '0 0 0.35rem' }}>{s.name}</h3>
+                <p style={{ fontSize: '0.82rem', color: 'var(--muted)', lineHeight: 1.55, margin: 0 }}>{s.body}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+            <span className="mono" style={{ fontSize: '0.7rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Teams build across:</span>
+            {programme.phase3.domains.map((d) => (
+              <span key={d} style={{ fontSize: '0.78rem', fontWeight: 500, padding: '0.25rem 0.7rem', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'var(--text)' }}>{d}</span>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Phase 4 — Career Launch ── */}
+        <section style={{ padding: '4rem 2.5rem', maxWidth: '1180px', margin: '0 auto', borderBottom: '1px solid var(--border)' }}>
+          <div style={sectionLabel}>Phase 4 · Career Launch · 4 weeks</div>
+          <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(1.6rem, 3vw, 2.3rem)', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '1rem', maxWidth: '640px' }}>
+            From trained <span style={{ color: 'var(--cyan)' }}>to earning.</span>
+          </h2>
+          <p style={{ color: 'var(--muted)', fontSize: '0.95rem', lineHeight: 1.7, maxWidth: '640px', marginTop: 0, marginBottom: '2rem' }}>{programme.phase4.intro}</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
+            {programme.phase4.paths.map((p) => (
+              <div key={p.name} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '1.5rem' }}>
+                <h3 style={{ fontFamily: 'var(--font-head)', fontSize: '1.05rem', fontWeight: 800, margin: '0 0 0.5rem' }}>{p.name}</h3>
+                <p style={{ color: 'var(--muted)', fontSize: '0.88rem', lineHeight: 1.6, margin: 0 }}>{p.body}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5rem' }}>
+            <div style={sectionLabel}>What every graduate leaves with</div>
+            <ul style={{ listStyle: 'none', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.6rem', margin: 0, padding: 0 }}>
+              {programme.phase4.outcomes.map((o) => (
+                <li key={o} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.55rem', fontSize: '0.86rem', color: 'var(--text)', lineHeight: 1.5 }}>
+                  <span style={{ color: 'var(--cyan)', flexShrink: 0 }}>✓</span>{o}
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 

@@ -117,6 +117,42 @@ export const PROGRAMME = {
     advancedEntry:
       'Advanced tracks are open for enrolment now, but you must complete the prerequisite track first. If you already have the experience, you can sit a placement assessment to verify it and enter the advanced track directly — no one skips the prerequisite on an unverified claim.',
   },
+  // The full four-phase journey (Phase 1 + 2 are the taught curriculum below;
+  // Phase 3 + 4 are applied stages, kept at student-facing depth — the facilitator
+  // playbook and named project briefs stay internal).
+  journey: [
+    { n: 1, name: 'Foundation', tag: '8 weeks · compulsory', body: 'Digital & Business Foundations — digital fluency, structured problem-solving, business thinking, and AI literacy. Everyone in the cohort completes Phase 1.' },
+    { n: 2, name: 'Specialisation', tag: '12 weeks', body: 'Go deep in one of eight tracks (or an advanced track) with a structured, week-by-week, project-based curriculum. You advance after scoring 60% cumulatively in Phase 1.' },
+    { n: 3, name: 'Real Project Labs', tag: '12 weeks · 6 sprints', body: 'Join a cross-functional team and build a real, live product — discovery, architecture, two build sprints, user testing, and polish — ending in a public Demo Day open to employers and the community.' },
+    { n: 4, name: 'Career Launch', tag: '4 weeks', body: 'Choose your path — employment, freelancing, or startup — and execute it. You leave with a portfolio, a professional presence, a 90-day plan, and a real career action already taken.' },
+  ],
+  phase3: {
+    outcome: 'A real, live product built with a cross-functional team — something you can show an employer, a client, or an investor.',
+    sprints: [
+      { name: 'Discovery & Definition', body: 'Real user research, a clear problem statement, and a team charter.' },
+      { name: 'Architecture & Design', body: 'Technical architecture, wireframes, PRD, and a data measurement plan.' },
+      { name: 'Build Sprint 1', body: 'Core features only, daily standups, an internal demo at the halfway mark.' },
+      { name: 'Build Sprint 2 & User Testing', body: 'Iterate on feedback, usability tests with real users, scope decisions documented.' },
+      { name: 'Polish & Integration', body: 'Everything integrates, critical bugs fixed, technical docs and business case finalised.' },
+      { name: 'Demo Day & Graduation', body: 'A public Demo Day — problem, live demo, business case — open to guests, alumni, and employers.' },
+    ],
+    domains: ['Fintech', 'EdTech', 'SME tools', 'Cybersecurity', 'AgriTech', 'Freelance tools'],
+  },
+  phase4: {
+    intro: 'The final month. Every graduate chooses a path and spends four weeks executing the specific steps that move them from trained to earning — each week with a real output that goes into the world.',
+    paths: [
+      { name: 'Employment', body: 'Job search, applications, interviews. Target: first interview in 30 days, first offer in 60.' },
+      { name: 'Freelancing', body: 'Platform setup, proposals, first paid clients. Target: first client within 45 days.' },
+      { name: 'Startup', body: 'Validation, pitch, ecosystem. Target: one clear validation milestone within 30 days.' },
+    ],
+    outcomes: [
+      'A complete, professional portfolio ready to show employers or clients',
+      'A configured professional presence — LinkedIn, GitHub, Behance, or equivalent',
+      'A written 90-day career action plan with weekly targets',
+      'At least one real career action before graduation',
+      'A track-specific E-Technix certificate',
+    ],
+  },
 } as const;
 
 export const TRACKS: Track[] = [
