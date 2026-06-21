@@ -14,6 +14,7 @@ import {
   WhatsIncluded,
   Testimonials,
   GuaranteeStrip,
+  CommunityBand,
 } from '@/components/home/sections';
 
 export const metadata: Metadata = {
@@ -147,6 +148,7 @@ export default function Home() {
         <AboutDefinition />
         <WhatsIncluded />
         <HowItWorks />
+        <CommunityBand />
         <TrackGrid />
         <Testimonials />
         <Foundation />

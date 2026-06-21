@@ -106,7 +106,7 @@ export const foundationCourses = [
 ];
 
 export const stats = [
-  { num: '8', label: 'Specialisation Tracks' },
+  { num: '10', label: 'Career Tracks' },
   { num: '9', label: 'Month Programme' },
   { num: '5+', label: 'Real Project Labs' },
   { num: '3', label: 'Career Paths' },

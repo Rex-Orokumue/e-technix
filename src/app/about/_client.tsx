@@ -74,6 +74,18 @@ export default function AboutPage() {
           </p>
         </section>
 
+        {/* ── Online-class image band ── */}
+        <section style={{ padding: '2.5rem 2.5rem 0', maxWidth: '1180px', margin: '0 auto' }}>
+          <div style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border-bright)', aspectRatio: '16 / 6', minHeight: '240px' }}>
+            <Image src="/images/online-class.jpg" alt="A live E-Technix online class" fill sizes="(max-width: 1180px) 100vw, 1180px" style={{ objectFit: 'cover', filter: 'saturate(0.75) contrast(1.03)' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(7,13,26,0.85) 0%, rgba(7,13,26,0.35) 55%, transparent 100%)' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'var(--cyan)', opacity: 0.08, mixBlendMode: 'overlay', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', left: 0, bottom: 0, padding: 'clamp(1rem, 3vw, 2rem)' }}>
+              <span className="mono" style={{ fontSize: '0.72rem', color: 'var(--cyan)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Live · fully online · UK × Nigeria</span>
+            </div>
+          </div>
+        </section>
+
         {/* ── How It Started ── */}
         <section style={{
           padding: '5rem 2.5rem', maxWidth: '1180px', margin: '0 auto',
@@ -100,6 +112,10 @@ export default function AboutPage() {
               </p>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ position: 'relative', width: '100%', aspectRatio: '5 / 4', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-bright)' }}>
+                <Image src="/images/student-portrait.jpg" alt="A focused E-Technix student in their online lesson" fill sizes="(max-width: 900px) 100vw, 560px" style={{ objectFit: 'cover', objectPosition: 'center 25%', filter: 'saturate(0.8) contrast(1.03)' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'var(--cyan)', opacity: 0.07, mixBlendMode: 'overlay', pointerEvents: 'none' }} />
+              </div>
               {[
                 { icon: '🌍', title: 'Africa-First, Globally Open', desc: 'Our primary market is Africa — Nigeria, Ghana, Kenya, and beyond. But the programme is open to anyone in the world who is serious about building a digital career.' },
                 { icon: '🇬🇧', title: 'UK-Directed', desc: 'Programme direction, standards, and strategy come from the UK — giving our students and their certificates international credibility.' },
