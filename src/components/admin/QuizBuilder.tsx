@@ -163,7 +163,7 @@ export default function QuizBuilder({ quiz, questions: initialQuestions }: { qui
       {/* Questions (edit mode only) */}
       {editing && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', position: 'sticky', top: '0.5rem', zIndex: 20, background: 'var(--bg)', padding: '0.6rem 0.75rem', borderRadius: '10px', border: '1px solid var(--border)', backdropFilter: 'blur(8px)' }}>
             <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.1rem', margin: 0 }}>Questions ({questions.length})</h2>
             <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
               <button onClick={() => addQuestion('mcq')} style={addBtn}>+ Multiple choice</button>
