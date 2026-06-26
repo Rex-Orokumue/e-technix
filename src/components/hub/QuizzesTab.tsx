@@ -109,6 +109,8 @@ function TakeQuiz({ quiz, questions, onExit }: { quiz: Quiz; questions: QuizQues
   const [result, setResult] = useState<{ attempt: any; feedback: Feedback } | null>(null);
   const [error, setError] = useState('');
   const [secondsLeft, setSecondsLeft] = useState<number | null>(quiz.time_limit_mins ? quiz.time_limit_mins * 60 : null);
+  const [violations, setViolations] = useState(0);
+  const [showViolationWarning, setShowViolationWarning] = useState(false);
 
   const submit = async () => {
     if (submitting || result) return;
@@ -131,6 +133,26 @@ function TakeQuiz({ quiz, questions, onExit }: { quiz: Quiz; questions: QuizQues
     const t = setTimeout(() => setSecondsLeft(s => (s == null ? s : s - 1)), 1000);
     return () => clearTimeout(t);
   }, [secondsLeft, result]);
+
+  // Tab/window visibility anti-cheat
+  useEffect(() => {
+    if (result) return;
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setViolations(v => {
+          const next = v + 1;
+          if (next >= 2) {
+            submitRef.current();
+          } else {
+            setShowViolationWarning(true);
+          }
+          return next;
+        });
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [result]);
 
   const setAnswer = (qid: string, v: any) => setAnswers(a => ({ ...a, [qid]: v }));
 
@@ -178,17 +200,49 @@ function TakeQuiz({ quiz, questions, onExit }: { quiz: Quiz; questions: QuizQues
 
   return (
     <div>
+      {/* Violation warning overlay */}
+      {showViolationWarning && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(7,13,26,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid #FF5555', borderRadius: '14px', padding: '2rem', maxWidth: '420px', width: '100%', textAlign: 'center' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>⚠️</div>
+            <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.15rem', color: '#FF5555', margin: '0 0 0.75rem' }}>Violation Detected</h3>
+            <p style={{ fontSize: '0.88rem', color: 'var(--muted)', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
+              You left the quiz tab. This has been recorded as a violation.<br />
+              <strong style={{ color: 'var(--text)' }}>If you leave again, your quiz will be auto-submitted immediately.</strong>
+            </p>
+            <button onClick={() => setShowViolationWarning(false)}
+              style={{ padding: '0.7rem 1.75rem', background: 'var(--cyan)', color: '#070D1A', border: 'none', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer' }}>
+              I understand — Resume Quiz
+            </button>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
         <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.5rem', margin: 0 }}>{quiz.title}</h2>
-        {secondsLeft != null && (
-          <span style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.1rem', color: secondsLeft < 60 ? '#FF5555' : 'var(--cyan)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.35rem 0.85rem' }}>⏱ {mm}:{ss}</span>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {violations > 0 && (
+            <span style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.8rem', color: '#FF5555', background: 'rgba(255,85,85,0.1)', border: '1px solid rgba(255,85,85,0.3)', borderRadius: '8px', padding: '0.35rem 0.75rem' }}>
+              ⚠ {violations}/2 violation{violations !== 1 ? 's' : ''}
+            </span>
+          )}
+          {secondsLeft != null && (
+            <span style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.1rem', color: secondsLeft < 60 ? '#FF5555' : 'var(--cyan)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.35rem 0.85rem' }}>⏱ {mm}:{ss}</span>
+          )}
+        </div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {ordered.map((q, i) => (
           <div key={q.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem', maxWidth: '100%' }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.75rem', wordBreak: 'break-word' }}>{i + 1}. {q.prompt} <span style={{ color: 'var(--muted)', fontWeight: 400, fontSize: '0.78rem' }}>({q.points} pt{q.points !== 1 ? 's' : ''})</span></div>
+            {/* No select/copy on question text */}
+            <div
+              style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.75rem', wordBreak: 'break-word', userSelect: 'none' }}
+              onCopy={e => e.preventDefault()}
+              onContextMenu={e => e.preventDefault()}
+            >
+              {i + 1}. {q.prompt} <span style={{ color: 'var(--muted)', fontWeight: 400, fontSize: '0.78rem' }}>({q.points} pt{q.points !== 1 ? 's' : ''})</span>
+            </div>
             {q.image_url && <img src={q.image_url} alt="" style={{ maxWidth: '100%', maxHeight: '260px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '0.75rem', display: 'block' }} />}
 
             {q.type === 'mcq' && (
@@ -214,8 +268,13 @@ function TakeQuiz({ quiz, questions, onExit }: { quiz: Quiz; questions: QuizQues
             )}
 
             {q.type === 'short_text' && (
-              <textarea value={answers[q.id] ?? ''} onChange={e => setAnswer(q.id, e.target.value)} placeholder="Type your answer…"
-                style={{ width: '100%', boxSizing: 'border-box', minHeight: '80px', padding: '0.7rem 0.9rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '0.88rem', outline: 'none', resize: 'vertical', lineHeight: 1.5 }} />
+              <textarea
+                value={answers[q.id] ?? ''}
+                onChange={e => setAnswer(q.id, e.target.value)}
+                onPaste={e => e.preventDefault()}
+                placeholder="Type your answer…"
+                style={{ width: '100%', boxSizing: 'border-box', minHeight: '80px', padding: '0.7rem 0.9rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '0.88rem', outline: 'none', resize: 'vertical', lineHeight: 1.5 }}
+              />
             )}
           </div>
         ))}
