@@ -13,6 +13,7 @@ export default function QuizzesTab({ studentId, track }: { studentId: string; tr
   const [attempts, setAttempts] = useState<QuizAttempt[]>([]);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<{ quiz: Quiz; questions: QuizQuestion[] } | null>(null);
+  const [viewingResult, setViewingResult] = useState<{ quiz: Quiz; attempt: QuizAttempt } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -27,6 +28,43 @@ export default function QuizzesTab({ studentId, track }: { studentId: string; tr
     const data = await fetch(`/api/quizzes/${quizId}`).then(r => r.json());
     setActive({ quiz: data, questions: data.questions ?? [] });
   };
+
+  if (viewingResult) {
+    const { quiz, attempt } = viewingResult;
+    const score = attempt.total_score ?? attempt.auto_score;
+    const isPending = attempt.status === 'submitted';
+    return (
+      <QuizPageShell>
+        <div style={{ maxWidth: '560px', margin: '0 auto', padding: '2rem 0' }}>
+          <button onClick={() => setViewingResult(null)}
+            style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '0.85rem', marginBottom: '1.5rem', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            ← Back to quizzes
+          </button>
+          <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.4rem', marginBottom: '0.25rem' }}>{quiz.title}</h2>
+          <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginBottom: '2rem' }}>Attempt #{attempt.attempt_number}</p>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '2rem', textAlign: 'center' }}>
+            {isPending ? (
+              <>
+                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>⏳</div>
+                <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.6rem', color: '#F59E0B' }}>Awaiting Review</div>
+                <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginTop: '0.5rem' }}>Auto-graded: {attempt.auto_score} / {attempt.max_score}</p>
+                <p style={{ color: 'var(--muted)', fontSize: '0.82rem', marginTop: '0.25rem' }}>Short-answer questions are pending instructor review — your total may rise.</p>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>✅</div>
+                <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '3rem', color: 'var(--cyan)', lineHeight: 1 }}>{score}</div>
+                <div style={{ color: 'var(--muted)', fontSize: '1rem', marginTop: '0.25rem' }}>out of {attempt.max_score}</div>
+                <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: score != null && attempt.max_score ? (score / attempt.max_score >= 0.7 ? '#34D366' : score / attempt.max_score >= 0.5 ? '#F59E0B' : '#FF5555') : 'var(--muted)' }}>
+                  {score != null && attempt.max_score ? `${Math.round((score / attempt.max_score) * 100)}%` : ''}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </QuizPageShell>
+    );
+  }
 
   if (active) {
     return (
@@ -84,10 +122,18 @@ export default function QuizzesTab({ studentId, track }: { studentId: string; tr
                   </div>
                 </div>
                 {used > 0 ? (
-                  <button onClick={() => openQuiz(q.id)} disabled={!canTake && !isClosed}
-                    style={{ padding: '0.6rem 1.2rem', background: 'rgba(0,200,255,0.15)', color: 'var(--cyan)', border: '1px solid rgba(0,200,255,0.25)', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', flexShrink: 0 }}>
-                    {isClosed ? 'View result' : 'Retake'}
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                    <button onClick={() => setViewingResult({ quiz: q, attempt: latest })}
+                      style={{ padding: '0.6rem 1.2rem', background: 'rgba(0,200,255,0.1)', color: 'var(--cyan)', border: '1px solid rgba(0,200,255,0.25)', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
+                      View result
+                    </button>
+                    {canTake && (
+                      <button onClick={() => openQuiz(q.id)}
+                        style={{ padding: '0.6rem 1.2rem', background: 'var(--cyan)', color: '#070D1A', border: 'none', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
+                        Retake
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <button onClick={() => openQuiz(q.id)} disabled={!canTake}
                     style={{ padding: '0.6rem 1.2rem', background: canTake ? 'var(--cyan)' : 'rgba(0,200,255,0.15)', color: canTake ? '#070D1A' : 'var(--muted)', border: 'none', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.82rem', cursor: canTake ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
