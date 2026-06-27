@@ -60,14 +60,17 @@ export default function QuizzesTab({ studentId, track }: { studentId: string; tr
             const best = mine.reduce<number | null>((acc, a) => {
               const s = a.total_score; if (s == null) return acc; return acc == null ? s : Math.max(acc, s);
             }, null);
+            const now = new Date();
             const pastDue = !!q.due_date && todayGMT1() > q.due_date;
+            const isClosed = !!q.closes_at && new Date(q.closes_at) < now;
             const awaiting = latest?.status === 'submitted';
-            const canTake = left > 0 && !pastDue;
+            const canTake = left > 0 && !pastDue && !isClosed;
 
             let statusLine = 'Not started';
             if (awaiting) statusLine = `Submitted — awaiting review (auto: ${latest.auto_score}/${latest.max_score})`;
             else if (best != null) statusLine = `Best score: ${best}/${latest?.max_score ?? '?'}`;
             if (pastDue && !used) statusLine = 'Past due';
+            if (isClosed && !used) statusLine = 'Quiz closed';
 
             return (
               <div key={q.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
@@ -80,10 +83,17 @@ export default function QuizzesTab({ studentId, track }: { studentId: string; tr
                     {q.time_limit_mins && ` · ${q.time_limit_mins} min limit`}
                   </div>
                 </div>
-                <button onClick={() => openQuiz(q.id)} disabled={!canTake}
-                  style={{ padding: '0.6rem 1.2rem', background: canTake ? 'var(--cyan)' : 'rgba(0,200,255,0.15)', color: canTake ? '#070D1A' : 'var(--muted)', border: 'none', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.82rem', cursor: canTake ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
-                  {used > 0 ? 'Retake' : 'Start'}
-                </button>
+                {used > 0 ? (
+                  <button onClick={() => openQuiz(q.id)} disabled={!canTake && !isClosed}
+                    style={{ padding: '0.6rem 1.2rem', background: 'rgba(0,200,255,0.15)', color: 'var(--cyan)', border: '1px solid rgba(0,200,255,0.25)', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', flexShrink: 0 }}>
+                    {isClosed ? 'View result' : 'Retake'}
+                  </button>
+                ) : (
+                  <button onClick={() => openQuiz(q.id)} disabled={!canTake}
+                    style={{ padding: '0.6rem 1.2rem', background: canTake ? 'var(--cyan)' : 'rgba(0,200,255,0.15)', color: canTake ? '#070D1A' : 'var(--muted)', border: 'none', borderRadius: '8px', fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.82rem', cursor: canTake ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
+                    Start
+                  </button>
+                )}
               </div>
             );
           })}

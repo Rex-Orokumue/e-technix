@@ -24,7 +24,13 @@ export async function GET(req: NextRequest) {
     );
     const { data: attempts } = await supabase
       .from('quiz_attempts').select('*').eq('student_id', user.id);
-    return NextResponse.json({ quizzes: visible, attempts: attempts ?? [] });
+    // Also show quizzes the student has attempted even if they're now closed/outside window
+    const attemptedIds = new Set((attempts ?? []).map((a: any) => a.quiz_id));
+    const attempted = (quizzes ?? []).filter(q =>
+      attemptedIds.has(q.id) && !visible.find((v: any) => v.id === q.id) &&
+      (!q.tracks || q.tracks.length === 0 || (track && q.tracks.includes(track)))
+    );
+    return NextResponse.json({ quizzes: [...visible, ...attempted], attempts: attempts ?? [] });
   }
 
   if (!(await isAdminAuthenticated()))
