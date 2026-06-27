@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
+import { sendPushToStudents } from '@/lib/push';
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await isAdminAuthenticated()))
@@ -27,9 +28,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         penalty_changed_by: admin_name ?? 'Admin',
         penalty_changed_at: new Date().toISOString(),
       })
-      .eq('id', id)
-      .select()
-      .single();
+      .eq('id', id).select().single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json(data);
@@ -42,13 +41,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!['full', 'partial', 'minimal'].includes(contribution))
     return NextResponse.json({ error: 'Invalid contribution value' }, { status: 400 });
 
+  // Fetch before updating so we can notify the student
+  const { data: existing } = await supabase
+    .from('assignment_submissions')
+    .select('student_id, assignment_id, score')
+    .eq('id', id).single();
+
   const { data, error } = await supabase
     .from('assignment_submissions')
     .update({ score, contribution })
-    .eq('id', id)
-    .select()
-    .single();
+    .eq('id', id).select().single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Notify student when their submission is graded (only on first grade, not re-grades)
+  if (existing?.student_id && existing.score == null && existing.assignment_id) {
+    const { data: assignment } = await supabase
+      .from('assignments').select('title').eq('id', existing.assignment_id).single();
+    sendPushToStudents([existing.student_id], {
+      title: '✅ Assignment graded',
+      body: `${assignment?.title ?? 'Your assignment'} has been graded — score: ${score}/100. Tap to view.`,
+      url: '/hub?tab=assignments',
+    }).catch(console.error);
+  }
+
   return NextResponse.json(data);
 }
