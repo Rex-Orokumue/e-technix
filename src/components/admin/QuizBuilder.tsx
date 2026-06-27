@@ -24,6 +24,8 @@ export default function QuizBuilder({ quiz, questions: initialQuestions }: { qui
     shuffle_questions: quiz?.shuffle_questions ?? false,
     status: quiz?.status ?? 'draft',
     due_date: quiz?.due_date ?? '',
+    opens_at: quiz?.opens_at ? quiz.opens_at.slice(0, 16) : '',
+    closes_at: quiz?.closes_at ? quiz.closes_at.slice(0, 16) : '',
   });
   const set = (k: string, v: any) => setMeta(m => ({ ...m, [k]: v }));
 
@@ -49,6 +51,8 @@ export default function QuizBuilder({ quiz, questions: initialQuestions }: { qui
     shuffle_questions: meta.shuffle_questions,
     status: meta.status,
     due_date: meta.due_date || null,
+    opens_at: meta.opens_at ? `${meta.opens_at}:00+01:00` : null,
+    closes_at: meta.closes_at ? `${meta.closes_at}:00+01:00` : null,
   });
 
   const createQuiz = async () => {
@@ -129,6 +133,11 @@ export default function QuizBuilder({ quiz, questions: initialQuestions }: { qui
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
           <div><label style={labelStyle}>Time limit (mins, optional)</label><input type="number" min="1" style={inputStyle} value={meta.time_limit_mins} onChange={e => set('time_limit_mins', e.target.value)} placeholder="No limit" /></div>
           <div><label style={labelStyle}>Due date (optional)</label><input type="date" style={inputStyle} value={meta.due_date} onChange={e => set('due_date', e.target.value)} /></div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+          <div><label style={labelStyle}>Opens at — Nigeria time (optional)</label><input type="datetime-local" style={inputStyle} value={meta.opens_at} onChange={e => set('opens_at', e.target.value)} /></div>
+          <div><label style={labelStyle}>Closes at — Nigeria time (optional)</label><input type="datetime-local" style={inputStyle} value={meta.closes_at} onChange={e => set('closes_at', e.target.value)} /></div>
         </div>
 
         <div><label style={labelStyle}>Link to session (optional)</label>

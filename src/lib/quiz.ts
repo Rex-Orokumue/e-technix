@@ -26,6 +26,8 @@ export interface Quiz {
   shuffle_questions: boolean;
   status: 'draft' | 'published' | 'closed';
   due_date?: string | null;
+  opens_at?: string | null;
+  closes_at?: string | null;
   created_at: string;
 }
 

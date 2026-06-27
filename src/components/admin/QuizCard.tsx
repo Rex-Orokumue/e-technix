@@ -37,6 +37,13 @@ export default function QuizCard({ quiz }: { quiz: any }) {
           {quiz.question_count ?? 0} questions · {quiz.attempt_count ?? 0} attempts · Phase {quiz.phase} Week {quiz.week}
           {quiz.tracks?.length ? ` · ${quiz.tracks.join(', ')}` : ' · All tracks'}
         </div>
+        {(quiz.opens_at || quiz.closes_at) && (
+          <div style={{ fontSize: '0.72rem', color: '#F59E0B', marginTop: '0.2rem' }}>
+            ⏰ {quiz.opens_at ? `Opens ${new Date(quiz.opens_at).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}` : ''}
+            {quiz.opens_at && quiz.closes_at ? ' – ' : ''}
+            {quiz.closes_at ? `Closes ${new Date(quiz.closes_at).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}` : ''}
+          </div>
+        )}
       </div>
       <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0, flexWrap: 'wrap' }}>
         <Link href={`/admin/quizzes/${quiz.id}`} style={btn('var(--cyan-border)', 'var(--cyan)')}>Edit</Link>

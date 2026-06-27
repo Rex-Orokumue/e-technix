@@ -16,6 +16,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!quiz || quiz.status !== 'published')
     return NextResponse.json({ error: 'Quiz not available' }, { status: 403 });
 
+  const now = new Date();
+
+  // Schedule window check
+  if (quiz.opens_at && new Date(quiz.opens_at) > now)
+    return NextResponse.json({ error: 'This quiz has not opened yet' }, { status: 403 });
+  if (quiz.closes_at && new Date(quiz.closes_at) < now)
+    return NextResponse.json({ error: 'The quiz window has closed' }, { status: 403 });
+
   // Due date check (GMT+1 end of day)
   if (quiz.due_date) {
     const nowG1 = new Date(Date.now() + 60 * 60 * 1000);

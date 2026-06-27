@@ -15,8 +15,13 @@ export async function GET(req: NextRequest) {
       .from('quizzes').select('*').eq('status', 'published')
       .order('phase').order('week');
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    const now = new Date();
     const track = student?.track;
-    const visible = (quizzes ?? []).filter(q => !q.tracks || q.tracks.length === 0 || (track && q.tracks.includes(track)));
+    const visible = (quizzes ?? []).filter(q =>
+      (!q.tracks || q.tracks.length === 0 || (track && q.tracks.includes(track))) &&
+      (!q.opens_at || new Date(q.opens_at) <= now) &&
+      (!q.closes_at || new Date(q.closes_at) >= now)
+    );
     const { data: attempts } = await supabase
       .from('quiz_attempts').select('*').eq('student_id', user.id);
     return NextResponse.json({ quizzes: visible, attempts: attempts ?? [] });
