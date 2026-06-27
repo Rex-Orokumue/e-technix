@@ -24,13 +24,21 @@ export async function GET(req: NextRequest) {
     );
     const { data: attempts } = await supabase
       .from('quiz_attempts').select('*').eq('student_id', user.id);
-    // Also show quizzes the student has attempted even if they're now closed/outside window
+    // Also show quizzes the student has attempted even if closed/expired (any status)
     const attemptedIds = new Set((attempts ?? []).map((a: any) => a.quiz_id));
-    const attempted = (quizzes ?? []).filter(q =>
-      attemptedIds.has(q.id) && !visible.find((v: any) => v.id === q.id) &&
-      (!q.tracks || q.tracks.length === 0 || (track && q.tracks.includes(track)))
-    );
-    return NextResponse.json({ quizzes: [...visible, ...attempted], attempts: attempts ?? [] });
+    if (attemptedIds.size > 0) {
+      const alreadyShown = new Set(visible.map((v: any) => v.id));
+      const missing = Array.from(attemptedIds).filter(id => !alreadyShown.has(id));
+      if (missing.length > 0) {
+        const { data: extra } = await supabase
+          .from('quizzes').select('*').in('id', missing);
+        const filtered = (extra ?? []).filter(q =>
+          !q.tracks || q.tracks.length === 0 || (track && q.tracks.includes(track))
+        );
+        return NextResponse.json({ quizzes: [...visible, ...filtered], attempts: attempts ?? [] });
+      }
+    }
+    return NextResponse.json({ quizzes: visible, attempts: attempts ?? [] });
   }
 
   if (!(await isAdminAuthenticated()))
