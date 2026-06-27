@@ -35,7 +35,6 @@ export default function AttendanceReportPage() {
     setToggling(key);
     const isMarked = attendance.has(key);
 
-    // Optimistic update
     setAttendance(prev => {
       const next = new Set(prev);
       isMarked ? next.delete(key) : next.add(key);
@@ -49,7 +48,6 @@ export default function AttendanceReportPage() {
     });
 
     if (!res.ok) {
-      // Revert on failure
       setAttendance(prev => {
         const next = new Set(prev);
         isMarked ? next.add(key) : next.delete(key);
@@ -90,46 +88,68 @@ export default function AttendanceReportPage() {
 
   if (loading) return <div style={{ color: 'var(--muted)', padding: '2rem' }}>Loading…</div>;
 
+  const stickyHead: React.CSSProperties = {
+    position: 'sticky', top: 0, zIndex: 2,
+    background: 'var(--surface)',
+    borderBottom: '1px solid var(--border)',
+  };
+  const stickyCorner: React.CSSProperties = {
+    position: 'sticky', top: 0, left: 0, zIndex: 3,
+    background: 'var(--surface)',
+    borderBottom: '1px solid var(--border)',
+    borderRight: '1px solid var(--border)',
+  };
+
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      {/* Page header — always visible */}
+      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.8rem', letterSpacing: '-0.02em', marginBottom: '0.2rem' }}>Attendance Report</h1>
-          <p style={{ color: 'var(--muted)', fontSize: '0.88rem' }}>{filteredStudents.length} students · {sessions.length} completed session{sessions.length !== 1 ? 's' : ''}</p>
+          <h1 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.8rem', letterSpacing: '-0.02em', marginBottom: '0.2rem' }}>Attendance</h1>
+          <p style={{ color: 'var(--muted)', fontSize: '0.88rem' }}>{filteredStudents.length} students · {sessions.length} session{sessions.length !== 1 ? 's' : ''}</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <select
-            value={trackFilter}
-            onChange={e => setTrackFilter(e.target.value)}
-            style={{ padding: '0.55rem 1rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontSize: '0.85rem', cursor: 'pointer' }}
-          >
+          <select value={trackFilter} onChange={e => setTrackFilter(e.target.value)}
+            style={{ padding: '0.55rem 1rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontSize: '0.85rem', cursor: 'pointer' }}>
             <option value="" style={optStyle}>All Tracks</option>
             {tracks.map(t => <option key={t} value={t} style={optStyle}>{t}</option>)}
           </select>
-          <button
-            onClick={exportCSV}
-            style={{ padding: '0.55rem 1rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'var(--font-head)', fontWeight: 600, whiteSpace: 'nowrap' }}
-          >
+          <button onClick={exportCSV}
+            style={{ padding: '0.55rem 1rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'var(--font-head)', fontWeight: 600, whiteSpace: 'nowrap' }}>
             ↓ Export CSV
           </button>
         </div>
       </div>
 
-      <p style={{ color: 'var(--muted)', fontSize: '0.78rem', marginBottom: '1.5rem' }}>Click any cell to manually mark or unmark attendance.</p>
+      <p style={{ flexShrink: 0, color: 'var(--muted)', fontSize: '0.78rem', margin: 0 }}>Click any cell to mark or unmark attendance. Scroll right to see all sessions.</p>
 
       {sessions.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem 2rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px' }}>
           <p style={{ color: 'var(--muted)' }}>No completed sessions yet. Sessions appear here once a recording URL is added.</p>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+        /* Scrollable in both directions — sticky corners/headers handled by CSS */
+        <div style={{
+          overflow: 'auto',
+          border: '1px solid var(--border)',
+          borderRadius: '12px',
+          maxWidth: '100%',
+          /* Cap height so the table scrolls vertically inside this box */
+          maxHeight: 'calc(100vh - 220px)',
+          WebkitOverflowScrolling: 'touch',
+        }}>
+          <table style={{ borderCollapse: 'collapse', fontSize: '0.8rem', minWidth: 'max-content', width: '100%' }}>
             <thead>
-              <tr style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-                <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.68rem', whiteSpace: 'nowrap', position: 'sticky', left: 0, background: 'var(--surface)', zIndex: 1 }}>Student</th>
-                <th style={{ padding: '0.75rem 0.6rem', textAlign: 'center', fontWeight: 700, color: '#34D366', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.68rem' }}>%</th>
+              <tr>
+                {/* Corner: sticky top + left */}
+                <th style={{ ...stickyCorner, padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.68rem', whiteSpace: 'nowrap' }}>
+                  Student
+                </th>
+                <th style={{ ...stickyHead, padding: '0.75rem 0.6rem', textAlign: 'center', fontWeight: 700, color: '#34D366', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.68rem' }}>
+                  %
+                </th>
                 {sessions.map(sess => (
-                  <th key={sess.id} style={{ padding: '0.6rem 0.4rem', textAlign: 'center', fontWeight: 600, color: 'var(--muted)', fontSize: '0.65rem', minWidth: '48px', whiteSpace: 'nowrap' }}
+                  <th key={sess.id} style={{ ...stickyHead, padding: '0.6rem 0.4rem', textAlign: 'center', fontWeight: 600, color: 'var(--muted)', fontSize: '0.65rem', minWidth: '48px', whiteSpace: 'nowrap' }}
                     title={`${sess.title} — ${sess.date}`}>
                     <div>S{sess.session_number}</div>
                     <div style={{ fontSize: '0.58rem', opacity: 0.7 }}>W{sess.week}</div>
@@ -140,16 +160,24 @@ export default function AttendanceReportPage() {
             <tbody>
               {filteredStudents.map((student, i) => (
                 <tr key={student.id} style={{ borderBottom: i < filteredStudents.length - 1 ? '1px solid var(--border)' : 'none', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
-                  <td style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap', position: 'sticky', left: 0, background: i % 2 === 0 ? 'var(--bg)' : 'rgba(7,13,26,0.97)', zIndex: 1 }}>
+                  {/* Student name — sticky left */}
+                  <td style={{
+                    padding: '0.75rem 1rem', whiteSpace: 'nowrap',
+                    position: 'sticky', left: 0, zIndex: 1,
+                    background: i % 2 === 0 ? 'var(--bg)' : 'rgba(7,13,26,0.97)',
+                    borderRight: '1px solid var(--border)',
+                  }}>
                     <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.82rem' }}>{student.full_name}</div>
                     <div style={{ fontSize: '0.68rem', color: 'var(--muted)' }}>{student.track}</div>
                   </td>
+                  {/* Attendance % */}
                   <td style={{ padding: '0.6rem', textAlign: 'center' }}>
                     <span style={{
                       fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '0.75rem',
                       color: pct(student.id) >= 80 ? '#34D366' : pct(student.id) >= 50 ? '#F59E0B' : sessions.length === 0 ? 'var(--muted)' : '#FF5555',
                     }}>{pct(student.id)}%</span>
                   </td>
+                  {/* Session cells */}
                   {sessions.map(sess => {
                     const key = `${student.id}:${sess.id}`;
                     const isMarked = attendance.has(key);
@@ -159,7 +187,7 @@ export default function AttendanceReportPage() {
                         <button
                           onClick={() => toggle(student.id, sess.id)}
                           disabled={!!toggling}
-                          title={isMarked ? 'Click to unmark attendance' : 'Click to mark attendance'}
+                          title={isMarked ? 'Click to unmark' : 'Click to mark'}
                           style={{
                             width: '32px', height: '32px', borderRadius: '6px', cursor: toggling ? 'wait' : 'pointer',
                             border: isMarked ? '1px solid rgba(52,211,102,0.35)' : '1px solid var(--border)',
@@ -167,8 +195,7 @@ export default function AttendanceReportPage() {
                             color: isMarked ? '#34D366' : 'rgba(255,255,255,0.2)',
                             fontSize: isToggling ? '0.6rem' : '0.85rem',
                             transition: 'all 0.15s',
-                          }}
-                        >
+                          }}>
                           {isToggling ? '…' : isMarked ? '✓' : '–'}
                         </button>
                       </td>
