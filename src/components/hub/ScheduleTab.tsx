@@ -30,6 +30,15 @@ function formatTime(t: string): string {
 }
 
 function getStatus(session: Session, todayGMT1: string, currentMinsGMT1: number, attended: boolean) {
+  const isLive = !!session.meet_link;
+
+  // A session with no meet_link never had a live component to miss —
+  // it's self-paced, so it can only be "upcoming" or "pending" content.
+  if (!isLive) {
+    if (session.youtube_url) return 'attended';
+    return session.date <= todayGMT1 ? 'pending' : 'upcoming';
+  }
+
   if (session.youtube_url) return attended ? 'attended' : 'missed';
   if (session.date < todayGMT1) return attended ? 'attended' : 'missed';
   if (session.date === todayGMT1) {
@@ -48,6 +57,7 @@ const STATUS_STYLE: Record<string, { label: string; color: string; bg: string; b
   live:     { label: 'In Session',color: '#34D366', bg: 'rgba(52,211,102,0.12)', border: 'rgba(52,211,102,0.3)' },
   today:    { label: 'Today',     color: '#00C8FF', bg: 'rgba(0,200,255,0.08)',   border: 'rgba(0,200,255,0.25)' },
   upcoming: { label: 'Upcoming',  color: '#A78BFA', bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.2)' },
+  pending:  { label: 'Self-Paced', color: '#94A3B8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.2)' },
 };
 
 export default function ScheduleTab({
