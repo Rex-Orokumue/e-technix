@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { TRACK_META } from '@/lib/tracks';
 
 interface Session {
   id: string;
@@ -17,6 +18,32 @@ interface Session {
   meet_link?: string;
   attendance_code?: string;
   attendance_code_expires_at?: string;
+  tracks?: string[] | null;
+}
+
+function TrackBadges({ tracks }: { tracks?: string[] | null }) {
+  if (!tracks || tracks.length === 0) {
+    return (
+      <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--muted)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '4px', padding: '0.1rem 0.45rem' }}>
+        🌍 General
+      </span>
+    );
+  }
+  return (
+    <>
+      {tracks.map(track => {
+        const meta = TRACK_META[track];
+        const color = meta?.accent === 'orange' ? 'var(--orange)' : 'var(--cyan)';
+        const bg = meta?.accent === 'orange' ? 'var(--orange-dim)' : 'var(--cyan-dim)';
+        const border = meta?.accent === 'orange' ? 'rgba(255,107,43,0.25)' : 'var(--cyan-border)';
+        return (
+          <span key={track} style={{ fontSize: '0.65rem', fontWeight: 700, color, background: bg, border: `1px solid ${border}`, borderRadius: '4px', padding: '0.1rem 0.45rem', whiteSpace: 'nowrap' }}>
+            {meta?.icon ?? ''} {track}
+          </span>
+        );
+      })}
+    </>
+  );
 }
 
 function formatTime(t: string): string {
@@ -111,6 +138,7 @@ export default function AdminSessionCard({ session }: { session: Session }) {
           {isLive && (
             <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#FF5555', background: 'rgba(255,51,51,0.1)', border: '1px solid rgba(255,51,51,0.3)', borderRadius: '4px', padding: '0.1rem 0.45rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>🔴 Live now</span>
           )}
+          <TrackBadges tracks={session.tracks} />
         </div>
         {rescheduling ? (
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '6px' }}>

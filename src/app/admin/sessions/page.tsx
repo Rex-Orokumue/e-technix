@@ -3,8 +3,15 @@ export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase/admin';
 import AdminSessionCard from '@/components/admin/AdminSessionCard';
+import { TRACKS, TRACK_META } from '@/lib/tracks';
 
-export default async function AdminSessionsPage() {
+export default async function AdminSessionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ track?: string }>;
+}) {
+  const { track: selectedTrack } = await searchParams;
+
   const supabase = createAdminClient();
   const { data: sessions } = await supabase
     .from('sessions')
@@ -12,7 +19,12 @@ export default async function AdminSessionsPage() {
     .order('phase').order('week').order('session_number');
 
   const todayGMT1 = new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 10);
-  const all = sessions ?? [];
+  const withTrack = sessions ?? [];
+  const all = !selectedTrack
+    ? withTrack
+    : selectedTrack === 'general'
+    ? withTrack.filter(s => !s.tracks || s.tracks.length === 0)
+    : withTrack.filter(s => !s.tracks || s.tracks.length === 0 || s.tracks.includes(selectedTrack));
   const upcoming = all.filter(s => s.date >= todayGMT1).sort((a, b) => a.date.localeCompare(b.date));
   const past = all.filter(s => s.date < todayGMT1);
 
@@ -29,7 +41,9 @@ export default async function AdminSessionsPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '1.8rem', letterSpacing: '-0.02em', marginBottom: '0.2rem' }}>Sessions</h1>
-          <p style={{ color: 'var(--muted)', fontSize: '0.88rem' }}>{sessions?.length ?? 0} sessions recorded</p>
+          <p style={{ color: 'var(--muted)', fontSize: '0.88rem' }}>
+            {selectedTrack ? `${all.length} of ${withTrack.length}` : withTrack.length} sessions recorded
+          </p>
         </div>
         <Link href="/admin/sessions/new" style={{
           display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
@@ -53,13 +67,42 @@ export default async function AdminSessionsPage() {
         + Add Session
       </Link>
 
+      {/* Track filter tabs */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.75rem' }}>
+        {[
+          { key: undefined, label: 'All', icon: '📚' },
+          { key: 'general', label: 'General', icon: '🌍' },
+          ...TRACKS.map(t => ({ key: t, label: t, icon: TRACK_META[t]?.icon ?? '' })),
+        ].map(tab => {
+          const isActive = (selectedTrack ?? undefined) === tab.key;
+          return (
+            <Link
+              key={tab.label}
+              href={tab.key ? `/admin/sessions?track=${encodeURIComponent(tab.key)}` : '/admin/sessions'}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                padding: '0.4rem 0.85rem', borderRadius: '999px', textDecoration: 'none',
+                fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap',
+                background: isActive ? 'var(--cyan-dim)' : 'var(--surface)',
+                border: `1px solid ${isActive ? 'var(--cyan-border)' : 'var(--border)'}`,
+                color: isActive ? 'var(--cyan)' : 'var(--muted)',
+              }}
+            >
+              {tab.icon} {tab.label}
+            </Link>
+          );
+        })}
+      </div>
+
       {all.length === 0 ? (
         <div style={{
           textAlign: 'center', padding: '4rem 2rem',
           background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px',
         }}>
           <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>🎬</div>
-          <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>No sessions yet. Add your first session.</p>
+          <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>
+            {withTrack.length === 0 ? 'No sessions yet. Add your first session.' : 'No sessions for this track yet.'}
+          </p>
         </div>
       ) : (
         <>
